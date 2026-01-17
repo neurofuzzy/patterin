@@ -1,0 +1,416 @@
+/* Modal and Menu Styles */
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MODAL OVERLAY */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(1, 4, 9, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+}
+
+.modal-container {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-width: 320px;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(1, 4, 9, 0.75);
+    transform: scale(0.95);
+    transition: transform 0.15s ease;
+}
+
+.modal-overlay.open .modal-container {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 60px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MODAL FORM ELEMENTS */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal-section {
+    margin-bottom: 16px;
+}
+
+.modal-label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-select {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.modal-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.radio-option input {
+    accent-color: var(--accent);
+}
+
+.size-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.size-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.size-row label {
+    width: 60px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.size-row input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.size-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.units-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.modal-button {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
+.modal-button.primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.modal-button.primary:hover {
+    filter: brightness(1.1);
+}
+
+.modal-button.danger {
+    background: transparent;
+    border: 1px solid #f85149;
+    color: #f85149;
+}
+
+.modal-button.danger:hover {
+    background: rgba(248, 81, 73, 0.1);
+}
+
+.modal-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* THEME MODAL */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.theme-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.theme-option:hover {
+    background: var(--bg-primary);
+}
+
+.theme-option.selected {
+    background: var(--bg-primary);
+    border-color: var(--accent);
+}
+
+.theme-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.theme-name {
+    flex: 1;
+}
+
+.theme-check {
+    color: var(--accent);
+    opacity: 0;
+}
+
+.theme-option.selected .theme-check {
+    opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* EXAMPLES MODAL */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.examples-modal {
+    min-width: 400px;
+}
+
+.examples-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+
+.examples-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.examples-tab:hover {
+    color: var(--text-primary);
+}
+
+.examples-tab.active {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.example-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.example-card:hover {
+    border-color: var(--accent);
+}
+
+.example-preview {
+    height: 60px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.example-placeholder {
+    font-size: 24px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.example-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.example-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SETTINGS MODAL */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.settings-modal {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.settings-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MENU DROPDOWN */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.menu-dropdown {
+    position: fixed;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(1, 4, 9, 0.75);
+    z-index: 999;
+    min-width: 180px;
+    padding: 8px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.menu-dropdown.open {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background: var(--bg-primary);
+}
+
+.menu-icon {
+    width: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}

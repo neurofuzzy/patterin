@@ -2,13 +2,19 @@
  * Patterin Playground - Main Entry Point
  */
 import * as patterin from 'patterin';
-import { Preview } from './components/Preview';
-import { Editor } from './components/Editor';
+import { Preview } from './components/Preview.ts';
+import { Editor } from './components/Editor.ts';
+import { Menu } from './components/Menu.ts';
+import { initTheme } from './modals/ThemeModal.ts';
+
+// Initialize theme
+initTheme();
 
 // Get DOM elements
 const editorContainer = document.querySelector('.editor-container') as HTMLDivElement;
 const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
+const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
 
 // Initialize Preview component
 const preview = new Preview({
@@ -70,10 +76,19 @@ const editor = new Editor({
     onChange: debouncedRun,
 });
 
+// Initialize Menu
+new Menu({
+    button: menuBtn,
+    onExampleLoad: (code: string) => {
+        editor.setCode(code);
+        runCode(code);
+    },
+});
+
 // Initial run
 runCode(editor.getCode());
 
 // Log available exports
 console.log('Patterin Playground loaded');
 console.log('Available:', Object.keys(patterin));
-console.log('Tip: Type "shape." to see autocomplete');
+console.log('Tip: Type "shape." to see autocomplete, or click ≡ for examples');
