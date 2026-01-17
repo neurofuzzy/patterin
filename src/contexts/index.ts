@@ -9,3 +9,5 @@ export {
     HexagonContext,
     TriangleContext,
 } from './ShapeContext.ts';
+
+export { PointContext } from './PointContext.ts';

@@ -5,11 +5,18 @@ import { Shape } from '../primitives/Shape.ts';
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
 
+export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
+
 export interface GridOptions {
+    type?: GridType;
     rows: number;
     cols: number;
     spacing: number | { x: number; y: number };
     offset?: [number, number];
+    // Hexagonal-specific
+    orientation?: 'pointy' | 'flat';
+    // Brick-specific
+    brickOffset?: number;  // 0-1, default 0.5
 }
 
 interface GridNode {
@@ -32,7 +39,8 @@ interface Placement {
 }
 
 /**
- * GridSystem - creates orthogonal grid structure.
+ * GridSystem - creates various grid structures.
+ * Supports: square (default), hexagonal, triangular, brick.
  */
 export class GridSystem {
     private _nodes: GridNode[] = [];
@@ -44,10 +52,17 @@ export class GridSystem {
     private _offsetX: number;
     private _offsetY: number;
     private _placements: Placement[] = [];
+    private _type: GridType;
+    private _orientation: 'pointy' | 'flat';
+    private _brickOffset: number;
+    private _traced = false;
 
     private constructor(options: GridOptions) {
+        this._type = options.type ?? 'square';
         this._rows = options.rows;
         this._cols = options.cols;
+        this._orientation = options.orientation ?? 'pointy';
+        this._brickOffset = options.brickOffset ?? 0.5;
 
         if (typeof options.spacing === 'number') {
             this._spacingX = options.spacing;
@@ -68,6 +83,22 @@ export class GridSystem {
     }
 
     private buildGrid(): void {
+        switch (this._type) {
+            case 'hexagonal':
+                this.buildHexGrid();
+                break;
+            case 'triangular':
+                this.buildTriangularGrid();
+                break;
+            case 'brick':
+                this.buildBrickGrid();
+                break;
+            default:
+                this.buildSquareGrid();
+        }
+    }
+
+    private buildSquareGrid(): void {
         // Create nodes (grid intersections)
         for (let row = 0; row <= this._rows; row++) {
             for (let col = 0; col <= this._cols; col++) {
@@ -92,10 +123,131 @@ export class GridSystem {
                     new Vector2(x + this._spacingX, y + this._spacingY),
                     new Vector2(x, y + this._spacingY),
                 ]);
+                cellShape.ephemeral = true;
 
                 this._cells.push({ shape: cellShape, row, col });
             }
         }
+    }
+
+    private buildHexGrid(): void {
+        const spacing = this._spacingX;
+
+        // Hex dimensions based on orientation
+        const hexWidth = this._orientation === 'pointy'
+            ? spacing * Math.sqrt(3)
+            : spacing * 2;
+        const hexHeight = this._orientation === 'pointy'
+            ? spacing * 2
+            : spacing * Math.sqrt(3);
+
+        const vertSpacing = this._orientation === 'pointy' ? hexHeight * 0.75 : hexHeight;
+        const horizSpacing = this._orientation === 'pointy' ? hexWidth : hexWidth * 0.75;
+
+        for (let row = 0; row < this._rows; row++) {
+            for (let col = 0; col < this._cols; col++) {
+                let x: number, y: number;
+
+                if (this._orientation === 'pointy') {
+                    // Offset every other row
+                    const xOffset = (row % 2) * hexWidth / 2;
+                    x = this._offsetX + col * horizSpacing + xOffset;
+                    y = this._offsetY + row * vertSpacing;
+                } else {
+                    // Offset every other column
+                    const yOffset = (col % 2) * hexHeight / 2;
+                    x = this._offsetX + col * horizSpacing;
+                    y = this._offsetY + row * vertSpacing + yOffset;
+                }
+
+                // Create node at hex center
+                this._nodes.push({ x, y, row, col });
+
+                // Create hexagon cell
+                const rotation = this._orientation === 'pointy' ? Math.PI / 6 : 0;
+                const hexShape = Shape.regularPolygon(6, spacing, new Vector2(x, y), rotation);
+                hexShape.ephemeral = true;
+
+                this._cells.push({ shape: hexShape, row, col });
+            }
+        }
+    }
+
+    private buildTriangularGrid(): void {
+        const spacing = this._spacingX;
+        const height = spacing * Math.sqrt(3) / 2;
+
+        for (let row = 0; row < this._rows; row++) {
+            for (let col = 0; col < this._cols; col++) {
+                const x = this._offsetX + col * spacing / 2;
+                const y = this._offsetY + row * height;
+
+                // Alternate up/down triangles
+                const pointsUp = (row + col) % 2 === 0;
+
+                let triShape: Shape;
+                if (pointsUp) {
+                    // △ vertices: bottom-left, bottom-right, top
+                    triShape = Shape.fromPoints([
+                        new Vector2(x, y + height),
+                        new Vector2(x + spacing, y + height),
+                        new Vector2(x + spacing / 2, y),
+                    ]);
+                } else {
+                    // ▽ vertices: top-left, top-right, bottom
+                    triShape = Shape.fromPoints([
+                        new Vector2(x, y),
+                        new Vector2(x + spacing, y),
+                        new Vector2(x + spacing / 2, y + height),
+                    ]);
+                }
+                triShape.ephemeral = true;
+
+                // Node at triangle center
+                const center = triShape.centroid();
+                this._nodes.push({ x: center.x, y: center.y, row, col });
+
+                this._cells.push({ shape: triShape, row, col });
+            }
+        }
+    }
+
+    private buildBrickGrid(): void {
+        const cellWidth = this._spacingX;
+        const cellHeight = this._spacingY;
+
+        for (let row = 0; row < this._rows; row++) {
+            const xOffset = (row % 2) * cellWidth * this._brickOffset;
+
+            for (let col = 0; col < this._cols; col++) {
+                const x = this._offsetX + col * cellWidth + xOffset;
+                const y = this._offsetY + row * cellHeight;
+
+                const cellShape = Shape.fromPoints([
+                    new Vector2(x, y),
+                    new Vector2(x + cellWidth, y),
+                    new Vector2(x + cellWidth, y + cellHeight),
+                    new Vector2(x, y + cellHeight),
+                ]);
+                cellShape.ephemeral = true;
+
+                // Node at brick center
+                const cx = x + cellWidth / 2;
+                const cy = y + cellHeight / 2;
+                this._nodes.push({ x: cx, y: cy, row, col });
+
+                this._cells.push({ shape: cellShape, row, col });
+            }
+        }
+    }
+
+    /** Make structure concrete (renderable) */
+    trace(): this {
+        this._traced = true;
+        for (const cell of this._cells) {
+            cell.shape.ephemeral = false;
+        }
+        return this;
     }
 
     /** Get all grid nodes as PointsContext */
@@ -115,14 +267,31 @@ export class GridSystem {
         const segments: Segment[] = [];
         const refShape = this._cells[0]?.shape ?? Shape.regularPolygon(3, 1);
 
-        for (let row = 0; row <= this._rows; row++) {
-            const y = this._offsetY + row * this._spacingY;
-            const startX = this._offsetX;
-            const endX = this._offsetX + this._cols * this._spacingX;
+        if (this._type === 'square' || this._type === 'brick') {
+            for (let row = 0; row <= this._rows; row++) {
+                const y = this._offsetY + row * this._spacingY;
+                const startX = this._offsetX;
+                const endX = this._offsetX + this._cols * this._spacingX;
 
-            const start = new Vertex(startX, y);
-            const end = new Vertex(endX, y);
-            segments.push(new Segment(start, end));
+                const start = new Vertex(startX, y);
+                const end = new Vertex(endX, y);
+                segments.push(new Segment(start, end));
+            }
+        } else {
+            // For hex/triangular, connect centers horizontally
+            const nodesByRow = new Map<number, GridNode[]>();
+            for (const node of this._nodes) {
+                if (!nodesByRow.has(node.row)) nodesByRow.set(node.row, []);
+                nodesByRow.get(node.row)!.push(node);
+            }
+            for (const nodes of nodesByRow.values()) {
+                nodes.sort((a, b) => a.x - b.x);
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const start = new Vertex(nodes[i].x, nodes[i].y);
+                    const end = new Vertex(nodes[i + 1].x, nodes[i + 1].y);
+                    segments.push(new Segment(start, end));
+                }
+            }
         }
 
         return new LinesContext(refShape, segments);
@@ -133,14 +302,31 @@ export class GridSystem {
         const segments: Segment[] = [];
         const refShape = this._cells[0]?.shape ?? Shape.regularPolygon(3, 1);
 
-        for (let col = 0; col <= this._cols; col++) {
-            const x = this._offsetX + col * this._spacingX;
-            const startY = this._offsetY;
-            const endY = this._offsetY + this._rows * this._spacingY;
+        if (this._type === 'square') {
+            for (let col = 0; col <= this._cols; col++) {
+                const x = this._offsetX + col * this._spacingX;
+                const startY = this._offsetY;
+                const endY = this._offsetY + this._rows * this._spacingY;
 
-            const start = new Vertex(x, startY);
-            const end = new Vertex(x, endY);
-            segments.push(new Segment(start, end));
+                const start = new Vertex(x, startY);
+                const end = new Vertex(x, endY);
+                segments.push(new Segment(start, end));
+            }
+        } else {
+            // For hex/triangular/brick, connect centers vertically
+            const nodesByCol = new Map<number, GridNode[]>();
+            for (const node of this._nodes) {
+                if (!nodesByCol.has(node.col)) nodesByCol.set(node.col, []);
+                nodesByCol.get(node.col)!.push(node);
+            }
+            for (const nodes of nodesByCol.values()) {
+                nodes.sort((a, b) => a.y - b.y);
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const start = new Vertex(nodes[i].x, nodes[i].y);
+                    const end = new Vertex(nodes[i + 1].x, nodes[i + 1].y);
+                    segments.push(new Segment(start, end));
+                }
+            }
         }
 
         return new LinesContext(refShape, segments);
@@ -153,10 +339,8 @@ export class GridSystem {
 
     /** Get computed bounds */
     getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
-        let minX = Infinity,
-            minY = Infinity;
-        let maxX = -Infinity,
-            maxY = -Infinity;
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
 
         for (const node of this._nodes) {
             minX = Math.min(minX, node.x);
@@ -165,7 +349,14 @@ export class GridSystem {
             maxY = Math.max(maxY, node.y);
         }
 
-        // Also include placements
+        for (const cell of this._cells) {
+            const bbox = cell.shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
         for (const p of this._placements) {
             const bbox = p.shape.boundingBox();
             minX = Math.min(minX, p.position.x + bbox.min.x);
@@ -177,7 +368,7 @@ export class GridSystem {
         return { minX, minY, maxX, maxY };
     }
 
-    /** Generate SVG output - only renders placed shapes, scaled to fit */
+    /** Generate SVG output */
     toSVG(options: {
         width: number;
         height: number;
@@ -186,25 +377,31 @@ export class GridSystem {
         const { width, height, margin = 10 } = options;
         const collector = new SVGCollector();
 
-        if (this._placements.length === 0) {
+        // Collect all renderable shapes
+        const renderables: { shape: Shape; style?: PathStyle }[] = [];
+
+        // Add traced cells
+        if (this._traced) {
+            for (const cell of this._cells) {
+                if (!cell.shape.ephemeral) {
+                    renderables.push({ shape: cell.shape });
+                }
+            }
+        }
+
+        // Add placements
+        for (const p of this._placements) {
+            renderables.push({ shape: p.shape, style: p.style });
+        }
+
+        if (renderables.length === 0) {
             return collector.toString({ width, height });
         }
 
-        // Compute bounds from placed shapes only
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const p of this._placements) {
-            const bbox = p.shape.boundingBox();
-            const cx = p.shape.centroid();
-            minX = Math.min(minX, cx.x + bbox.min.x - cx.x);
-            minY = Math.min(minY, cx.y + bbox.min.y - cx.y);
-            maxX = Math.max(maxX, cx.x + bbox.max.x - cx.x);
-            maxY = Math.max(maxY, cx.y + bbox.max.y - cx.y);
-        }
-
-        const contentWidth = maxX - minX || 1;
-        const contentHeight = maxY - minY || 1;
+        // Compute bounds
+        const bounds = this.getBounds();
+        const contentWidth = bounds.maxX - bounds.minX || 1;
+        const contentHeight = bounds.maxY - bounds.minY || 1;
 
         // Scale to fit
         const availW = width - margin * 2;
@@ -212,21 +409,15 @@ export class GridSystem {
         const scale = Math.min(availW / contentWidth, availH / contentHeight);
 
         // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - minY * scale;
+        const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
+        const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
 
-        // Draw only placements
-        for (const placement of this._placements) {
-            const clone = placement.shape.clone();
-            const cx = clone.centroid();
-
-            // Scale around centroid then translate
-            clone.scale(scale, cx);
-            clone.translate(new Vector2(
-                cx.x * (scale - 1) + offsetX,
-                cx.y * (scale - 1) + offsetY
-            ));
-            collector.addShape(clone, placement.style);
+        // Render all
+        for (const item of renderables) {
+            const clone = item.shape.clone();
+            clone.scale(scale);
+            clone.translate(new Vector2(offsetX, offsetY));
+            collector.addShape(clone, item.style ?? { stroke: '#000', strokeWidth: 1 });
         }
 
         return collector.toString({ width, height });

@@ -24,4 +24,5 @@ export { shape } from './shapes/index.ts';
 export { SVGCollector, type PathStyle } from './collectors/index.ts';
 
 // Systems
-export { GridSystem, type GridOptions } from './systems/index.ts';
+export { GridSystem, type GridOptions, type GridType } from './systems/index.ts';
+export { TessellationSystem, type TessellationOptions, type TessellationPattern } from './systems/index.ts';

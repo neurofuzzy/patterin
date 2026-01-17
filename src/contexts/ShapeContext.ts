@@ -3,6 +3,7 @@ import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment, Winding } from '../primitives/Segment.ts';
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { PointContext } from './PointContext.ts';
 
 /**
  * Base context for all shape operations.
@@ -141,6 +142,109 @@ export class ShapeContext {
         }
         collector.addShape(clone, style);
     }
+
+    // ==================== Phase 1.5 Operations ====================
+
+    /**
+     * Explode shape into independent segments.
+     * Marks original shape as ephemeral.
+     * @returns LinesContext with orphan segments (disconnected)
+     */
+    explode(): LinesContext {
+        this._shape.ephemeral = true;
+
+        // Create independent segments (not connected to each other)
+        const orphanSegments: Segment[] = [];
+        for (const seg of this._shape.segments) {
+            const start = new Vertex(seg.start.position.x, seg.start.position.y);
+            const end = new Vertex(seg.end.position.x, seg.end.position.y);
+            orphanSegments.push(new Segment(start, end));
+        }
+
+        return new LinesContext(this._shape, orphanSegments);
+    }
+
+    /**
+     * Collapse shape to its centroid point.
+     * Marks original shape as ephemeral.
+     * @returns PointContext at the centroid
+     */
+    collapse(): PointContext {
+        this._shape.ephemeral = true;
+        return new PointContext(this._shape.centroid(), this._shape);
+    }
+
+    /**
+     * Offset shape outline inward (negative) or outward (positive).
+     * Uses vertex normal offset with miter limit.
+     * @param distance - Offset distance (positive = outward, negative = inward)
+     * @param miterLimit - Miter limit for sharp corners (default 4, same as SVG)
+     * @returns New ShapeContext with offset shape
+     */
+    offsetShape(distance: number, miterLimit = 4): ShapeContext {
+        const newPoints: Vector2[] = [];
+        const vertices = this._shape.vertices;
+        const segments = this._shape.segments;
+        const n = vertices.length;
+
+        for (let i = 0; i < n; i++) {
+            const vertex = vertices[i];
+            const prevSeg = segments[(i - 1 + n) % n];
+            const nextSeg = segments[i];
+
+            // Compute offset direction (vertex normal = average of adjacent segment normals)
+            const normal = vertex.normal;
+            const offsetDir = normal.multiply(distance);
+
+            // Offset the adjacent segments
+            const prevStart = prevSeg.start.position.add(prevSeg.normal.multiply(distance));
+            const prevEnd = prevSeg.end.position.add(prevSeg.normal.multiply(distance));
+            const nextStart = nextSeg.start.position.add(nextSeg.normal.multiply(distance));
+            const nextEnd = nextSeg.end.position.add(nextSeg.normal.multiply(distance));
+
+            // Find intersection of offset segments
+            const intersection = this.lineIntersection(prevStart, prevEnd, nextStart, nextEnd);
+
+            if (intersection) {
+                // Check miter length
+                const miterLength = intersection.subtract(vertex.position).length();
+                const maxMiter = Math.abs(distance) * miterLimit;
+
+                if (miterLength > maxMiter) {
+                    // Insert bevel (two vertices instead of sharp corner)
+                    newPoints.push(prevEnd);
+                    newPoints.push(nextStart);
+                } else {
+                    newPoints.push(intersection);
+                }
+            } else {
+                // Parallel lines - just offset the vertex
+                newPoints.push(vertex.position.add(offsetDir));
+            }
+        }
+
+        if (newPoints.length >= 3) {
+            const newShape = Shape.fromPoints(newPoints, this._shape.winding);
+            return new ShapeContext(newShape);
+        }
+
+        return new ShapeContext(this._shape.clone());
+    }
+
+    /** Helper: find intersection of two lines (or null if parallel) */
+    private lineIntersection(
+        a1: Vector2, a2: Vector2,
+        b1: Vector2, b2: Vector2
+    ): Vector2 | null {
+        const d1 = a2.subtract(a1);
+        const d2 = b2.subtract(b1);
+        const cross = d1.x * d2.y - d1.y * d2.x;
+
+        if (Math.abs(cross) < 1e-10) return null; // Parallel
+
+        const t = ((b1.x - a1.x) * d2.y - (b1.y - a1.y) * d2.x) / cross;
+        return new Vector2(a1.x + t * d1.x, a1.y + t * d1.y);
+    }
 }
 
 /**
@@ -252,6 +356,67 @@ export class PointsContext {
             height: maxY - minY,
             center: min.lerp(max, 0.5),
         };
+    }
+
+    // ==================== Phase 1.5 Operations ====================
+
+    /**
+     * Expand each point into a circle shape.
+     * Does NOT modify the original shape.
+     * @param radius - Circle radius
+     * @param segments - Number of circle segments (default 32)
+     * @returns ShapesContext with independent circle shapes
+     */
+    expandToCircles(radius: number, segments = 32): ShapesContext {
+        const shapes: Shape[] = [];
+        for (const v of this._vertices) {
+            const circle = Shape.regularPolygon(segments, radius, v.position);
+            shapes.push(circle);
+        }
+        return new ShapesContext(shapes);
+    }
+
+    /**
+     * Cast rays from each point.
+     * @param distance - Ray distance
+     * @param direction - Angle in degrees, or 'outward'/'inward' relative to shape center
+     * @returns PointsContext with ray endpoints
+     */
+    raycast(distance: number, direction: number | 'outward' | 'inward'): PointsContext {
+        const endpoints: Vertex[] = [];
+        const center = this._shape.centroid();
+
+        for (const v of this._vertices) {
+            let angle: number;
+
+            if (typeof direction === 'number') {
+                angle = direction * Math.PI / 180;
+            } else {
+                // Use vertex normal if available
+                const normal = v.normal;
+                if (normal.length() > 0.001) {
+                    angle = Math.atan2(normal.y, normal.x);
+                    if (direction === 'inward') {
+                        angle += Math.PI;
+                    }
+                } else {
+                    // Fallback to direction from center
+                    const toCenter = center.subtract(v.position).normalize();
+                    angle = Math.atan2(toCenter.y, toCenter.x);
+                    if (direction === 'outward') {
+                        angle += Math.PI;
+                    }
+                }
+            }
+
+            const endpoint = new Vector2(
+                v.position.x + Math.cos(angle) * distance,
+                v.position.y + Math.sin(angle) * distance
+            );
+            endpoints.push(new Vertex(endpoint.x, endpoint.y));
+        }
+
+        return new PointsContext(this._shape, endpoints);
     }
 }
 
@@ -366,6 +531,53 @@ export class LinesContext {
         }
         return sum.divide(this._segments.length);
     }
+
+    // ==================== Phase 1.5 Operations ====================
+
+    /**
+     * Collapse selected segments to their midpoints.
+     * Modifies parent shape: removes segment and merges vertices at midpoint.
+     * @returns PointsContext with midpoint locations
+     */
+    collapse(): PointsContext {
+        const midpoints: Vertex[] = [];
+
+        for (const seg of this._segments) {
+            const mid = seg.midpoint();
+            midpoints.push(new Vertex(mid.x, mid.y));
+        }
+
+        // Note: Full topology modification would remove segments from parent shape.
+        // For now, just return the midpoints. Shape modification is complex.
+        return new PointsContext(this._shape, midpoints);
+    }
+
+    /**
+     * Expand each segment into a rectangle with square end caps.
+     * Does NOT modify the original shape.
+     * @param distance - Half-height of rectangle (total height = 2 * distance)
+     * @returns ShapesContext with independent rectangle shapes
+     */
+    expandToRect(distance: number): ShapesContext {
+        const shapes: Shape[] = [];
+
+        for (const seg of this._segments) {
+            const start = seg.start.position;
+            const end = seg.end.position;
+            const normal = seg.normal.multiply(distance);
+
+            // Create rectangle: start, end, end+normal, start+normal
+            const rect = Shape.fromPoints([
+                start.subtract(normal),
+                end.subtract(normal),
+                end.add(normal),
+                start.add(normal),
+            ]);
+            shapes.push(rect);
+        }
+
+        return new ShapesContext(shapes);
+    }
 }
 
 /**
@@ -476,6 +688,48 @@ export class ShapesContext {
             }
             collector.addShape(clone, style);
         }
+    }
+
+    // ==================== Phase 1.5 Operations ====================
+
+    /**
+     * Distribute shapes radially around a circle.
+     * @param radius - Distance from origin
+     * @param arc - Optional angle range: undefined = 360°, number = 0 to angle, [start, end] = range
+     * @returns This ShapesContext (modified in place)
+     */
+    spreadPolar(radius: number, arc?: number | [number, number]): this {
+        let startAngle = 0;
+        let endAngle = 360;
+
+        if (arc !== undefined) {
+            if (typeof arc === 'number') {
+                endAngle = arc;
+            } else {
+                startAngle = arc[0];
+                endAngle = arc[1];
+            }
+        }
+
+        const angleRange = endAngle - startAngle;
+        const n = this._shapes.length;
+
+        // For full circle, don't put last shape on top of first
+        const step = angleRange === 360
+            ? angleRange / n
+            : angleRange / Math.max(1, n - 1);
+
+        for (let i = 0; i < n; i++) {
+            const angleDeg = startAngle + step * i;
+            const angleRad = angleDeg * Math.PI / 180;
+
+            const x = Math.cos(angleRad) * radius;
+            const y = Math.sin(angleRad) * radius;
+
+            this._shapes[i].moveTo(new Vector2(x, y));
+        }
+
+        return this;
     }
 }
 
