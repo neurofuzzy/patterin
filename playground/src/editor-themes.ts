@@ -2,6 +2,9 @@
  * Editor Themes - Color definitions for CodeMirror
  */
 import { EditorView } from '@codemirror/view';
+import { Extension } from '@codemirror/state';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 
 export type ThemeId = 'github-dark' | 'nord' | 'tokyo-night';
 
@@ -24,6 +27,9 @@ interface ThemeColors {
     number: string;
     method: string;
     comment: string;
+    variable: string;
+    property: string;
+    punctuation: string;
 
     // UI
     border: string;
@@ -44,6 +50,9 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         number: '#79c0ff',
         method: '#d2a8ff',
         comment: '#8b949e',
+        variable: '#e6edf3',
+        property: '#79c0ff',
+        punctuation: '#e6edf3',
         border: '#30363d',
         selection: 'rgba(56, 139, 253, 0.3)',
         activeLine: 'rgba(56, 139, 253, 0.1)',
@@ -60,6 +69,9 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         number: '#b48ead',
         method: '#88c0d0',
         comment: '#616e88',
+        variable: '#d8dee9',
+        property: '#88c0d0',
+        punctuation: '#eceff4',
         border: '#434c5e',
         selection: 'rgba(136, 192, 208, 0.3)',
         activeLine: 'rgba(136, 192, 208, 0.1)',
@@ -76,6 +88,9 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         number: '#ff9e64',
         method: '#7dcfff',
         comment: '#565f89',
+        variable: '#c0caf5',
+        property: '#7aa2f7',
+        punctuation: '#c0caf5',
         border: '#414868',
         selection: 'rgba(125, 207, 255, 0.3)',
         activeLine: 'rgba(125, 207, 255, 0.1)',
@@ -85,10 +100,11 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
 /**
  * Create a CodeMirror theme extension for the given theme ID
  */
-export function createEditorTheme(themeId: ThemeId) {
+export function createTheme(themeId: ThemeId): Extension {
     const c = THEME_COLORS[themeId];
 
-    return EditorView.theme({
+    // 1. Editor Theme (UI)
+    const editorTheme = EditorView.theme({
         '&': {
             backgroundColor: c.bgPrimary,
             color: c.textPrimary,
@@ -124,22 +140,7 @@ export function createEditorTheme(themeId: ThemeId) {
         '.cm-lineNumbers .cm-gutterElement': {
             padding: '0 8px 0 16px',
         },
-        // Syntax highlighting
-        '.cm-keyword': { color: c.keyword },
-        '.cm-operator': { color: c.keyword },
-        '.cm-variableName': { color: c.textPrimary },
-        '.cm-propertyName': { color: c.method },
-        '.cm-function': { color: c.method },
-        '.cm-string': { color: c.string },
-        '.cm-number': { color: c.number },
-        '.cm-comment': { color: c.comment },
-        '.cm-bracket': { color: c.textPrimary },
-        '.cm-punctuation': { color: c.textPrimary },
-        '.cm-definition': { color: c.method },
-        '.cm-typeName': { color: c.number },
-        '.cm-atom': { color: c.number },
-        '.cm-bool': { color: c.number },
-        // Autocomplete
+        // Autocomplete UI
         '.cm-tooltip': {
             backgroundColor: c.bgTertiary,
             border: `1px solid ${c.border}`,
@@ -179,6 +180,28 @@ export function createEditorTheme(themeId: ThemeId) {
             scrollbarColor: `${c.border} ${c.bgPrimary}`,
         },
     }, { dark: true });
+
+    // 2. Syntax Highlighting
+    const highlightStyle = HighlightStyle.define([
+        { tag: t.keyword, color: c.keyword },
+        { tag: [t.name, t.deleted, t.character, t.propertyName, t.macroName], color: c.variable },
+        { tag: [t.processingInstruction, t.string, t.inserted, t.special(t.string)], color: c.string },
+        { tag: [t.function(t.variableName), t.labelName], color: c.method },
+        { tag: [t.color, t.constant(t.name), t.standard(t.name)], color: c.number },
+        { tag: [t.definition(t.name), t.separator], color: c.variable },
+        { tag: [t.typeName, t.className, t.number, t.changed, t.annotation, t.modifier, t.self, t.namespace], color: c.number },
+        { tag: [t.operator, t.operatorKeyword, t.url, t.escape, t.regexp, t.link, t.special(t.string)], color: c.keyword },
+        { tag: [t.meta, t.comment], color: c.comment },
+        { tag: t.strong, fontWeight: "bold" },
+        { tag: t.emphasis, fontStyle: "italic" },
+        { tag: t.strikethrough, textDecoration: "line-through" },
+        { tag: t.link, color: c.textMuted, textDecoration: "underline" },
+        { tag: t.heading, fontWeight: "bold", color: c.keyword },
+        { tag: [t.atom, t.bool, t.special(t.variableName)], color: c.number },
+        { tag: [t.bracket, t.punctuation], color: c.punctuation }
+    ]);
+
+    return [editorTheme, syntaxHighlighting(highlightStyle)];
 }
 
 /**

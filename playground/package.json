@@ -9,6 +9,8 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@codemirror/language": "^6.12.1",
+        "@lezer/highlight": "^1.2.3",
         "patterin": "file:.."
     },
     "devDependencies": {

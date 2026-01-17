@@ -7,7 +7,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
 import { createAutocomplete } from '../autocomplete/completions.ts';
-import { createEditorTheme, getCurrentThemeId, ThemeId } from '../editor-themes.ts';
+import { createTheme, getCurrentThemeId, ThemeId } from '../editor-themes.ts';
 
 export interface EditorOptions {
     container: HTMLElement;
@@ -47,7 +47,7 @@ export class Editor {
             extensions: [
                 basicSetup,
                 javascript(),
-                this.themeCompartment.of(createEditorTheme(this.currentTheme)),
+                this.themeCompartment.of(createTheme(this.currentTheme)),
                 createAutocomplete(),
                 keymap.of([indentWithTab]),
                 EditorView.updateListener.of((update) => {
@@ -87,7 +87,7 @@ export class Editor {
 
         this.currentTheme = themeId;
         this.view.dispatch({
-            effects: this.themeCompartment.reconfigure(createEditorTheme(themeId))
+            effects: this.themeCompartment.reconfigure(createTheme(themeId))
         });
     }
 
