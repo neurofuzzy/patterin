@@ -1,6 +1,20 @@
 {
   "name": "patterin",
   "version": "0.1.0",
+  "description": "Declarative procedural 2D vector graphics with system scaffolds",
+  "keywords": [
+    "svg",
+    "procedural",
+    "generative",
+    "geometry",
+    "plotter",
+    "cnc",
+    "laser-cutter",
+    "vector-graphics",
+    "pattern-generation"
+  ],
+  "author": "Geoff Gaudreault",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
