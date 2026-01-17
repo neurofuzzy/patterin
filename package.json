@@ -1,0 +1,42 @@
+{
+  "name": "patterin",
+  "version": "0.1.0",
+  "description": "Declarative procedural 2D vector graphics with system scaffolds",
+  "keywords": [
+    "svg",
+    "procedural",
+    "generative",
+    "geometry",
+    "plotter",
+    "cnc",
+    "laser-cutter",
+    "vector-graphics",
+    "pattern-generation"
+  ],
+  "author": "Geoff Gaudreault",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src tests"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.39.2",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.53.0",
+    "vitest": "^1.0.0"
+  }
+}
