@@ -1,0 +1,662 @@
+import { Shape, BoundingBox } from '../primitives/Shape.ts';
+import { Vector2 } from '../primitives/Vector2.ts';
+import { Vertex } from '../primitives/Vertex.ts';
+import { Segment, Winding } from '../primitives/Segment.ts';
+import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+
+/**
+ * Base context for all shape operations.
+ * Wraps a Shape and provides fluent API for transformations.
+ */
+export class ShapeContext {
+    constructor(protected _shape: Shape) { }
+
+    /** Get the underlying shape */
+    get shape(): Shape {
+        return this._shape;
+    }
+
+    /** Get all vertices */
+    get vertices(): Vertex[] {
+        return this._shape.vertices;
+    }
+
+    /** Get all segments */
+    get segments(): Segment[] {
+        return this._shape.segments;
+    }
+
+    /** Get the center (centroid) of the shape */
+    get center(): Vector2 {
+        return this._shape.centroid();
+    }
+
+    /** Get the centroid of the shape */
+    get centroid(): Vector2 {
+        return this._shape.centroid();
+    }
+
+    /** Get the winding direction */
+    get winding(): Winding {
+        return this._shape.winding;
+    }
+
+    /** Access points context for vertex operations */
+    get points(): PointsContext {
+        return new PointsContext(this._shape, this._shape.vertices);
+    }
+
+    /** Access lines context for segment operations */
+    get lines(): LinesContext {
+        return new LinesContext(this._shape, this._shape.segments);
+    }
+
+    /** Clone this shape n times */
+    clone(n: number = 1): ShapesContext {
+        const shapes: Shape[] = [];
+        for (let i = 0; i < n; i++) {
+            shapes.push(this._shape.clone());
+        }
+        return new ShapesContext(shapes);
+    }
+
+    /** Scale shape by factor */
+    scale(factor: number): this {
+        this._shape.scale(factor);
+        return this;
+    }
+
+    /** Rotate shape by angle in radians */
+    rotate(angle: number): this {
+        this._shape.rotate(angle);
+        return this;
+    }
+
+    /** Rotate shape by angle in degrees */
+    rotateDeg(degrees: number): this {
+        return this.rotate((degrees * Math.PI) / 180);
+    }
+
+    /** Move shape to position */
+    moveTo(x: number, y: number): this;
+    moveTo(point: Vector2): this;
+    moveTo(xOrPoint: number | Vector2, y?: number): this {
+        if (typeof xOrPoint === 'number') {
+            this._shape.moveTo(new Vector2(xOrPoint, y!));
+        } else {
+            this._shape.moveTo(xOrPoint);
+        }
+        return this;
+    }
+
+    /** Offset shape by delta */
+    offset(x: number, y: number): this {
+        this._shape.translate(new Vector2(x, y));
+        return this;
+    }
+
+    /** Reverse winding direction */
+    reverse(): this {
+        this._shape.reverse();
+        return this;
+    }
+
+    /** Get bounding box as ephemeral rect context */
+    bbox(): RectContext {
+        const bounds = this._shape.boundingBox();
+        const rect = Shape.fromPoints([
+            bounds.min,
+            new Vector2(bounds.max.x, bounds.min.y),
+            bounds.max,
+            new Vector2(bounds.min.x, bounds.max.y),
+        ]);
+        rect.ephemeral = true;
+        return new RectContext(rect, bounds.width, bounds.height);
+    }
+
+    /** Get center point as ephemeral point */
+    centerPoint(): Vector2 {
+        return this._shape.centroid();
+    }
+
+    /** Make shape concrete if ephemeral */
+    trace(): this {
+        this._shape.ephemeral = false;
+        return this;
+    }
+
+    /** Mark shape as ephemeral */
+    ephemeral(): this {
+        this._shape.ephemeral = true;
+        return this;
+    }
+
+    /** Stamp shape to collector */
+    stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        if (this._shape.ephemeral) return;
+
+        const clone = this._shape.clone();
+        if (x !== 0 || y !== 0) {
+            clone.translate(new Vector2(x, y));
+        }
+        collector.addShape(clone, style);
+    }
+}
+
+/**
+ * Context for points/vertices operations.
+ */
+export class PointsContext {
+    constructor(
+        protected _shape: Shape,
+        protected _vertices: Vertex[]
+    ) { }
+
+    /** Get selected vertices */
+    get vertices(): Vertex[] {
+        return this._vertices;
+    }
+
+    /** Get number of selected points */
+    get length(): number {
+        return this._vertices.length;
+    }
+
+    /** Select every nth point */
+    every(n: number, offset = 0): PointsContext {
+        const selected: Vertex[] = [];
+        for (let i = offset; i < this._vertices.length; i += n) {
+            selected.push(this._vertices[i]);
+        }
+        return new PointsContext(this._shape, selected);
+    }
+
+    /** Select points at specific indices */
+    at(...indices: number[]): PointsContext {
+        const selected: Vertex[] = [];
+        for (const i of indices) {
+            if (i >= 0 && i < this._vertices.length) {
+                selected.push(this._vertices[i]);
+            }
+        }
+        return new PointsContext(this._shape, selected);
+    }
+
+    /** Expand selected points outward along normals */
+    expand(distance: number): ShapeContext {
+        for (const v of this._vertices) {
+            v.moveAlongNormal(distance);
+        }
+        // Invalidate all segment normals
+        for (const seg of this._shape.segments) {
+            seg.invalidateNormal();
+        }
+        return new ShapeContext(this._shape);
+    }
+
+    /** Inset selected points inward along normals */
+    inset(distance: number): ShapeContext {
+        return this.expand(-distance);
+    }
+
+    /** Move selected points by offset */
+    move(x: number, y: number): PointsContext {
+        const offset = new Vector2(x, y);
+        for (const v of this._vertices) {
+            v.position = v.position.add(offset);
+        }
+        return this;
+    }
+
+    /** Get midpoint of selected points */
+    midPoint(): Vector2 {
+        if (this._vertices.length === 0) return Vector2.zero();
+        let sum = Vector2.zero();
+        for (const v of this._vertices) {
+            sum = sum.add(v.position);
+        }
+        return sum.divide(this._vertices.length);
+    }
+
+    /** Get bounding box of selected points */
+    bbox(): BoundingBox {
+        if (this._vertices.length === 0) {
+            return {
+                min: Vector2.zero(),
+                max: Vector2.zero(),
+                width: 0,
+                height: 0,
+                center: Vector2.zero(),
+            };
+        }
+
+        let minX = Infinity,
+            minY = Infinity;
+        let maxX = -Infinity,
+            maxY = -Infinity;
+
+        for (const v of this._vertices) {
+            minX = Math.min(minX, v.x);
+            minY = Math.min(minY, v.y);
+            maxX = Math.max(maxX, v.x);
+            maxY = Math.max(maxY, v.y);
+        }
+
+        const min = new Vector2(minX, minY);
+        const max = new Vector2(maxX, maxY);
+
+        return {
+            min,
+            max,
+            width: maxX - minX,
+            height: maxY - minY,
+            center: min.lerp(max, 0.5),
+        };
+    }
+}
+
+/**
+ * Context for lines/segments operations.
+ */
+export class LinesContext {
+    constructor(
+        protected _shape: Shape,
+        protected _segments: Segment[]
+    ) { }
+
+    /** Get selected segments */
+    get segments(): Segment[] {
+        return this._segments;
+    }
+
+    /** Get number of selected lines */
+    get length(): number {
+        return this._segments.length;
+    }
+
+    /** Select every nth line */
+    every(n: number, offset = 0): LinesContext {
+        const selected: Segment[] = [];
+        for (let i = offset; i < this._segments.length; i += n) {
+            selected.push(this._segments[i]);
+        }
+        return new LinesContext(this._shape, selected);
+    }
+
+    /** Select lines at specific indices */
+    at(...indices: number[]): LinesContext {
+        const selected: Segment[] = [];
+        for (const i of indices) {
+            if (i >= 0 && i < this._segments.length) {
+                selected.push(this._segments[i]);
+            }
+        }
+        return new LinesContext(this._shape, selected);
+    }
+
+    /**
+     * Extrude selected lines outward.
+     * For each selected segment A→B, replaces it with A→A'→B'→B where A' and B'
+     * are the extruded positions (original + normal * distance).
+     * Returns the modified ShapeContext.
+     */
+    extrude(distance: number): ShapeContext {
+        // Build a set of selected segments for quick lookup
+        const selectedSet = new Set(this._segments);
+
+        // Rebuild shape: for selected segments, splice in extruded vertices
+        const newPoints: Vector2[] = [];
+
+        for (let i = 0; i < this._shape.segments.length; i++) {
+            const seg = this._shape.segments[i];
+            const isSelected = selectedSet.has(seg);
+
+            // Always add the start point of each segment
+            newPoints.push(seg.start.position);
+
+            if (isSelected) {
+                // For selected segment A→B:
+                // We already added A (start), now add A' (extruded start), B' (extruded end)
+                // The next segment will add B (end becomes next start)
+                const normal = seg.normal.multiply(distance);
+                newPoints.push(seg.start.position.add(normal)); // A'
+                newPoints.push(seg.end.position.add(normal));   // B'
+            }
+            // For non-selected segments, just the start point is added (end = next start)
+        }
+
+        // Create new shape from points
+        if (newPoints.length >= 3) {
+            const newShape = Shape.fromPoints(newPoints, this._shape.winding);
+            newShape.ephemeral = this._shape.ephemeral;
+
+            // Update the shape's segments
+            this._shape.segments = newShape.segments;
+            this._shape.winding = newShape.winding;
+            this._shape.connectSegments();
+        }
+
+        return new ShapeContext(this._shape);
+    }
+
+    /**
+     * Divide selected lines into n segments.
+     * Returns points at division locations.
+     */
+    divide(n: number): PointsContext {
+        const vertices: Vertex[] = [];
+
+        for (const seg of this._segments) {
+            for (let i = 1; i < n; i++) {
+                const t = i / n;
+                const point = seg.pointAt(t);
+                vertices.push(new Vertex(point.x, point.y));
+            }
+        }
+
+        return new PointsContext(this._shape, vertices);
+    }
+
+    /** Get midpoint of all selected lines */
+    midPoint(): Vector2 {
+        if (this._segments.length === 0) return Vector2.zero();
+        let sum = Vector2.zero();
+        for (const seg of this._segments) {
+            sum = sum.add(seg.midpoint());
+        }
+        return sum.divide(this._segments.length);
+    }
+}
+
+/**
+ * Context for multiple shapes.
+ */
+export class ShapesContext {
+    constructor(protected _shapes: Shape[]) { }
+
+    /** Get all shapes */
+    get shapes(): Shape[] {
+        return this._shapes;
+    }
+
+    /** Get number of shapes */
+    get length(): number {
+        return this._shapes.length;
+    }
+
+    /** Select every nth shape */
+    every(n: number, offset = 0): ShapesContext {
+        const selected: Shape[] = [];
+        for (let i = offset; i < this._shapes.length; i += n) {
+            selected.push(this._shapes[i]);
+        }
+        return new ShapesContext(selected);
+    }
+
+    /** Select shapes at specific indices */
+    at(...indices: number[]): ShapesContext {
+        const selected: Shape[] = [];
+        for (const i of indices) {
+            if (i >= 0 && i < this._shapes.length) {
+                selected.push(this._shapes[i]);
+            }
+        }
+        return new ShapesContext(selected);
+    }
+
+    /** Select range of shapes */
+    slice(start: number, end?: number): ShapesContext {
+        return new ShapesContext(this._shapes.slice(start, end));
+    }
+
+    /** Spread shapes with offset between each */
+    spread(x: number, y: number): ShapesContext {
+        const offset = new Vector2(x, y);
+        for (let i = 0; i < this._shapes.length; i++) {
+            this._shapes[i].translate(offset.multiply(i));
+        }
+        return this;
+    }
+
+    /** Clone each shape n times */
+    clone(n: number): ShapesContext {
+        const newShapes: Shape[] = [];
+        for (const shape of this._shapes) {
+            for (let i = 0; i < n; i++) {
+                newShapes.push(shape.clone());
+            }
+        }
+        return new ShapesContext(newShapes);
+    }
+
+    /** Get all points from all shapes */
+    get points(): PointsContext {
+        const allVertices: Vertex[] = [];
+        for (const shape of this._shapes) {
+            allVertices.push(...shape.vertices);
+        }
+        // Use first shape as reference (may be empty)
+        const refShape = this._shapes[0] ?? Shape.fromPoints([
+            Vector2.zero(),
+            new Vector2(1, 0),
+            new Vector2(0, 1),
+        ]);
+        return new PointsContext(refShape, allVertices);
+    }
+
+    /** Get all lines from all shapes */
+    get lines(): LinesContext {
+        const allSegments: Segment[] = [];
+        for (const shape of this._shapes) {
+            allSegments.push(...shape.segments);
+        }
+        const refShape = this._shapes[0] ?? Shape.fromPoints([
+            Vector2.zero(),
+            new Vector2(1, 0),
+            new Vector2(0, 1),
+        ]);
+        return new LinesContext(refShape, allSegments);
+    }
+
+    /** Make all shapes concrete */
+    trace(): ShapesContext {
+        for (const shape of this._shapes) {
+            shape.ephemeral = false;
+        }
+        return this;
+    }
+
+    /** Stamp all shapes to collector */
+    stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        for (const shape of this._shapes) {
+            if (shape.ephemeral) continue;
+            const clone = shape.clone();
+            if (x !== 0 || y !== 0) {
+                clone.translate(new Vector2(x, y));
+            }
+            collector.addShape(clone, style);
+        }
+    }
+}
+
+/**
+ * Circle context with radius and segments.
+ */
+export class CircleContext extends ShapeContext {
+    private _radius = 10;
+    private _segments = 32;
+    private _center = Vector2.zero();
+
+    constructor() {
+        super(Shape.regularPolygon(32, 10));
+    }
+
+    /** Set circle radius */
+    radius(r: number): this {
+        this._radius = r;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set number of segments */
+    numSegments(n: number): this {
+        this._segments = Math.max(3, n);
+        this.rebuild();
+        return this;
+    }
+
+    /** Set center position */
+    setCenter(x: number, y: number): this {
+        this._center = new Vector2(x, y);
+        this.rebuild();
+        return this;
+    }
+
+    private rebuild(): void {
+        this._shape = Shape.regularPolygon(
+            this._segments,
+            this._radius,
+            this._center
+        );
+    }
+}
+
+/**
+ * Rectangle context with width and height.
+ */
+export class RectContext extends ShapeContext {
+    private _width: number;
+    private _height: number;
+    private _center = Vector2.zero();
+
+    constructor(shape?: Shape, width = 10, height = 10) {
+        super(shape ?? RectContext.createRect(width, height, Vector2.zero()));
+        this._width = width;
+        this._height = height;
+    }
+
+    /** Set width */
+    width(w: number): this {
+        this._width = w;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set height */
+    height(h: number): this {
+        this._height = h;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set width and height */
+    wh(w: number, h: number): this {
+        this._width = w;
+        this._height = h;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set size (square) */
+    size(s: number): this {
+        return this.wh(s, s);
+    }
+
+    /** Set center position */
+    setCenter(x: number, y: number): this {
+        this._center = new Vector2(x, y);
+        this.rebuild();
+        return this;
+    }
+
+    private rebuild(): void {
+        this._shape = RectContext.createRect(this._width, this._height, this._center);
+    }
+
+    static createRect(width: number, height: number, center: Vector2): Shape {
+        const hw = width / 2;
+        const hh = height / 2;
+        return Shape.fromPoints([
+            new Vector2(center.x - hw, center.y - hh),
+            new Vector2(center.x + hw, center.y - hh),
+            new Vector2(center.x + hw, center.y + hh),
+            new Vector2(center.x - hw, center.y + hh),
+        ]);
+    }
+}
+
+/**
+ * Square context (special case of rectangle).
+ */
+export class SquareContext extends RectContext {
+    constructor(size = 10) {
+        super(undefined, size, size);
+    }
+
+    /** Set square size */
+    size(s: number): this {
+        return this.wh(s, s);
+    }
+}
+
+/**
+ * Hexagon context with radius.
+ */
+export class HexagonContext extends ShapeContext {
+    private _radius = 10;
+    private _center = Vector2.zero();
+
+    constructor() {
+        // 6 segments, rotated 30° so flat edge is at bottom
+        super(Shape.regularPolygon(6, 10, Vector2.zero(), Math.PI / 6));
+    }
+
+    /** Set hexagon radius */
+    radius(r: number): this {
+        this._radius = r;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set center position */
+    setCenter(x: number, y: number): this {
+        this._center = new Vector2(x, y);
+        this.rebuild();
+        return this;
+    }
+
+    private rebuild(): void {
+        this._shape = Shape.regularPolygon(6, this._radius, this._center, Math.PI / 6);
+    }
+}
+
+/**
+ * Triangle context with radius.
+ */
+export class TriangleContext extends ShapeContext {
+    private _radius = 10;
+    private _center = Vector2.zero();
+
+    constructor() {
+        // 3 segments, rotated so one vertex points up
+        super(Shape.regularPolygon(3, 10, Vector2.zero(), -Math.PI / 2));
+    }
+
+    /** Set triangle radius */
+    radius(r: number): this {
+        this._radius = r;
+        this.rebuild();
+        return this;
+    }
+
+    /** Set center position */
+    setCenter(x: number, y: number): this {
+        this._center = new Vector2(x, y);
+        this.rebuild();
+        return this;
+    }
+
+    private rebuild(): void {
+        this._shape = Shape.regularPolygon(3, this._radius, this._center, -Math.PI / 2);
+    }
+}
