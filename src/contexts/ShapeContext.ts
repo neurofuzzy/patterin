@@ -466,36 +466,47 @@ export class LinesContext {
      * Returns the modified ShapeContext.
      */
     extrude(distance: number): ShapeContext {
+        if (this._segments.length === 0) return new ShapeContext(this._shape);
+
         // Build a set of selected segments for quick lookup
         const selectedSet = new Set(this._segments);
-
-        // Rebuild shape: for selected segments, splice in extruded vertices
         const newPoints: Vector2[] = [];
+        const allSegments = this._shape.segments;
 
-        for (let i = 0; i < this._shape.segments.length; i++) {
-            const seg = this._shape.segments[i];
+        if (allSegments.length === 0) return new ShapeContext(this._shape);
+
+        // Iterate through all segments of the shape to build new point list
+        for (let i = 0; i < allSegments.length; i++) {
+            const seg = allSegments[i];
             const isSelected = selectedSet.has(seg);
 
-            // Always add the start point of each segment
             newPoints.push(seg.start.position);
 
             if (isSelected) {
-                // For selected segment A→B:
-                // We already added A (start), now add A' (extruded start), B' (extruded end)
-                // The next segment will add B (end becomes next start)
                 const normal = seg.normal.multiply(distance);
                 newPoints.push(seg.start.position.add(normal)); // A'
                 newPoints.push(seg.end.position.add(normal));   // B'
             }
-            // For non-selected segments, just the start point is added (end = next start)
         }
 
         // Create new shape from points
         if (newPoints.length >= 3) {
-            const newShape = Shape.fromPoints(newPoints, this._shape.winding);
+            // Remove duplicate consecutive points before creating shape
+            const uniquePoints = newPoints.filter((p, i, arr) => {
+                if (i === 0) return true;
+                return !p.equals(arr[i - 1]);
+            });
+            // Check for closing point duplication
+            if (uniquePoints.length > 1 && uniquePoints[0].equals(uniquePoints[uniquePoints.length - 1])) {
+                uniquePoints.pop();
+            }
+
+            if (uniquePoints.length < 3) return new ShapeContext(this._shape);
+
+            const newShape = Shape.fromPoints(uniquePoints, this._shape.winding);
             newShape.ephemeral = this._shape.ephemeral;
 
-            // Update the shape's segments
+            // Mutate the original shape
             this._shape.segments = newShape.segments;
             this._shape.winding = newShape.winding;
             this._shape.connectSegments();
