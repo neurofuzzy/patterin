@@ -22,6 +22,11 @@ function setTheme(themeId: string): void {
     localStorage.setItem('patterin-theme', themeId);
     document.documentElement.setAttribute('data-theme', themeId);
 
+    // Dispatch custom event for editor theme switching
+    window.dispatchEvent(new CustomEvent('patterin-theme-change', {
+        detail: themeId
+    }));
+
     // Update all theme swatches
     document.querySelectorAll('.theme-option').forEach(option => {
         const isSelected = option.getAttribute('data-theme-id') === themeId;

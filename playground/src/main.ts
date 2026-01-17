@@ -5,7 +5,10 @@ import * as patterin from 'patterin';
 import { Preview } from './components/Preview.ts';
 import { Editor } from './components/Editor.ts';
 import { Menu } from './components/Menu.ts';
+import { Modal } from './components/Modal.ts';
 import { initTheme } from './modals/ThemeModal.ts';
+import { createExportModal } from './modals/ExportModal.ts';
+import { initKeyboardShortcuts } from './keyboard.ts';
 
 // Initialize theme
 initTheme();
@@ -85,10 +88,27 @@ new Menu({
     },
 });
 
+// Initialize Keyboard Shortcuts
+initKeyboardShortcuts({
+    onExport: () => {
+        Modal.show({
+            title: 'Export SVG',
+            content: createExportModal(),
+        });
+    },
+    onToggleGrid: () => {
+        const gridBtn = document.querySelector('.preview-btn') as HTMLButtonElement;
+        gridBtn?.click();
+    },
+    onResetView: () => {
+        preview.resetView();
+    },
+});
+
 // Initial run
 runCode(editor.getCode());
 
 // Log available exports
 console.log('Patterin Playground loaded');
 console.log('Available:', Object.keys(patterin));
-console.log('Tip: Type "shape." to see autocomplete, or click ≡ for examples');
+console.log('Shortcuts: ⌘E Export, ⌘G Grid, ⌘0 Reset');
