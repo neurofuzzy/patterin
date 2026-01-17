@@ -140,7 +140,14 @@ export class ShapeContext {
         if (x !== 0 || y !== 0) {
             clone.translate(new Vector2(x, y));
         }
-        collector.addShape(clone, style);
+
+        const finalStyle = {
+            stroke: '#999',
+            strokeWidth: 1,
+            ...style
+        };
+
+        collector.addShape(clone, finalStyle);
     }
 
     // ==================== Phase 1.5 Operations ====================
@@ -691,13 +698,20 @@ export class ShapesContext {
 
     /** Stamp all shapes to collector */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Default style
+        const finalStyle = {
+            stroke: '#999',
+            strokeWidth: 1,
+            ...style
+        };
+
         for (const shape of this._shapes) {
             if (shape.ephemeral) continue;
             const clone = shape.clone();
             if (x !== 0 || y !== 0) {
                 clone.translate(new Vector2(x, y));
             }
-            collector.addShape(clone, style);
+            collector.addShape(clone, finalStyle);
         }
     }
 

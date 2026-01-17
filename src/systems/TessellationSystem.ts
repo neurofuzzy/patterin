@@ -453,7 +453,7 @@ export class TessellationSystem {
             const clone = tile.shape.clone();
             clone.scale(scale);
             clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, { stroke: '#000', strokeWidth: 1 });
+            collector.addShape(clone, { stroke: '#999', strokeWidth: 1 });
         }
 
         return collector.toString({ width, height });

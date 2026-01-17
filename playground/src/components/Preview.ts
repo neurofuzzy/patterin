@@ -133,20 +133,53 @@ export class Preview {
 
     private updateTransform(): void {
         this.svgContainer.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+
+        // Sync grid and origin mark logic runs in the next frame to ensure layout is updated
+        requestAnimationFrame(() => this.syncOverlays());
+    }
+
+    private syncOverlays(): void {
+        if (!this.svgContainer || !this.gridOverlay || !this.centerMark) return;
+
+        // Get relative position of the SVG container within the main container
+        const containerRect = this.container.getBoundingClientRect();
+        const svgRect = this.svgContainer.getBoundingClientRect();
+
+        const x = svgRect.left - containerRect.left;
+        const y = svgRect.top - containerRect.top;
+
+        // Update grid
+        // 20px is the base grid size defined in CSS
+        const gridSize = 20 * this.zoom;
+        this.gridOverlay.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        this.gridOverlay.style.backgroundPosition = `${x}px ${y}px`;
+
+        // Update origin center mark
+        // Position at (0,0) of the SVG content (top-left of svgContainer)
+        this.centerMark.style.left = `${x}px`;
+        this.centerMark.style.top = `${y}px`;
+        this.centerMark.style.transform = 'translate(-50%, -50%)'; // Center symbol on point
     }
 
     private updateStatus(): void {
-        this.statusBar.textContent = `${Math.round(this.zoom * 100)}%`;
+        const panText = `(${Math.round(this.panX)}, ${Math.round(this.panY)})`;
+        this.statusBar.textContent = `${Math.round(this.zoom * 100)}% ${panText}`;
     }
 
     private toggleGrid(btn: HTMLButtonElement): void {
         this.gridOverlay.classList.toggle('hidden');
         btn.classList.toggle('active');
+        if (!this.gridOverlay.classList.contains('hidden')) {
+            this.syncOverlays();
+        }
     }
 
     private toggleCenter(btn: HTMLButtonElement): void {
         this.centerMark.classList.toggle('hidden');
         btn.classList.toggle('active');
+        if (!this.centerMark.classList.contains('hidden')) {
+            this.syncOverlays();
+        }
     }
 
     resetView(): void {
@@ -162,6 +195,8 @@ export class Preview {
      */
     setSVG(svgString: string): void {
         this.svgContainer.innerHTML = svgString;
+        // Sync overlays after new content size might change centering
+        requestAnimationFrame(() => this.syncOverlays());
     }
 
     /**
