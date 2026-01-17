@@ -3,9 +3,10 @@
  */
 import * as patterin from 'patterin';
 import { Preview } from './components/Preview';
+import { Editor } from './components/Editor';
 
 // Get DOM elements
-const editorEl = document.getElementById('editor') as HTMLTextAreaElement;
+const editorContainer = document.querySelector('.editor-container') as HTMLDivElement;
 const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
 
@@ -14,7 +15,7 @@ const preview = new Preview({
     container: previewPane,
 });
 
-// Create sandbox context
+// Create sandbox context with all patterin exports + render helper
 const sandboxContext = {
     ...patterin,
     render: (collector: patterin.SVGCollector) => {
@@ -41,9 +42,7 @@ function hideError(): void {
     errorDisplay.classList.add('hidden');
 }
 
-function runCode(): void {
-    const code = editorEl.value;
-
+function runCode(code: string): void {
     try {
         // Create sandbox function with all patterin exports + render helper
         const paramNames = Object.keys(sandboxContext);
@@ -60,17 +59,21 @@ function runCode(): void {
     }
 }
 
-function debouncedRun(): void {
+function debouncedRun(code: string): void {
     clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(runCode, 250);
+    debounceTimer = window.setTimeout(() => runCode(code), 250);
 }
 
-// Run on input
-editorEl.addEventListener('input', debouncedRun);
+// Initialize CodeMirror Editor
+const editor = new Editor({
+    container: editorContainer,
+    onChange: debouncedRun,
+});
 
 // Initial run
-runCode();
+runCode(editor.getCode());
 
 // Log available exports
 console.log('Patterin Playground loaded');
 console.log('Available:', Object.keys(patterin));
+console.log('Tip: Type "shape." to see autocomplete');
