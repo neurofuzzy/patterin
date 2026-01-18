@@ -81,55 +81,120 @@ export class SVGCollector {
         margin?: number;
         background?: string;
         autoScale?: boolean;
+        flatten?: boolean;
     } = {}): string {
-        const { margin = 10, background, autoScale = true } = options;
+        const { margin = 10, background, autoScale = true, flatten = false } = options;
         let width = options.width ?? 100;
         let height = options.height ?? 100;
 
-        let viewBox: string;
-        let bounds: { x: number, y: number, width: number, height: number };
+        const bounds = this.getBounds(margin);
 
-        if (autoScale) {
-            bounds = this.getBounds(margin);
-
-            // If scale to fit, we use the bounds as viewBox
-            // But we still render at the requested width/height size
-            viewBox = `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`;
-
-            // If we didn't specify dimensions, use the bounds
-            if (!options.width) width = bounds.width;
-            if (!options.height) height = bounds.height;
-        } else {
-            // Native 1:1 coordinate system
-            // We do NOT set viewBox, so it uses the viewport (0 0 width height)
-            // But we add overflow: visible to allow drawing outside
-            viewBox = '';
-            bounds = { x: 0, y: 0, width, height }; // Used for background rect
-        }
+        // If we didn't specify dimensions, use the bounds
+        if (!options.width) width = bounds.width;
+        if (!options.height) height = bounds.height;
 
         const lines: string[] = [];
-        if (viewBox) {
+
+        if (flatten || !autoScale) {
+            // Flatten mode: transform coordinates directly, no viewBox
+            lines.push(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`
+            );
+
+            // Calculate transform for flatten mode
+            let scale = 1;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (autoScale && bounds.width > 0 && bounds.height > 0) {
+                // Scale to fit viewport
+                const scaleX = width / bounds.width;
+                const scaleY = height / bounds.height;
+                scale = Math.min(scaleX, scaleY);
+
+                // Center in viewport
+                const scaledWidth = bounds.width * scale;
+                const scaledHeight = bounds.height * scale;
+                offsetX = (width - scaledWidth) / 2 - bounds.x * scale;
+                offsetY = (height - scaledHeight) / 2 - bounds.y * scale;
+            }
+
+            if (background) {
+                lines.push(
+                    `  <rect x="0" y="0" width="${width}" height="${height}" fill="${background}"/>`
+                );
+            }
+
+            for (const path of this.paths) {
+                const transformedD = this.transformPathData(path.d, scale, offsetX, offsetY);
+                lines.push(`  ${this.renderPathWithData(transformedD, path.style)}`);
+            }
+        } else {
+            // Original viewBox mode for backward compatibility
+            const viewBox = `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`;
             lines.push(
                 `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}">`
             );
-        } else {
-            lines.push(
-                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="overflow: visible;">`
-            );
-        }
 
-        if (background) {
-            lines.push(
-                `  <rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="${background}"/>`
-            );
-        }
+            if (background) {
+                lines.push(
+                    `  <rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="${background}"/>`
+                );
+            }
 
-        for (const path of this.paths) {
-            lines.push(`  ${this.renderPath(path)}`);
+            for (const path of this.paths) {
+                lines.push(`  ${this.renderPath(path)}`);
+            }
         }
 
         lines.push('</svg>');
         return lines.join('\n');
+    }
+
+    /**
+     * Transform path data coordinates by scale and offset.
+     */
+    private transformPathData(d: string, scale: number, offsetX: number, offsetY: number): string {
+        // Match coordinates in M, L commands and transform them
+        return d.replace(
+            /([ML])\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s+(-?\d+\.?\d*(?:e[+-]?\d+)?)/gi,
+            (_match, cmd, xStr, yStr) => {
+                const x = parseFloat(xStr) * scale + offsetX;
+                const y = parseFloat(yStr) * scale + offsetY;
+                return `${cmd} ${x} ${y}`;
+            }
+        );
+    }
+
+    /**
+     * Render a path element with pre-transformed data.
+     */
+    private renderPathWithData(d: string, style: PathStyle): string {
+        const attrs: string[] = [`d="${d}"`];
+
+        if (style.fill !== undefined) {
+            attrs.push(`fill="${style.fill}"`);
+        } else {
+            attrs.push('fill="none"');
+        }
+
+        if (style.stroke !== undefined) {
+            attrs.push(`stroke="${style.stroke}"`);
+        }
+
+        if (style.strokeWidth !== undefined) {
+            attrs.push(`stroke-width="${style.strokeWidth}"`);
+        }
+
+        if (style.opacity !== undefined) {
+            attrs.push(`opacity="${style.opacity}"`);
+        }
+
+        if (style.dash && style.dash.length > 0) {
+            attrs.push(`stroke-dasharray="${style.dash.join(' ')}"`);
+        }
+
+        return `<path ${attrs.join(' ')}/>`;
     }
 
     /**

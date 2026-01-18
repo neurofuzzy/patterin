@@ -316,18 +316,19 @@ function downloadSVG(): void {
     const innerWidth = pagePxW - marginPx * 2;
     const innerHeight = pagePxH - marginPx * 2;
 
-    const innerSVG = currentCollector.toString({
+    // Get flattened SVG with pre-transformed coordinates
+    let innerSVG = currentCollector.toString({
       width: innerWidth,
       height: innerHeight,
       margin: 0,
       autoScale: true,
+      flatten: true,  // Use flatten mode for maximum compatibility
     });
 
-    // Parse and modify
+    // Parse and modify strokes if needed
     const parser = new DOMParser();
     const doc = parser.parseFromString(innerSVG, 'image/svg+xml');
 
-    // Modify strokes if needed
     if (settings.strokeColor !== 'themed') {
       const strokeVal = settings.strokeColor === 'black' ? '#000000' : '#ffffff';
       doc.querySelectorAll('path').forEach(path => {
@@ -335,21 +336,25 @@ function downloadSVG(): void {
       });
     }
 
-    // Extract inner content (paths)
-    const innerContent = doc.documentElement.innerHTML;
+    // Extract paths from the flattened inner SVG
+    const paths = doc.querySelectorAll('path');
+    const pathsContent: string[] = [];
+    paths.forEach(path => {
+      // Offset coordinates by margin
+      const d = path.getAttribute('d') || '';
+      const offsetD = offsetPathData(d, marginPx, marginPx);
+      path.setAttribute('d', offsetD);
+      pathsContent.push(path.outerHTML);
+    });
 
-    // Build final SVG with page background and margin offset
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${pagePxW}" height="${pagePxH}" viewBox="0 0 ${pagePxW} ${pagePxH}">
+    // Build final flat SVG - no nested SVG elements, no viewBox tricks
+    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${pagePxW}" height="${pagePxH}">
   <rect width="100%" height="100%" fill="${bgColor}"/>
-  <g transform="translate(${marginPx}, ${marginPx})">
-    <svg width="${innerWidth}" height="${innerHeight}" viewBox="${doc.documentElement.getAttribute('viewBox') || `0 0 ${innerWidth} ${innerHeight}`}">
-      ${innerContent}
-    </svg>
-  </g>
+  ${pathsContent.join('\n  ')}
 </svg>`;
   } else {
     // Fallback: empty page
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${pagePxW}" height="${pagePxH}" viewBox="0 0 ${pagePxW} ${pagePxH}">
+    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${pagePxW}" height="${pagePxH}">
   <rect width="100%" height="100%" fill="${bgColor}"/>
 </svg>`;
   }
@@ -364,4 +369,18 @@ function downloadSVG(): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Offset path data coordinates by a fixed amount.
+ */
+function offsetPathData(d: string, offsetX: number, offsetY: number): string {
+  return d.replace(
+    /([ML])\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s+(-?\d+\.?\d*(?:e[+-]?\d+)?)/gi,
+    (_match, cmd, xStr, yStr) => {
+      const x = parseFloat(xStr) + offsetX;
+      const y = parseFloat(yStr) + offsetY;
+      return `${cmd} ${x} ${y}`;
+    }
+  );
 }
