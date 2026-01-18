@@ -1,12 +1,8 @@
 /**
- * Editor Themes - Color definitions for CodeMirror
+ * Editor Themes - Color definitions for Monaco Editor
  */
-import { EditorView } from '@codemirror/view';
-import { Extension } from '@codemirror/state';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { tags as t } from '@lezer/highlight';
 
-export type ThemeId = 'github-dark' | 'nord' | 'tokyo-night';
+export type ThemeId = 'github-dark' | 'github-light' | 'nord' | 'tokyo-night';
 
 interface ThemeColors {
     // Background
@@ -19,7 +15,7 @@ interface ThemeColors {
 
     // Accent
     accent: string;
-    accentMuted: string;
+    accentMuted: string; // Used for selection/active line usually
 
     // Syntax
     keyword: string;
@@ -41,21 +37,40 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
     'github-dark': {
         bgPrimary: '#0d1117',
         bgTertiary: '#161b22',
-        textPrimary: '#e6edf3',
-        textMuted: '#6e7681',
+        textPrimary: '#c9d1d9',
+        textMuted: '#8b949e',
         accent: '#58a6ff',
-        accentMuted: 'rgba(56, 139, 253, 0.3)',
+        accentMuted: '#1f6feb44',
         keyword: '#ff7b72',
         string: '#a5d6ff',
         number: '#79c0ff',
         method: '#d2a8ff',
         comment: '#8b949e',
-        variable: '#e6edf3',
+        variable: '#c9d1d9',
         property: '#79c0ff',
-        punctuation: '#e6edf3',
+        punctuation: '#c9d1d9',
         border: '#30363d',
-        selection: 'rgba(56, 139, 253, 0.3)',
-        activeLine: 'rgba(56, 139, 253, 0.1)',
+        selection: '#1f6feb44',
+        activeLine: '#1f6feb22',
+    },
+    'github-light': {
+        bgPrimary: '#ffffff',
+        bgTertiary: '#f6f8fa',
+        textPrimary: '#24292f',
+        textMuted: '#57606a',
+        accent: '#0969da',
+        accentMuted: '#0969da22',
+        keyword: '#cf222e',
+        string: '#0a3069',
+        number: '#0550ae',
+        method: '#8250df',
+        comment: '#6e7781',
+        variable: '#24292f',
+        property: '#0550ae',
+        punctuation: '#24292f',
+        border: '#d0d7de',
+        selection: '#0969da33',
+        activeLine: '#0969da11',
     },
     'nord': {
         bgPrimary: '#2e3440',
@@ -63,7 +78,7 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         textPrimary: '#eceff4',
         textMuted: '#616e88',
         accent: '#88c0d0',
-        accentMuted: 'rgba(136, 192, 208, 0.3)',
+        accentMuted: '#88c0d044',
         keyword: '#81a1c1',
         string: '#a3be8c',
         number: '#b48ead',
@@ -73,8 +88,8 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         property: '#88c0d0',
         punctuation: '#eceff4',
         border: '#434c5e',
-        selection: 'rgba(136, 192, 208, 0.3)',
-        activeLine: 'rgba(136, 192, 208, 0.1)',
+        selection: '#88c0d044',
+        activeLine: '#88c0d022',
     },
     'tokyo-night': {
         bgPrimary: '#1a1b26',
@@ -82,7 +97,7 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         textPrimary: '#c0caf5',
         textMuted: '#565f89',
         accent: '#7dcfff',
-        accentMuted: 'rgba(125, 207, 255, 0.3)',
+        accentMuted: '#7dcfff44',
         keyword: '#bb9af7',
         string: '#9ece6a',
         number: '#ff9e64',
@@ -92,116 +107,44 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         property: '#7aa2f7',
         punctuation: '#c0caf5',
         border: '#414868',
-        selection: 'rgba(125, 207, 255, 0.3)',
-        activeLine: 'rgba(125, 207, 255, 0.1)',
+        selection: '#7dcfff44',
+        activeLine: '#7dcfff22',
     },
 };
 
 /**
- * Create a CodeMirror theme extension for the given theme ID
+ * Create a Monaco theme definition
  */
-export function createTheme(themeId: ThemeId): Extension {
+export function createTheme(themeId: ThemeId): any {
     const c = THEME_COLORS[themeId];
+    const isDark = themeId !== 'github-light';
 
-    // 1. Editor Theme (UI)
-    const editorTheme = EditorView.theme({
-        '&': {
-            backgroundColor: c.bgPrimary,
-            color: c.textPrimary,
-            height: '100%',
-        },
-        '.cm-content': {
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            fontSize: '14px',
-            lineHeight: '1.7',
-            padding: '16px 0',
-            caretColor: c.accent,
-        },
-        '.cm-cursor': {
-            borderLeftColor: c.accent,
-            borderLeftWidth: '2px',
-        },
-        '.cm-activeLine': {
-            backgroundColor: c.activeLine,
-        },
-        '.cm-selectionBackground': {
-            backgroundColor: `${c.selection} !important`,
-        },
-        '.cm-gutters': {
-            backgroundColor: c.bgPrimary,
-            color: c.textMuted,
-            border: 'none',
-            paddingRight: '8px',
-        },
-        '.cm-activeLineGutter': {
-            backgroundColor: c.activeLine,
-            color: c.textPrimary,
-        },
-        '.cm-lineNumbers .cm-gutterElement': {
-            padding: '0 8px 0 16px',
-        },
-        // Autocomplete UI
-        '.cm-tooltip': {
-            backgroundColor: c.bgTertiary,
-            border: `1px solid ${c.border}`,
-            borderRadius: '6px',
-            boxShadow: '0 8px 24px rgba(1,4,9,0.75)',
-        },
-        '.cm-tooltip-autocomplete': {
-            '& > ul': {
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '13px',
-            },
-            '& > ul > li': {
-                padding: '4px 8px',
-            },
-            '& > ul > li[aria-selected]': {
-                backgroundColor: c.accent,
-                color: '#ffffff',
-            },
-        },
-        '.cm-completionLabel': {
-            color: c.textPrimary,
-        },
-        '.cm-completionDetail': {
-            color: c.textMuted,
-            fontStyle: 'normal',
-            marginLeft: '8px',
-        },
-        '.cm-completionMatchedText': {
-            color: c.accent,
-            fontWeight: 'bold',
-            textDecoration: 'none',
-        },
-        // Scrollbar
-        '.cm-scroller': {
-            overflow: 'auto',
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${c.border} ${c.bgPrimary}`,
-        },
-    }, { dark: true });
-
-    // 2. Syntax Highlighting
-    const highlightStyle = HighlightStyle.define([
-        { tag: t.keyword, color: c.keyword },
-        { tag: [t.name, t.deleted, t.character, t.propertyName, t.macroName], color: c.variable },
-        { tag: [t.processingInstruction, t.string, t.inserted, t.special(t.string)], color: c.string },
-        { tag: [t.function(t.variableName), t.labelName], color: c.method },
-        { tag: [t.color, t.constant(t.name), t.standard(t.name)], color: c.number },
-        { tag: [t.definition(t.name), t.separator], color: c.variable },
-        { tag: [t.typeName, t.className, t.number, t.changed, t.annotation, t.modifier, t.self, t.namespace], color: c.number },
-        { tag: [t.operator, t.operatorKeyword, t.url, t.escape, t.regexp, t.link, t.special(t.string)], color: c.keyword },
-        { tag: [t.meta, t.comment], color: c.comment },
-        { tag: t.strong, fontWeight: "bold" },
-        { tag: t.emphasis, fontStyle: "italic" },
-        { tag: t.strikethrough, textDecoration: "line-through" },
-        { tag: t.link, color: c.textMuted, textDecoration: "underline" },
-        { tag: t.heading, fontWeight: "bold", color: c.keyword },
-        { tag: [t.atom, t.bool, t.special(t.variableName)], color: c.number },
-        { tag: [t.bracket, t.punctuation], color: c.punctuation }
-    ]);
-
-    return [editorTheme, syntaxHighlighting(highlightStyle)];
+    return {
+        base: isDark ? 'vs-dark' : 'vs',
+        inherit: true,
+        rules: [
+            { token: 'keyword', foreground: c.keyword },
+            { token: 'string', foreground: c.string },
+            { token: 'number', foreground: c.number },
+            { token: 'comment', foreground: c.comment, fontStyle: 'italic' },
+            { token: 'identifier', foreground: c.variable },
+            { token: 'type', foreground: c.number },
+            { token: 'delimiter', foreground: c.punctuation },
+            { token: 'function', foreground: c.method },
+            { token: 'variable.property', foreground: c.property },
+        ],
+        colors: {
+            'editor.background': c.bgPrimary,
+            'editor.foreground': c.textPrimary,
+            'editor.lineHighlightBackground': c.activeLine,
+            'editor.selectionBackground': c.selection,
+            'editorCursor.foreground': c.accent,
+            'editorWhitespace.foreground': c.textMuted,
+            'editorLineNumber.foreground': c.textMuted,
+            'editorLineNumber.activeForeground': c.textPrimary,
+            'editor.selectionHighlightBackground': c.accentMuted,
+        }
+    };
 }
 
 /**

@@ -3,7 +3,7 @@
  */
 import * as patterin from 'patterin';
 import { Preview } from './components/Preview.ts';
-import { Editor } from './components/Editor.ts';
+import { MonacoEditor as Editor } from './components/MonacoEditor.ts';
 import { Menu } from './components/Menu.ts';
 import { Modal } from './components/Modal.ts';
 import { initTheme } from './modals/ThemeModal.ts';
