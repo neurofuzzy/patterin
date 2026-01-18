@@ -444,18 +444,24 @@ export class GridSystem implements ISystem {
     stamp(collector: SVGCollector, style?: PathStyle): void {
         const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
 
-        // Add traced cells
+        // Add traced cells in their own group
         if (this._traced) {
+            collector.beginGroup('cells');
             for (const cell of this._cells) {
                 if (!cell.shape.ephemeral) {
                     collector.addShape(cell.shape, finalStyle);
                 }
             }
+            collector.endGroup();
         }
 
-        // Add placements
-        for (const p of this._placements) {
-            collector.addShape(p.shape, p.style ?? finalStyle);
+        // Add placements in their own group
+        if (this._placements.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of this._placements) {
+                collector.addShape(p.shape, p.style ?? finalStyle);
+            }
+            collector.endGroup();
         }
     }
 
@@ -469,24 +475,27 @@ export class GridSystem implements ISystem {
         const { width, height, margin = 10 } = options;
         const collector = new SVGCollector();
 
-        // Collect all renderable shapes
-        const renderables: { shape: Shape; style?: PathStyle }[] = [];
+        // Collect all renderable shapes, grouped by type
+        const cellRenderables: { shape: Shape; style?: PathStyle }[] = [];
+        const placementRenderables: { shape: Shape; style?: PathStyle }[] = [];
 
         // Add traced cells
         if (this._traced) {
             for (const cell of this._cells) {
                 if (!cell.shape.ephemeral) {
-                    renderables.push({ shape: cell.shape });
+                    cellRenderables.push({ shape: cell.shape });
                 }
             }
         }
 
         // Add placements
         for (const p of this._placements) {
-            renderables.push({ shape: p.shape, style: p.style });
+            placementRenderables.push({ shape: p.shape, style: p.style });
         }
 
-        if (renderables.length === 0) {
+        const allRenderables = [...cellRenderables, ...placementRenderables];
+
+        if (allRenderables.length === 0) {
             return collector.toString({ width, height });
         }
 
@@ -504,12 +513,28 @@ export class GridSystem implements ISystem {
         const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
         const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
 
-        // Render all
-        for (const item of renderables) {
-            const clone = item.shape.clone();
-            clone.scale(scale);
-            clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+        // Render cells in 'cells' group
+        if (cellRenderables.length > 0) {
+            collector.beginGroup('cells');
+            for (const item of cellRenderables) {
+                const clone = item.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
+        }
+
+        // Render placements in 'placements' group
+        if (placementRenderables.length > 0) {
+            collector.beginGroup('placements');
+            for (const item of placementRenderables) {
+                const clone = item.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
         }
 
         return collector.toString({ width, height });

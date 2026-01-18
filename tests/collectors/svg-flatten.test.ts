@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SVGCollector, shape } from '../../src/index.ts';
+import { SVGCollector, GridSystem, shape } from '../../src/index.ts';
 
 describe('SVGCollector flatten mode', () => {
     it('flatten mode should produce SVG without viewBox', () => {
@@ -69,5 +69,55 @@ describe('SVGCollector flatten mode', () => {
         });
 
         expect(svg).toContain('viewBox');
+    });
+
+    it('groups should be rendered with <g> elements', () => {
+        const collector = new SVGCollector();
+
+        collector.beginGroup('cells');
+        collector.addPath('M 0 0 L 50 0 L 50 50 L 0 50 Z', { stroke: '#000' });
+        collector.addPath('M 50 0 L 100 0 L 100 50 L 50 50 Z', { stroke: '#000' });
+        collector.endGroup();
+
+        collector.beginGroup('nodes');
+        collector.addPath('M 25 25 L 35 25 L 35 35 L 25 35 Z', { stroke: '#f00' });
+        collector.endGroup();
+
+        const svg = collector.toString({
+            width: 200,
+            height: 200,
+            flatten: false,
+        });
+
+        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="nodes">');
+        expect(svg).toContain('</g>');
+    });
+});
+
+describe('System SVG group output', () => {
+    it('GridSystem.toSVG should output groups for cells and placements', () => {
+        const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 50 });
+        grid.trace();  // Make cells visible
+        grid.nodes.place(shape.circle().radius(5), { stroke: '#000' });
+
+        const svg = grid.toSVG({ width: 200, height: 200 });
+
+        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="placements">');
+    });
+
+    it('GridSystem.stamp should add groups to collector', () => {
+        const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 50 });
+        grid.trace();
+        grid.nodes.place(shape.circle().radius(5), { stroke: '#000' });
+
+        const collector = new SVGCollector();
+        grid.stamp(collector);
+
+        const svg = collector.toString({ width: 200, height: 200 });
+
+        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="placements">');
     });
 });

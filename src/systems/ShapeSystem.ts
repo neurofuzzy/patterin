@@ -241,14 +241,20 @@ export class ShapeSystem implements ISystem {
     stamp(collector: SVGCollector, style?: PathStyle): void {
         const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
 
-        // Add traced source shape
+        // Add traced source shape in its own group
         if (this._traced && !this._sourceShape.ephemeral) {
+            collector.beginGroup('shape');
             collector.addShape(this._sourceShape, finalStyle);
+            collector.endGroup();
         }
 
-        // Add placements
-        for (const p of this._placements) {
-            collector.addShape(p.shape, p.style ?? finalStyle);
+        // Add placements in their own group
+        if (this._placements.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of this._placements) {
+                collector.addShape(p.shape, p.style ?? finalStyle);
+            }
+            collector.endGroup();
         }
     }
 
@@ -263,20 +269,23 @@ export class ShapeSystem implements ISystem {
         const { width, height, margin = 10 } = options;
         const collector = new SVGCollector();
 
-        // Collect all renderable shapes
-        const renderables: { shape: Shape; style?: PathStyle }[] = [];
+        // Collect renderables by type
+        const shapeRenderables: { shape: Shape; style?: PathStyle }[] = [];
+        const placementRenderables: { shape: Shape; style?: PathStyle }[] = [];
 
         // Add traced source shape
         if (this._traced && !this._sourceShape.ephemeral) {
-            renderables.push({ shape: this._sourceShape });
+            shapeRenderables.push({ shape: this._sourceShape });
         }
 
         // Add placements
         for (const p of this._placements) {
-            renderables.push({ shape: p.shape, style: p.style });
+            placementRenderables.push({ shape: p.shape, style: p.style });
         }
 
-        if (renderables.length === 0) {
+        const allRenderables = [...shapeRenderables, ...placementRenderables];
+
+        if (allRenderables.length === 0) {
             return collector.toString({ width, height });
         }
 
@@ -294,12 +303,28 @@ export class ShapeSystem implements ISystem {
         const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
         const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
 
-        // Render all
-        for (const item of renderables) {
-            const clone = item.shape.clone();
-            clone.scale(scale);
-            clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+        // Render source shape in 'shape' group
+        if (shapeRenderables.length > 0) {
+            collector.beginGroup('shape');
+            for (const item of shapeRenderables) {
+                const clone = item.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
+        }
+
+        // Render placements in 'placements' group
+        if (placementRenderables.length > 0) {
+            collector.beginGroup('placements');
+            for (const item of placementRenderables) {
+                const clone = item.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
         }
 
         return collector.toString({ width, height });

@@ -325,10 +325,11 @@ function downloadSVG(): void {
       flatten: true,  // Use flatten mode for maximum compatibility
     });
 
-    // Parse and modify strokes if needed
+    // Parse and modify
     const parser = new DOMParser();
     const doc = parser.parseFromString(innerSVG, 'image/svg+xml');
 
+    // Modify strokes if needed
     if (settings.strokeColor !== 'themed') {
       const strokeVal = settings.strokeColor === 'black' ? '#000000' : '#ffffff';
       doc.querySelectorAll('path').forEach(path => {
@@ -336,21 +337,26 @@ function downloadSVG(): void {
       });
     }
 
-    // Extract paths from the flattened inner SVG
-    const paths = doc.querySelectorAll('path');
-    const pathsContent: string[] = [];
-    paths.forEach(path => {
-      // Offset coordinates by margin
+    // Apply margin offset to all paths (including those in groups)
+    doc.querySelectorAll('path').forEach(path => {
       const d = path.getAttribute('d') || '';
       const offsetD = offsetPathData(d, marginPx, marginPx);
       path.setAttribute('d', offsetD);
-      pathsContent.push(path.outerHTML);
     });
 
-    // Build final flat SVG - no nested SVG elements, no viewBox tricks
+    // Extract all children from the inner SVG (preserving groups)
+    const contentParts: string[] = [];
+    const svgRoot = doc.documentElement;
+    for (const child of Array.from(svgRoot.children)) {
+      // Skip any rects that were added as backgrounds
+      if (child.tagName.toLowerCase() === 'rect') continue;
+      contentParts.push(child.outerHTML);
+    }
+
+    // Build final flat SVG - preserving groups
     svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${pagePxW}" height="${pagePxH}">
   <rect width="100%" height="100%" fill="${bgColor}"/>
-  ${pathsContent.join('\n  ')}
+  ${contentParts.join('\n  ')}
 </svg>`;
   } else {
     // Fallback: empty page

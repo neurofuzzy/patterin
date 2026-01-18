@@ -462,15 +462,23 @@ export class TessellationSystem implements ISystem {
     stamp(collector: SVGCollector, style?: PathStyle): void {
         const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
 
-        for (const tile of this._tiles) {
-            if (!tile.shape.ephemeral) {
+        // Add tiles in their own group
+        const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
+        if (visibleTiles.length > 0) {
+            collector.beginGroup('tiles');
+            for (const tile of visibleTiles) {
                 collector.addShape(tile.shape, finalStyle);
             }
+            collector.endGroup();
         }
 
-        // Add placements
-        for (const p of this._placements) {
-            collector.addShape(p.shape, p.style ?? finalStyle);
+        // Add placements in their own group
+        if (this._placements.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of this._placements) {
+                collector.addShape(p.shape, p.style ?? finalStyle);
+            }
+            collector.endGroup();
         }
     }
 
@@ -485,9 +493,10 @@ export class TessellationSystem implements ISystem {
         const { width, height, margin = 10 } = options;
         const collector = new SVGCollector();
 
-        const renderables = this._tiles.filter(t => !t.shape.ephemeral);
+        const tileRenderables = this._tiles.filter(t => !t.shape.ephemeral);
+        const placementRenderables = this._placements;
 
-        if (renderables.length === 0) {
+        if (tileRenderables.length === 0 && placementRenderables.length === 0) {
             return collector.toString({ width, height });
         }
 
@@ -495,8 +504,16 @@ export class TessellationSystem implements ISystem {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
-        for (const tile of renderables) {
+        for (const tile of tileRenderables) {
             const bbox = tile.shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        for (const p of placementRenderables) {
+            const bbox = p.shape.boundingBox();
             minX = Math.min(minX, bbox.min.x);
             minY = Math.min(minY, bbox.min.y);
             maxX = Math.max(maxX, bbox.max.x);
@@ -515,12 +532,28 @@ export class TessellationSystem implements ISystem {
         const offsetX = margin + (availW - contentWidth * scale) / 2 - minX * scale;
         const offsetY = margin + (availH - contentHeight * scale) / 2 - minY * scale;
 
-        // Render
-        for (const tile of renderables) {
-            const clone = tile.shape.clone();
-            clone.scale(scale);
-            clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, { stroke: '#999', strokeWidth: 1 });
+        // Render tiles in 'tiles' group
+        if (tileRenderables.length > 0) {
+            collector.beginGroup('tiles');
+            for (const tile of tileRenderables) {
+                const clone = tile.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
+        }
+
+        // Render placements in 'placements' group
+        if (placementRenderables.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of placementRenderables) {
+                const clone = p.shape.clone();
+                clone.scale(scale);
+                clone.translate(new Vector2(offsetX, offsetY));
+                collector.addShape(clone, p.style ?? { stroke: '#999', strokeWidth: 1 });
+            }
+            collector.endGroup();
         }
 
         return collector.toString({ width, height });
