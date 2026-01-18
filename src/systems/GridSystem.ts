@@ -368,6 +368,26 @@ export class GridSystem {
         return { minX, minY, maxX, maxY };
     }
 
+    /** Stamp system to collector (for auto-rendering) */
+    stamp(collector: SVGCollector, style?: PathStyle): void {
+        const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+
+        // Add traced cells
+        if (this._traced) {
+            for (const cell of this._cells) {
+                if (!cell.shape.ephemeral) {
+                    collector.addShape(cell.shape, finalStyle);
+                }
+            }
+        }
+
+        // Add placements
+        for (const p of this._placements) {
+            collector.addShape(p.shape, p.style ?? finalStyle);
+        }
+    }
+
+
     /** Generate SVG output */
     toSVG(options: {
         width: number;

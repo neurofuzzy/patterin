@@ -32,6 +32,7 @@ let lastCollector: patterin.SVGCollector | null = null;
  */
 function createAutoCollectContext() {
     const createdShapes: patterin.ShapeContext[] = [];
+    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem)[] = [];
 
     // Wrap shape factory to track created shapes
     const autoShape = {
@@ -62,13 +63,33 @@ function createAutoCollectContext() {
         },
     };
 
-    return { autoShape, createdShapes };
+    // Wrap system factory to track created systems
+    const autoSystem = {
+        grid: (options: patterin.GridOptions) => {
+            const sys = patterin.GridSystem.create(options);
+            createdSystems.push(sys);
+            return sys;
+        },
+        tessellation: (options: patterin.TessellationOptions) => {
+            const sys = patterin.TessellationSystem.create(options);
+            createdSystems.push(sys);
+            return sys;
+        },
+        fromShape: (source: patterin.ShapeContext | patterin.Shape, options?: patterin.ShapeSystemOptions) => {
+            const sys = new patterin.ShapeSystem(source, options);
+            createdSystems.push(sys);
+            return sys;
+        },
+    };
+
+    return { autoShape, autoSystem, createdShapes, createdSystems };
 }
+
 
 function runCode(code: string): boolean {
     try {
         // Create fresh auto-collect context for this run
-        const { autoShape, createdShapes } = createAutoCollectContext();
+        const { autoShape, autoSystem, createdShapes, createdSystems } = createAutoCollectContext();
 
         // Create collector for this run
         const collector = new patterin.SVGCollector();
@@ -79,8 +100,9 @@ function runCode(code: string): boolean {
         // Build sandbox context
         const sandboxContext = {
             ...patterin,
-            shape: autoShape,  // Override shape with auto-collecting version
-            svg: collector,    // Provide collector as 'svg' for explicit use
+            shape: autoShape,    // Override shape with auto-collecting version
+            system: autoSystem,  // Override system with auto-collecting version
+            svg: collector,      // Provide collector as 'svg' for explicit use
             // Render function for explicit control
             render: (explicitCollector?: patterin.SVGCollector) => {
                 renderCalled = true;
@@ -102,12 +124,19 @@ function runCode(code: string): boolean {
         const sandbox = new Function(...paramNames, code);
         sandbox(...paramValues);
 
-        // Auto-render: if shapes were created and render() wasn't called explicitly
-        if (createdShapes.length > 0 && !renderCalled) {
+        // Auto-render: if shapes or systems were created and render() wasn't called explicitly
+        if ((createdShapes.length > 0 || createdSystems.length > 0) && !renderCalled) {
             // Stamp all created shapes to the collector
             for (const shapeCtx of createdShapes) {
                 if (typeof shapeCtx.stamp === 'function') {
                     shapeCtx.stamp(collector);
+                }
+            }
+
+            // Stamp all created systems to the collector
+            for (const sys of createdSystems) {
+                if (typeof sys.stamp === 'function') {
+                    sys.stamp(collector);
                 }
             }
 

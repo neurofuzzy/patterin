@@ -45,6 +45,17 @@ export const API_DATA: Record<string, TypeInfo> = {
         },
     },
 
+    'system': {
+        type: 'object',
+        doc: 'System factory - entry point for creating grid and tessellation systems',
+        methods: {
+            'grid': { params: ['options: GridOptions'], returns: 'GridSystem', doc: 'Create a grid system' },
+            'tessellation': { params: ['options: TessellationOptions'], returns: 'TessellationSystem', doc: 'Create a tessellation system' },
+            'fromShape': { params: ['source: ShapeContext | Shape', 'options?: ShapeSystemOptions'], returns: 'ShapeSystem', doc: 'Create system from shape (vertices → nodes, segments → edges)' },
+        },
+    },
+
+
     // ═══════════════════════════════════════════════════════════════════════════
     // SHAPE CONTEXTS
     // ═══════════════════════════════════════════════════════════════════════════
@@ -235,6 +246,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'addPlacement': { params: ['position: Vector2', 'shape: Shape', 'style?: PathStyle'], returns: 'void', doc: 'Add shape at position' },
             'getBounds': { returns: '{ minX, minY, maxX, maxY }', doc: 'Get grid bounds' },
             'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render system to collector' },
         },
     },
 
@@ -273,6 +285,24 @@ export const API_DATA: Record<string, TypeInfo> = {
             'darts': { returns: 'ShapesContext', doc: 'Get Penrose darts' },
             'triangles': { returns: 'ShapesContext', doc: 'Get triangle tiles' },
             'hexagons': { returns: 'ShapesContext', doc: 'Get hexagon tiles' },
+            'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render system to collector' },
+        },
+    },
+
+    'ShapeSystem': {
+        type: 'class',
+        doc: 'System created from a shape - treats vertices as nodes and segments as edges',
+        static: {
+            'create': { params: ['source: ShapeContext | Shape', 'options?: ShapeSystemOptions'], returns: 'ShapeSystem', doc: 'Create a shape system' },
+        },
+        methods: {
+            'trace': { returns: 'this', doc: 'Make system concrete' },
+            'nodes': { returns: 'PointsContext', doc: 'Get all nodes (vertices)' },
+            'edges': { returns: 'LinesContext', doc: 'Get all edges (segments)' },
+            'center': { returns: 'PointContext | null', doc: 'Get center point (if includeCenter was set)' },
+            'bbox': { returns: 'BoundingBox', doc: 'Get bounding box' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
             'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
         },
     },

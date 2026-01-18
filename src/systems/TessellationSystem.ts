@@ -2,7 +2,7 @@ import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
 import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext.ts';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
@@ -406,6 +406,18 @@ export class TessellationSystem {
         }
         return this;
     }
+
+    /** Stamp system to collector (for auto-rendering) */
+    stamp(collector: SVGCollector, style?: PathStyle): void {
+        const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+
+        for (const tile of this._tiles) {
+            if (!tile.shape.ephemeral) {
+                collector.addShape(tile.shape, finalStyle);
+            }
+        }
+    }
+
 
     // ==================== Export ====================
 
