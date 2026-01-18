@@ -8,10 +8,14 @@ import { Menu } from './components/Menu.ts';
 import { Modal } from './components/Modal.ts';
 import { initTheme } from './modals/ThemeModal.ts';
 import { createExportModal } from './modals/ExportModal.ts';
+import { getSettings } from './modals/SettingsModal.ts';
 import { initKeyboardShortcuts } from './keyboard.ts';
 
 // Initialize theme
 initTheme();
+
+// Load settings
+const settings = getSettings();
 
 // Get DOM elements
 const editorContainer = document.querySelector('.editor-container') as HTMLDivElement;
@@ -19,12 +23,25 @@ const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
 const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
 
+let lastCollector: patterin.SVGCollector | null = null;
+
+// Forward declare export handler
+const handleExport = () => {
+    Modal.show({
+        title: 'Export SVG',
+        content: createExportModal(lastCollector),
+    });
+};
+
 // Initialize Preview component
 const preview = new Preview({
     container: previewPane,
+    onExport: handleExport,
 });
 
-let lastCollector: patterin.SVGCollector | null = null;
+// Apply initial settings
+preview.setGridVisible(settings.showGrid);
+preview.setCenterMarkVisible(settings.showCenterMark ?? true);
 
 /**
  * Create auto-collecting shape factory.
@@ -267,12 +284,6 @@ new Menu({
         editor.setCode(code);
         runCode(code);
         preview.resetView(); // Auto-fit when loading example
-    },
-    onExport: () => {
-        Modal.show({
-            title: 'Export SVG',
-            content: createExportModal(lastCollector),
-        });
     },
 });
 

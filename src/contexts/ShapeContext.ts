@@ -607,6 +607,27 @@ export class LinesContext {
     }
 
     /**
+     * Stamp segments as line paths to collector.
+     * Uses thinner default stroke width (0.5) for connection lines.
+     */
+    stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Default style for connection lines - thinner than shapes
+        const finalStyle = {
+            stroke: '#999',
+            strokeWidth: 0.5,
+            ...style
+        };
+
+        for (const seg of this._segments) {
+            // Convert segment to path data (M startX startY L endX endY)
+            const startPos = seg.start.position;
+            const endPos = seg.end.position;
+            const pathData = `M ${startPos.x + x} ${startPos.y + y} L ${endPos.x + x} ${endPos.y + y}`;
+            collector.addPath(pathData, finalStyle);
+        }
+    }
+
+    /**
      * Expand each segment into a rectangle with square end caps.
      * Does NOT modify the original shape.
      * @param distance - Half-height of rectangle (total height = 2 * distance)

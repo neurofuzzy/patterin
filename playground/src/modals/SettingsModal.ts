@@ -5,6 +5,7 @@
 interface Settings {
     autoUpdate: boolean;
     showGrid: boolean;
+    showCenterMark: boolean;
     showConstruction: boolean;
 }
 
@@ -16,6 +17,7 @@ function getSettings(): Settings {
     return {
         autoUpdate: true,
         showGrid: true,
+        showCenterMark: true,
         showConstruction: true,
     };
 }
@@ -49,7 +51,18 @@ export function createSettingsModal(): HTMLElement {
             saveSettings(settings);
             // Toggle grid visibility
             document.querySelector('.grid-overlay')?.classList.toggle('hidden', !checked);
-            document.querySelector('.preview-btn')?.classList.toggle('active', checked);
+        }
+    );
+
+    // Show center mark
+    const centerMarkRow = createCheckbox(
+        'Show center mark',
+        settings.showCenterMark,
+        (checked) => {
+            settings.showCenterMark = checked;
+            saveSettings(settings);
+            // Toggle center mark visibility
+            document.querySelector('.center-mark')?.classList.toggle('hidden', !checked);
         }
     );
 
@@ -82,6 +95,7 @@ export function createSettingsModal(): HTMLElement {
 
     container.appendChild(autoUpdateRow);
     container.appendChild(gridRow);
+    container.appendChild(centerMarkRow);
     container.appendChild(constructionRow);
     container.appendChild(divider);
     container.appendChild(clearBtn);

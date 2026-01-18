@@ -442,14 +442,17 @@ export class GridSystem implements ISystem {
 
     /** Stamp system to collector (for auto-rendering) */
     stamp(collector: SVGCollector, style?: PathStyle): void {
-        const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+        // Traced cells (connections) use thinner stroke
+        const cellStyle = style ?? { stroke: '#999', strokeWidth: 0.5 };
+        // Placements (shapes at nodes) use standard stroke
+        const placementStyle = style ?? { stroke: '#999', strokeWidth: 1 };
 
         // Add traced cells in their own group
         if (this._traced) {
             collector.beginGroup('cells');
             for (const cell of this._cells) {
                 if (!cell.shape.ephemeral) {
-                    collector.addShape(cell.shape, finalStyle);
+                    collector.addShape(cell.shape, cellStyle);
                 }
             }
             collector.endGroup();
@@ -459,7 +462,7 @@ export class GridSystem implements ISystem {
         if (this._placements.length > 0) {
             collector.beginGroup('placements');
             for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? finalStyle);
+                collector.addShape(p.shape, p.style ?? placementStyle);
             }
             collector.endGroup();
         }
@@ -520,7 +523,7 @@ export class GridSystem implements ISystem {
                 const clone = item.shape.clone();
                 clone.scale(scale);
                 clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 0.5 });
             }
             collector.endGroup();
         }

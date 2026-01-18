@@ -1,10 +1,12 @@
 /**
  * Preview Component - SVG canvas with pan/zoom
  */
+import { Home, Download } from 'lucide';
 
 export interface PreviewOptions {
     container: HTMLElement;
     onZoomChange?: (zoom: number) => void;
+    onExport?: () => void;
 }
 
 export class Preview {
@@ -15,6 +17,7 @@ export class Preview {
     private centerMark: HTMLDivElement;
     private controls: HTMLDivElement;
     private statusBar: HTMLDivElement;
+    private statsDisplay: HTMLDivElement;
 
     private zoom = 1;
     private panX = 0;
@@ -24,10 +27,12 @@ export class Preview {
     private lastMouseY = 0;
 
     private onZoomChange?: (zoom: number) => void;
+    private onExport?: () => void;
 
     constructor(options: PreviewOptions) {
         this.container = options.container;
         this.onZoomChange = options.onZoomChange;
+        this.onExport = options.onExport;
 
         this.canvas = this.createElement('div', 'preview-canvas');
         this.svgContainer = this.createElement('div', 'svg-container');
@@ -35,6 +40,7 @@ export class Preview {
         this.centerMark = this.createElement('div', 'center-mark');
         this.controls = this.createControls();
         this.statusBar = this.createElement('div', 'status-bar');
+        this.statsDisplay = this.createElement('div', 'stats-display');
 
         this.canvas.appendChild(this.svgContainer);
         this.container.appendChild(this.gridOverlay);
@@ -42,6 +48,7 @@ export class Preview {
         this.container.appendChild(this.canvas);
         this.container.appendChild(this.controls);
         this.container.appendChild(this.statusBar);
+        this.container.appendChild(this.statsDisplay);
 
         this.setupEvents();
         this.updateStatus();
@@ -53,28 +60,50 @@ export class Preview {
         return el;
     }
 
+    private createIconButton(IconClass: typeof Home, title: string, onClick: () => void): HTMLButtonElement {
+        const btn = document.createElement('button');
+        btn.className = 'preview-btn icon-btn';
+        btn.title = title;
+
+        // Create SVG from Lucide icon
+        const iconNode = IconClass as unknown as { toSvg: (options?: object) => string };
+        if (typeof iconNode.toSvg === 'function') {
+            btn.innerHTML = iconNode.toSvg({ width: 16, height: 16 });
+        } else {
+            // Fallback: manually create the SVG element
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '16');
+            svg.setAttribute('height', '16');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '2');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+
+            if (IconClass === Home) {
+                svg.innerHTML = '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>';
+            } else if (IconClass === Download) {
+                svg.innerHTML = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>';
+            }
+            btn.appendChild(svg);
+        }
+
+        btn.addEventListener('click', onClick);
+        return btn;
+    }
+
     private createControls(): HTMLDivElement {
         const controls = this.createElement('div', 'preview-controls');
 
-        const gridBtn = document.createElement('button');
-        gridBtn.className = 'preview-btn active';
-        gridBtn.textContent = 'Grid';
-        gridBtn.addEventListener('click', () => this.toggleGrid(gridBtn));
+        // Reset button (Home icon) - first
+        const resetBtn = this.createIconButton(Home, 'Reset view', () => this.resetView());
 
-        const centerBtn = document.createElement('button');
-        centerBtn.className = 'preview-btn active';
-        centerBtn.textContent = '⊕';
-        centerBtn.title = 'Center mark';
-        centerBtn.addEventListener('click', () => this.toggleCenter(centerBtn));
+        // Export button (Download icon) - second
+        const exportBtn = this.createIconButton(Download, 'Export SVG', () => this.onExport?.());
 
-        const resetBtn = document.createElement('button');
-        resetBtn.className = 'preview-btn';
-        resetBtn.textContent = 'Reset';
-        resetBtn.addEventListener('click', () => this.resetView());
-
-        controls.appendChild(gridBtn);
-        controls.appendChild(centerBtn);
         controls.appendChild(resetBtn);
+        controls.appendChild(exportBtn);
 
         return controls;
     }
@@ -162,23 +191,39 @@ export class Preview {
     }
 
     private updateStatus(): void {
-        const panText = `(${Math.round(this.panX)}, ${Math.round(this.panY)})`;
-        this.statusBar.textContent = `${Math.round(this.zoom * 100)}% ${panText}`;
+        this.statusBar.textContent = `${Math.round(this.zoom * 100)}%`;
     }
 
-    private toggleGrid(btn: HTMLButtonElement): void {
-        this.gridOverlay.classList.toggle('hidden');
-        btn.classList.toggle('active');
-        if (!this.gridOverlay.classList.contains('hidden')) {
+    /**
+     * Toggle grid visibility (called from settings)
+     */
+    setGridVisible(visible: boolean): void {
+        this.gridOverlay.classList.toggle('hidden', !visible);
+        if (visible) {
             this.syncOverlays();
         }
     }
 
-    private toggleCenter(btn: HTMLButtonElement): void {
-        this.centerMark.classList.toggle('hidden');
-        btn.classList.toggle('active');
-        if (!this.centerMark.classList.contains('hidden')) {
+    /**
+     * Toggle center mark visibility (called from settings)
+     */
+    setCenterMarkVisible(visible: boolean): void {
+        this.centerMark.classList.toggle('hidden', !visible);
+        if (visible) {
             this.syncOverlays();
+        }
+    }
+
+    /**
+     * Update stats display with shape and segment counts
+     */
+    setStats(shapes: number, segments: number): void {
+        if (shapes === 0 && segments === 0) {
+            this.statsDisplay.textContent = '';
+        } else {
+            const shapeText = shapes === 1 ? '1 shape' : `${shapes} shapes`;
+            const segmentText = segments === 1 ? '1 segment' : `${segments} segments`;
+            this.statsDisplay.textContent = `${shapeText} · ${segmentText}`;
         }
     }
 
@@ -215,10 +260,8 @@ export class Preview {
             // Compute scale to fit
             const scaleX = availWidth / bbox.width;
             const scaleY = availHeight / bbox.height;
-            const newZoom = Math.min(scaleX, scaleY, 1); // Don't zoom in past 100% by default? Actually auto-fit might want max zoom.
-            // But let's cap at something reasonable if content is tiny. Maybe allow up to 2x?
-            // "zoom to extents" usually implies fitting exactly. Let's start with raw fit, clamped to [0.1, 10].
-            const constrainedZoom = Math.max(0.1, Math.min(10, Math.min(scaleX, scaleY) * 0.9)); // 0.9 for padding factor within margin
+            // Zoom to fit, clamped to [0.1, 10] with 0.9 padding factor
+            const constrainedZoom = Math.max(0.1, Math.min(10, Math.min(scaleX, scaleY) * 0.9));
 
             // Compute center of bounding box in local coords
             const contentCenterX = bbox.x + bbox.width / 2;

@@ -2,7 +2,6 @@
  * Menu Component - Hamburger dropdown menu
  */
 import { Modal } from './Modal.ts';
-import { createExportModal } from '../modals/ExportModal.ts';
 import { createThemeModal } from '../modals/ThemeModal.ts';
 import { createExamplesModal } from '../modals/ExamplesModal.ts';
 import { createSettingsModal } from '../modals/SettingsModal.ts';
@@ -10,7 +9,6 @@ import { createSettingsModal } from '../modals/SettingsModal.ts';
 export interface MenuOptions {
     button: HTMLElement;
     onExampleLoad?: (code: string) => void;
-    onExport?: () => void;
 }
 
 interface MenuItem {
@@ -24,12 +22,10 @@ export class Menu {
     private isOpen = false;
     private button: HTMLElement;
     private onExampleLoad?: (code: string) => void;
-    private onExport?: () => void;
 
     constructor(options: MenuOptions) {
         this.button = options.button;
         this.onExampleLoad = options.onExampleLoad;
-        this.onExport = options.onExport;
 
         this.button.addEventListener('click', () => this.toggle());
 
@@ -44,14 +40,6 @@ export class Menu {
 
     private getMenuItems(): MenuItem[] {
         return [
-            {
-                label: 'Export SVG...',
-                icon: '↓',
-                action: () => {
-                    if (this.onExport) this.onExport();
-                    else this.showExportModal(); // Fallback
-                },
-            },
             {
                 label: 'Theme...',
                 icon: '◐',
@@ -132,13 +120,6 @@ export class Menu {
         }, 150);
 
         this.isOpen = false;
-    }
-
-    private showExportModal(): void {
-        Modal.show({
-            title: 'Export SVG',
-            content: createExportModal(),
-        });
     }
 
     private showThemeModal(): void {

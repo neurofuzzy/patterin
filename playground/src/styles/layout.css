@@ -192,6 +192,29 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Stats Display */
+.stats-display {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* Icon Button */
+.preview-btn.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+}
+
+.preview-btn.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Error Display */
 .error-display {
   position: absolute;

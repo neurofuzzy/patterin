@@ -239,12 +239,15 @@ export class ShapeSystem implements ISystem {
      * Stamp system to collector (for auto-rendering)
      */
     stamp(collector: SVGCollector, style?: PathStyle): void {
-        const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+        // Source shape (scaffold) uses thinner stroke
+        const shapeStyle = style ?? { stroke: '#999', strokeWidth: 0.5 };
+        // Placements (shapes at nodes) use standard stroke
+        const placementStyle = style ?? { stroke: '#999', strokeWidth: 1 };
 
         // Add traced source shape in its own group
         if (this._traced && !this._sourceShape.ephemeral) {
             collector.beginGroup('shape');
-            collector.addShape(this._sourceShape, finalStyle);
+            collector.addShape(this._sourceShape, shapeStyle);
             collector.endGroup();
         }
 
@@ -252,7 +255,7 @@ export class ShapeSystem implements ISystem {
         if (this._placements.length > 0) {
             collector.beginGroup('placements');
             for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? finalStyle);
+                collector.addShape(p.shape, p.style ?? placementStyle);
             }
             collector.endGroup();
         }
@@ -310,7 +313,7 @@ export class ShapeSystem implements ISystem {
                 const clone = item.shape.clone();
                 clone.scale(scale);
                 clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
+                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 0.5 });
             }
             collector.endGroup();
         }
