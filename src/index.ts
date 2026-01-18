@@ -18,6 +18,7 @@ export {
     SquareContext,
     HexagonContext,
     TriangleContext,
+    PathContext,
 } from './contexts/index.ts';
 
 // Shape Factory
@@ -30,6 +31,7 @@ export { SVGCollector, type PathStyle } from './collectors/index.ts';
 export { GridSystem, type GridOptions, type GridType } from './systems/index.ts';
 export { TessellationSystem, type TessellationOptions, type TessellationPattern } from './systems/index.ts';
 export { ShapeSystem, type ShapeSystemOptions } from './systems/index.ts';
+export { LSystem, type LSystemOptions } from './systems/index.ts';
 
 // System Factory
 export { system } from './systems/index.ts';

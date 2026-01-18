@@ -52,6 +52,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'grid': { params: ['options: GridOptions'], returns: 'GridSystem', doc: 'Create a grid system' },
             'tessellation': { params: ['options: TessellationOptions'], returns: 'TessellationSystem', doc: 'Create a tessellation system' },
             'fromShape': { params: ['source: ShapeContext | Shape', 'options?: ShapeSystemOptions'], returns: 'ShapeSystem', doc: 'Create system from shape (vertices → nodes, segments → edges)' },
+            'lsystem': { params: ['options: LSystemOptions'], returns: 'LSystem', doc: 'Create an L-System' },
         },
     },
 
@@ -93,6 +94,16 @@ export const API_DATA: Record<string, TypeInfo> = {
             'winding': { returns: 'Winding', doc: 'Winding direction (CW or CCW)' },
             'points': { returns: 'PointsContext', doc: 'Access vertex operations' },
             'lines': { returns: 'LinesContext', doc: 'Access segment operations' },
+        },
+    },
+
+    'PathContext': {
+        type: 'class',
+        extends: 'ShapeContext',
+        doc: 'Context for open, continuous paths',
+        methods: {
+            'stamp': { params: ['collector: SVGCollector', 'x?: number', 'y?: number', 'style?: PathStyle'], returns: 'void', doc: 'Render to SVG collector' },
+            'generateConnectedPathData': { returns: 'string', doc: 'Generate optimal path data for connected segments' },
         },
     },
 
@@ -310,6 +321,28 @@ export const API_DATA: Record<string, TypeInfo> = {
             'mask': { params: ['maskShape: ShapeContext'], returns: 'this', doc: 'Clip system to mask shape boundary' },
             'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
             'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+        },
+    },
+
+    'LSystem': {
+        type: 'class',
+        doc: 'L-System for generating fractal and organic patterns',
+        static: {
+            'create': { params: ['options: LSystemOptions'], returns: 'LSystem', doc: 'Create an L-System' },
+        },
+        methods: {
+            'trace': { returns: 'this', doc: 'Make system specific geometry concrete' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render system to collector' },
+            'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+            'place': { params: ['shapeCtx: ShapeContext', 'style?: PathStyle'], returns: 'this', doc: 'Place shape at each node' },
+            'mask': { params: ['maskShape: ShapeContext'], returns: 'this', doc: 'Clip system to mask shape boundary' },
+        },
+        getters: {
+            'segments': { returns: 'LinesContext', doc: 'Get all generated segments' },
+            'nodes': { returns: 'PointsContext', doc: 'Get all generated nodes (vertices)' },
+            'endpoints': { returns: 'PointsContext', doc: 'Get terminal points' },
+            'path': { returns: 'PathContext', doc: 'Get the full continuous path' },
+            'length': { returns: 'number', doc: 'Total number of segments' },
         },
     },
 

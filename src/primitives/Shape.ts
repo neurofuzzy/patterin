@@ -219,6 +219,7 @@ export class Shape {
 
         const shape = new Shape(segments, this.winding);
         shape.ephemeral = this.ephemeral;
+        shape.open = this.open;
         shape.connectSegments();
         return shape;
     }
@@ -329,6 +330,9 @@ export class Shape {
         return inside;
     }
 
+    /** Flag for open paths (no closing Z) */
+    open = false;
+
     /**
      * Convert shape to SVG path data string.
      */
@@ -342,7 +346,10 @@ export class Shape {
         for (let i = 1; i < verts.length; i++) {
             parts.push(`L ${verts[i].x} ${verts[i].y}`);
         }
-        parts.push('Z');
+
+        if (!this.open) {
+            parts.push('Z');
+        }
 
         return parts.join(' ');
     }

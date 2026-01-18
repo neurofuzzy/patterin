@@ -168,4 +168,115 @@ const tess = TessellationSystem.create({
 tess.trace()
 render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
   },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // L-SYSTEMS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Koch Curve',
+    category: 'L-Systems',
+    description: 'Quadratic Koch Island fractal',
+    code: `const koch = system.lsystem({
+  axiom: 'F',
+  rules: { 'F': 'F+F-F-F+F' },
+  iterations: 4,
+  angle: 90,
+  length: 2,
+  origin: [-150, 0]
+})
+
+koch.trace()
+render(koch.toSVG({ width: 400, height: 400 }))`,
+  },
+  {
+    name: 'Koch Snowflake',
+    category: 'L-Systems',
+    description: 'Closed Koch Snowflake',
+    code: `const snowflake = system.lsystem({
+  axiom: 'F++F++F',
+  rules: { 'F': 'F-F++F-F' },
+  iterations: 4,
+  angle: 60,
+  length: 2,
+  origin: [-100, -50]
+})
+
+snowflake.trace()
+render(snowflake.toSVG({ width: 400, height: 400 }))`,
+  },
+  {
+    name: 'Dragon Curve',
+    category: 'L-Systems',
+    description: 'Heighway Dragon (Space-filling)',
+    code: `const dragon = system.lsystem({
+  axiom: 'F',
+  rules: {
+    'F': 'F+G',
+    'G': 'F-G'
+  },
+  iterations: 12,
+  angle: 90,
+  length: 3,
+  origin: [-50, 0]
+})
+
+dragon.trace()
+render(dragon.toSVG({ width: 400, height: 400 }))`,
+  },
+  {
+    name: 'Hilbert Curve',
+    category: 'L-Systems',
+    description: 'Continuous space-filling curve',
+    code: `const hilbert = system.lsystem({
+  axiom: 'A',
+  rules: { 
+    'A': '-BF+AFA+FB-', 
+    'B': '+AF-BFB-FA+' 
+  },
+  iterations: 5,
+  angle: 90,
+  length: 10,
+  origin: [-100, -100]
+})
+
+hilbert.trace()
+render(hilbert.toSVG({ width: 400, height: 400 }))`,
+  },
+  {
+    name: 'Sierpinski Triangle',
+    category: 'L-Systems',
+    description: 'Sierpiński Arrowhead Curve',
+    code: `const sierpinski = system.lsystem({
+  axiom: 'F',
+  rules: {
+    'F': 'G-F-G',
+    'G': 'F+G+F'
+  },
+  iterations: 6,
+  angle: 60,
+  length: 2,
+  origin: [-100, 80]
+})
+
+sierpinski.trace()
+render(sierpinski.toSVG({ width: 400, height: 400 }))`,
+  },
+  {
+    name: 'Gosper Curve',
+    category: 'L-Systems',
+    description: 'Peano-Gosper Flowsnake',
+    code: `const gosper = system.lsystem({
+  axiom: 'F',
+  rules: {
+    'F': 'F+G++G-F--FF-G+',
+    'G': '-F+GG++G+F--F-G'
+  },
+  iterations: 4,
+  angle: 60,
+  length: 5,
+  origin: [-100, -80]
+})
+
+gosper.trace()
+render(gosper.toSVG({ width: 400, height: 400 }))`,
+  },
 ];

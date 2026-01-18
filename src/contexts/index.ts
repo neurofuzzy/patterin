@@ -11,3 +11,4 @@ export {
 } from './ShapeContext.ts';
 
 export { PointContext } from './PointContext.ts';
+export { PathContext } from './PathContext.ts';

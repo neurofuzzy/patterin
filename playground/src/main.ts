@@ -97,6 +97,11 @@ function createAutoCollectContext() {
             createdSystems.push(sys);
             return sys;
         },
+        lsystem: (options: patterin.LSystemOptions) => {
+            const sys = patterin.LSystem.create(options);
+            createdSystems.push(sys);
+            return sys;
+        },
     };
 
     return { autoShape, autoSystem, createdShapes, createdSystems };
