@@ -1,7 +1,11 @@
 import * as monaco from 'monaco-editor';
 import '../monaco-setup'; // Ensure workers are set up
 import { getCurrentThemeId, ThemeId, createTheme } from '../editor-themes';
-import { generateDSLTypeDefinition } from '../autocomplete/dsl-to-dts';
+import { generateDSLTypeDefinition } from '../dsl/dsl-to-dts';
+import { registerDSLLanguage, LANGUAGE_ID } from '../dsl/dsl-language';
+
+// Register custom language definition
+registerDSLLanguage();
 
 const STORAGE_KEY = 'patterin-code';
 
@@ -63,7 +67,7 @@ function getContext(text: string): string | null {
 }
 
 // Register Inline Completions Provider
-monaco.languages.registerInlineCompletionsProvider('javascript', {
+monaco.languages.registerInlineCompletionsProvider(LANGUAGE_ID, {
     provideInlineCompletions: function (model, position, _context, _token) {
         const textBefore = model.getValueInRange({
             startLineNumber: position.lineNumber,
@@ -145,7 +149,7 @@ export class MonacoEditor {
         // Create Editor
         this.editor = monaco.editor.create(this.container, {
             value: initialCode,
-            language: 'javascript',
+            language: LANGUAGE_ID,
             theme: this.mapTheme(this.currentTheme),
             automaticLayout: true,
             minimap: { enabled: false },
