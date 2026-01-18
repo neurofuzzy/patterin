@@ -1,5 +1,6 @@
 import type { SVGCollector, PathStyle } from './collectors/SVGCollector.ts';
 import type { ShapeContext, ShapesContext } from './contexts/ShapeContext.ts';
+import type { SystemBounds, SVGOptions } from './types.ts';
 
 /**
  * Shared interface for all drawable objects (shapes, systems).
@@ -22,9 +23,11 @@ export interface IDrawable {
 
 /**
  * System interface - all coordinate systems implement this.
- * Extends IDrawable with placement, masking, and export capabilities.
+ * Extends IDrawable with placement, masking, selection, and transform capabilities.
  */
 export interface ISystem extends IDrawable {
+    // ==================== Core ====================
+
     /**
      * Place a shape at each node in the system.
      * Marks the source shape as ephemeral (construction geometry).
@@ -36,7 +39,6 @@ export interface ISystem extends IDrawable {
     /**
      * Clip system to mask shape boundary.
      * Points outside the mask are removed.
-     * Segments crossing the boundary are clipped at intersection.
      * Marks the mask shape as ephemeral.
      * @param maskShape - Shape to use as clipping mask
      */
@@ -45,9 +47,49 @@ export interface ISystem extends IDrawable {
     /** Return all shapes in the system */
     get shapes(): ShapesContext;
 
+    /** Generate SVG output */
+    toSVG(options: SVGOptions): string;
+
+    // ==================== Selection ====================
+
     /**
-     * Generate SVG output.
-     * @param options - SVG output options (width, height, margin)
+     * Select every nth shape for modification.
+     * @param n - Select every nth shape
+     * @param offset - Starting offset (default 0)
+     * @returns ShapesContext with selected shapes
      */
-    toSVG(options: { width: number; height: number; margin?: number }): string;
+    every(n: number, offset?: number): ShapesContext;
+
+    /**
+     * Select a range of shapes for modification.
+     * @param start - Start index (inclusive)
+     * @param end - End index (exclusive)
+     * @returns ShapesContext with selected shapes
+     */
+    slice(start: number, end?: number): ShapesContext;
+
+    // ==================== Transform ====================
+
+    /**
+     * Scale all shapes uniformly.
+     * @param factor - Scale factor
+     * @returns This system (modified in place)
+     */
+    scale(factor: number): this;
+
+    /**
+     * Rotate all shapes by angle.
+     * @param angleDeg - Angle in degrees
+     * @returns This system (modified in place)
+     */
+    rotate(angleDeg: number): this;
+
+    // ==================== Info ====================
+
+    /** Number of shapes in the system */
+    get length(): number;
+
+    /** Get bounding box of all geometry */
+    getBounds(): SystemBounds;
 }
+

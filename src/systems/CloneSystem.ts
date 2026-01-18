@@ -264,6 +264,30 @@ export class CloneSystem implements ISystem {
         return new ShapesContext(selected);
     }
 
+    /** Get bounding box of all geometry */
+    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for (const shape of this._shapes) {
+            const bbox = shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        for (const p of this._placements) {
+            const bbox = p.shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
+
     /**
      * Distribute shapes radially around a circle.
      * @param radius - Distance from origin

@@ -316,6 +316,82 @@ export class LSystem implements ISystem {
         return new ShapesContext(shapes);
     }
 
+    /** Number of nodes/placements in the system */
+    get length(): number {
+        return this._placements.length > 0 ? this._placements.length : this._nodes.length;
+    }
+
+    // ==================== Selection ====================
+
+    /**
+     * Select every nth shape for modification.
+     */
+    every(n: number, offset = 0): ShapesContext {
+        const source = this._placements.map(p => p.shape);
+
+        const selected: Shape[] = [];
+        for (let i = offset; i < source.length; i += n) {
+            selected.push(source[i]);
+        }
+        return new ShapesContext(selected);
+    }
+
+    /**
+     * Select a range of shapes for modification.
+     */
+    slice(start: number, end?: number): ShapesContext {
+        const source = this._placements.map(p => p.shape);
+        return new ShapesContext(source.slice(start, end));
+    }
+
+    // ==================== Transform ====================
+
+    /**
+     * Scale all shapes uniformly.
+     */
+    scale(factor: number): this {
+        this._shape.scale(factor);
+        for (const p of this._placements) {
+            p.shape.scale(factor);
+        }
+        return this;
+    }
+
+    /**
+     * Rotate all shapes by angle.
+     */
+    rotate(angleDeg: number): this {
+        const angleRad = angleDeg * Math.PI / 180;
+        this._shape.rotate(angleRad);
+        for (const p of this._placements) {
+            p.shape.rotate(angleRad);
+        }
+        return this;
+    }
+
+    /** Get bounding box of all geometry */
+    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for (const node of this._nodes) {
+            minX = Math.min(minX, node.x);
+            minY = Math.min(minY, node.y);
+            maxX = Math.max(maxX, node.x);
+            maxY = Math.max(maxY, node.y);
+        }
+
+        for (const p of this._placements) {
+            const bbox = p.shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
+
     /**
      * Generate SVG output.
      */

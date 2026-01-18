@@ -291,9 +291,78 @@ export class GridSystem implements ISystem {
         return new GridShapesContext(this, shapes);
     }
 
+    /** Alias for cells() - consistent with TessellationSystem.tiles */
+    get tiles(): GridShapesContext {
+        return this.cells;
+    }
+
     get shapes(): ShapesContext {
         const shapes = this._placements.map((p) => p.shape.clone());
         return new ShapesContext(shapes);
+    }
+
+    /** Number of cells/placements in the system */
+    get length(): number {
+        return this._placements.length > 0 ? this._placements.length : this._cells.length;
+    }
+
+    // ==================== Selection ====================
+
+    /**
+     * Select every nth shape for modification.
+     * Operates on placements if present, otherwise cells.
+     */
+    every(n: number, offset = 0): ShapesContext {
+        const source = this._placements.length > 0
+            ? this._placements.map(p => p.shape)
+            : this._cells.map(c => c.shape);
+
+        const selected: Shape[] = [];
+        for (let i = offset; i < source.length; i += n) {
+            selected.push(source[i]);
+        }
+        return new ShapesContext(selected);
+    }
+
+    /**
+     * Select a range of shapes for modification.
+     * Operates on placements if present, otherwise cells.
+     */
+    slice(start: number, end?: number): ShapesContext {
+        const source = this._placements.length > 0
+            ? this._placements.map(p => p.shape)
+            : this._cells.map(c => c.shape);
+
+        return new ShapesContext(source.slice(start, end));
+    }
+
+    // ==================== Transform ====================
+
+    /**
+     * Scale all shapes uniformly.
+     */
+    scale(factor: number): this {
+        for (const cell of this._cells) {
+            cell.shape.scale(factor);
+        }
+        for (const p of this._placements) {
+            p.shape.scale(factor);
+        }
+        return this;
+    }
+
+    /**
+     * Rotate all shapes by angle.
+     */
+    rotate(angleDeg: number): this {
+        const angleRad = angleDeg * Math.PI / 180;
+        for (const cell of this._cells) {
+            cell.shape.rotate(angleRad);
+        }
+        for (const p of this._placements) {
+            p.shape.rotate(angleRad);
+        }
+        return this;
     }
 
     /** Get row lines */
