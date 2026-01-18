@@ -386,6 +386,11 @@ export class TessellationSystem implements ISystem {
         return new LinesContext(refShape, segments);
     }
 
+    get shapes(): ShapesContext {
+        const shapes = this._tiles.map((t) => t.shape.clone());
+        return new ShapesContext(shapes);
+    }
+
     // Pattern-specific getters
     get kites(): ShapesContext {
         const shapes = this._tiles.filter(t => t.type === 'kite').map(t => t.shape.clone());

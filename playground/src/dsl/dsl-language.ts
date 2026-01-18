@@ -23,7 +23,8 @@ export function registerDSLLanguage() {
         dslMethods: [
             'tessellation', 'grid', 'place', 'trace', 'mask', 'ephemeral',
             'clone', 'scale', 'rotate', 'translate', 'add', 'subtract',
-            'every', 'at', 'repeat', 'expand', 'inset', 'round', 'extrude'
+            'every', 'at', 'repeat', 'expand', 'inset', 'round', 'extrude',
+            'lsystem'
         ],
 
         // Patterin specific shapes

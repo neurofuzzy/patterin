@@ -4,7 +4,7 @@ import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape, BoundingBox } from '../primitives/Shape.ts';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext.ts';
+import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
 import { PointContext } from '../contexts/PointContext.ts';
 import type { ISystem } from '../interfaces.ts';
 
@@ -201,6 +201,11 @@ export class ShapeSystem implements ISystem {
         );
 
         return this;
+    }
+
+    get shapes(): ShapesContext {
+        const shapes = this._placements.map((p) => p.shape.clone());
+        return new ShapesContext(shapes);
     }
 
     /**

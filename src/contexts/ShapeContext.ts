@@ -770,6 +770,23 @@ export class ShapesContext {
         return this;
     }
 
+    /** Scale all shapes uniformly */
+    scale(factor: number): this {
+        for (const shape of this._shapes) {
+            shape.scale(factor);
+        }
+        return this;
+    }
+
+    /** Rotate all shapes by angle (degrees) */
+    rotate(angleDeg: number): this {
+        const angleRad = angleDeg * Math.PI / 180;
+        for (const shape of this._shapes) {
+            shape.rotate(angleRad);
+        }
+        return this;
+    }
+
     /** Stamp all shapes to collector */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
         // Default style

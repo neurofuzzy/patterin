@@ -64,6 +64,24 @@ export function generateDSLTypeDefinition(): string {
         subdivide?: number;
     }
 
+    /** L-System options */
+    interface LSystemOptions {
+        /** Initial axiom string (e.g. "F+F+F+F") */
+        axiom: string;
+        /** Production rules (e.g. { "F": "F+F-F-F+F" }) */
+        rules: Record<string, string>;
+        /** Number of iterations */
+        iterations: number;
+        /** Turn angle in degrees */
+        angle: number;
+        /** Step length */
+        length: number;
+        /** Starting position [x, y] (default [0, 0]) */
+        origin?: [number, number];
+        /** Initial heading in degrees (default 0) */
+        heading?: number;
+    }
+
     /** Shared interface for drawable objects */
     interface IDrawable {
         /** Make object concrete (renderable) */
@@ -147,6 +165,8 @@ export function generateDSLTypeDefinition(): string {
         tessellation(options?: TessellationOptions): TessellationSystem;
         /** Create a system from a shape (vertices → nodes, segments → edges) */
         fromShape(source: ShapeContext | Shape, options?: ShapeSystemOptions): ShapeSystem;
+        /** Create an L-System */
+        lsystem(options: LSystemOptions): LSystem;
     };
 
     declare const points: PointsContext;

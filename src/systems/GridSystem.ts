@@ -291,6 +291,11 @@ export class GridSystem implements ISystem {
         return new GridShapesContext(this, shapes);
     }
 
+    get shapes(): ShapesContext {
+        const shapes = this._placements.map((p) => p.shape.clone());
+        return new ShapesContext(shapes);
+    }
+
     /** Get row lines */
     get rows(): LinesContext {
         const segments: Segment[] = [];

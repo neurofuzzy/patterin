@@ -5,7 +5,7 @@ import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { renderSystemToSVG } from './SystemUtils.ts';
-import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext.ts';
+import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
 import { PathContext } from '../contexts/PathContext.ts';
 
 export interface LSystemOptions {
@@ -309,6 +309,11 @@ export class LSystem implements ISystem {
         this.path = new PathContext(this._shape);
 
         return this;
+    }
+
+    get shapes(): ShapesContext {
+        const shapes = this._placements.map((p) => p.shape.clone());
+        return new ShapesContext(shapes);
     }
 
     /**

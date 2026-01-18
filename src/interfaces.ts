@@ -1,5 +1,5 @@
 import type { SVGCollector, PathStyle } from './collectors/SVGCollector.ts';
-import type { ShapeContext } from './contexts/ShapeContext.ts';
+import type { ShapeContext, ShapesContext } from './contexts/ShapeContext.ts';
 
 /**
  * Shared interface for all drawable objects (shapes, systems).
@@ -41,6 +41,9 @@ export interface ISystem extends IDrawable {
      * @param maskShape - Shape to use as clipping mask
      */
     mask(maskShape: ShapeContext): this;
+
+    /** Return all shapes in the system */
+    get shapes(): ShapesContext;
 
     /**
      * Generate SVG output.

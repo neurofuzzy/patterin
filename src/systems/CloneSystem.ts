@@ -10,6 +10,7 @@ import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { renderSystemToSVG } from './SystemUtils.ts';
+import { ShapesContext } from '../contexts/ShapeContext.ts';
 
 // Avoid circular import - use Shape directly
 // ShapeContext is only used for place/mask ISystem methods
@@ -79,7 +80,7 @@ export class CloneSystem implements ISystem {
 
             // Include original shapes (i=0) and n copies
             for (let i = 0; i <= count; i++) {
-                for (const shape of sourceShapes) {
+                for (const shape of sourceShapes.shapes) {
                     const clone = shape.clone();
                     clone.ephemeral = false;  // Ensure clones are renderable
                     clone.translate(offset.multiply(i));
@@ -134,13 +135,6 @@ export class CloneSystem implements ISystem {
     }
 
     /**
-     * Get all computed shapes.
-     */
-    get shapes(): Shape[] {
-        return this._shapes;
-    }
-
-    /**
      * Get number of shapes.
      */
     get length(): number {
@@ -159,6 +153,11 @@ export class CloneSystem implements ISystem {
      */
     get pathSegments(): Segment[] {
         return this._segments;
+    }
+
+    get shapes(): ShapesContext {
+        // Return actual shapes (not clones) so modifications affect this system
+        return new ShapesContext(this._shapes);
     }
 
     /**
@@ -210,12 +209,23 @@ export class CloneSystem implements ISystem {
 
     /**
      * Select every nth shape.
+     * Marks non-selected shapes as ephemeral.
      * @returns New CloneSystem with selected shapes
      */
     every(n: number, offset = 0): CloneSystem {
         const selected: Shape[] = [];
+        const selectedIndices = new Set<number>();
+
         for (let i = offset; i < this._shapes.length; i += n) {
             selected.push(this._shapes[i]);
+            selectedIndices.add(i);
+        }
+
+        // Mark non-selected shapes as ephemeral
+        for (let i = 0; i < this._shapes.length; i++) {
+            if (!selectedIndices.has(i)) {
+                this._shapes[i].ephemeral = true;
+            }
         }
 
         // Create a new CloneSystem from selected shapes
@@ -228,6 +238,36 @@ export class CloneSystem implements ISystem {
         });
         result._buildPathSegments();
         return result;
+    }
+
+    /**
+     * Scale all shapes uniformly.
+     * @param factor - Scale factor
+     * @returns This CloneSystem (modified in place)
+     */
+    scale(factor: number): this {
+        for (const shape of this._shapes) {
+            shape.scale(factor);
+        }
+        // Update nodes to match new centroids
+        for (let i = 0; i < this._shapes.length; i++) {
+            const c = this._shapes[i].centroid();
+            this._nodes[i] = new Vertex(c.x, c.y);
+        }
+        return this;
+    }
+
+    /**
+     * Rotate all shapes by angle.
+     * @param angleDeg - Angle in degrees
+     * @returns This CloneSystem (modified in place)
+     */
+    rotate(angleDeg: number): this {
+        const angleRad = angleDeg * Math.PI / 180;
+        for (const shape of this._shapes) {
+            shape.rotate(angleRad);
+        }
+        return this;
     }
 
     /**
