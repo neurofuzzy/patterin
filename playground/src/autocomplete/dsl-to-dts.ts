@@ -76,6 +76,8 @@ export function generateDSLTypeDefinition(): string {
     interface ISystem extends IDrawable {
         /** Place a shape at each node */
         place(shapeCtx: ShapeContext, style?: PathStyle): this;
+        /** Clip system to mask shape boundary */
+        mask(maskShape: ShapeContext): this;
         /** Generate SVG output */
         toSVG(options: { width: number; height: number; margin?: number }): string;
     }

@@ -169,10 +169,41 @@ export class ShapeSystem implements ISystem {
         return this;
     }
 
+    /**
+     * Clip system to mask shape boundary
+     */
+    mask(maskShape: ShapeContext): this {
+        // Mark mask as ephemeral (construction geometry)
+        maskShape.shape.ephemeral = true;
 
+        const shape = maskShape.shape;
 
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(node.position)
+        );
+
+        // Filter center node if outside mask
+        if (this._centerNode && !shape.containsPoint(this._centerNode.position)) {
+            this._centerNode = null;
+        }
+
+        // Filter edges - for now, filter by midpoint being inside
+        // TODO: Clip edges at mask boundary for partial edges
+        this._edges = this._edges.filter(edge =>
+            shape.containsPoint(edge.midpoint())
+        );
+
+        // Filter placements to those inside the mask
+        this._placements = this._placements.filter(p =>
+            shape.containsPoint(p.position)
+        );
+
+        return this;
+    }
 
     /**
+
      * Get computed bounds
      */
     getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {

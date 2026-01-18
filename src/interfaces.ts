@@ -22,7 +22,7 @@ export interface IDrawable {
 
 /**
  * System interface - all coordinate systems implement this.
- * Extends IDrawable with placement and export capabilities.
+ * Extends IDrawable with placement, masking, and export capabilities.
  */
 export interface ISystem extends IDrawable {
     /**
@@ -32,6 +32,15 @@ export interface ISystem extends IDrawable {
      * @param style - Optional style for placements
      */
     place(shapeCtx: ShapeContext, style?: PathStyle): this;
+
+    /**
+     * Clip system to mask shape boundary.
+     * Points outside the mask are removed.
+     * Segments crossing the boundary are clipped at intersection.
+     * Marks the mask shape as ephemeral.
+     * @param maskShape - Shape to use as clipping mask
+     */
+    mask(maskShape: ShapeContext): this;
 
     /**
      * Generate SVG output.

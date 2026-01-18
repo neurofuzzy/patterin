@@ -380,6 +380,32 @@ export class GridSystem implements ISystem {
         return this;
     }
 
+    /** Clip system to mask shape boundary */
+    mask(maskShape: ShapeContext): this {
+        // Mark mask as ephemeral (construction geometry)
+        maskShape.shape.ephemeral = true;
+
+        const shape = maskShape.shape;
+
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(new Vector2(node.x, node.y))
+        );
+
+        // Filter cells to those with centroids inside the mask
+        this._cells = this._cells.filter(cell =>
+            shape.containsPoint(cell.shape.centroid())
+        );
+
+        // Filter placements to those inside the mask
+        this._placements = this._placements.filter(p =>
+            shape.containsPoint(p.position)
+        );
+
+        return this;
+    }
+
+
 
 
 

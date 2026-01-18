@@ -432,6 +432,32 @@ export class TessellationSystem implements ISystem {
         return this;
     }
 
+    /** Clip system to mask shape boundary */
+    mask(maskShape: ShapeContext): this {
+        // Mark mask as ephemeral (construction geometry)
+        maskShape.shape.ephemeral = true;
+
+        const shape = maskShape.shape;
+
+        // Filter tiles to those with centroids inside the mask
+        this._tiles = this._tiles.filter(tile =>
+            shape.containsPoint(tile.shape.centroid())
+        );
+
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(node)
+        );
+
+        // Filter placements to those inside the mask
+        this._placements = this._placements.filter(p =>
+            shape.containsPoint(p.position)
+        );
+
+        return this;
+    }
+
+
     /** Stamp system to collector (for auto-rendering) */
     stamp(collector: SVGCollector, style?: PathStyle): void {
         const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
