@@ -12,6 +12,7 @@ const THEMES: Theme[] = [
     { name: 'GitHub Dark', id: 'github-dark', accentColor: '#58a6ff' },
     { name: 'Nord', id: 'nord', accentColor: '#88c0d0' },
     { name: 'Tokyo Night Storm', id: 'tokyo-night', accentColor: '#7dcfff' },
+    { name: 'Atom One Dark', id: 'atom-one-dark', accentColor: '#61afef' },
 ];
 
 function getCurrentTheme(): string {

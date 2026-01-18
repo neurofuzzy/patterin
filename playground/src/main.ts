@@ -166,6 +166,12 @@ function runCode(code: string): boolean {
                 autoScale: false
             });
             preview.setSVG(svgString);
+
+            // Update stats
+            const stats = (collector as any).stats;
+            if (stats) {
+                preview.setStats(stats.shapes, stats.segments);
+            }
         }
 
         hideError();

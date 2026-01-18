@@ -37,6 +37,7 @@ export class SVGCollector {
     private maxX = -Infinity;
     private maxY = -Infinity;
     private currentGroup?: string;
+    private _segmentCount = 0;
 
     /**
      * Add a path to the collector.
@@ -44,6 +45,12 @@ export class SVGCollector {
     addPath(pathData: string, style: PathStyle = {}): void {
         this.paths.push({ d: pathData, style, group: this.currentGroup });
         this.updateBoundsFromPath(pathData);
+
+        // simple segment count approximation (count all commands except M/m)
+        const commands = pathData.match(/[LlHhVvCcSsQqTtAaZz]/g);
+        if (commands) {
+            this._segmentCount += commands.length;
+        }
     }
 
     /**
@@ -298,10 +305,21 @@ export class SVGCollector {
     }
 
     /**
+     * Get statistics about collected paths.
+     */
+    get stats(): { shapes: number; segments: number } {
+        return {
+            shapes: this.paths.length,
+            segments: this._segmentCount
+        };
+    }
+
+    /**
      * Clear all paths.
      */
     clear(): void {
         this.paths = [];
+        this._segmentCount = 0;
         this.minX = Infinity;
         this.minY = Infinity;
         this.maxX = -Infinity;

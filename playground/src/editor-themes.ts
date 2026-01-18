@@ -2,7 +2,7 @@
  * Editor Themes - Color definitions for Monaco Editor
  */
 
-export type ThemeId = 'github-dark' | 'github-light' | 'nord' | 'tokyo-night';
+export type ThemeId = 'github-dark' | 'github-light' | 'nord' | 'tokyo-night' | 'atom-one-dark';
 
 interface ThemeColors {
     // Background
@@ -109,6 +109,25 @@ const THEME_COLORS: Record<ThemeId, ThemeColors> = {
         border: '#414868',
         selection: '#7dcfff44',
         activeLine: '#7dcfff22',
+    },
+    'atom-one-dark': {
+        bgPrimary: '#282c34',
+        bgTertiary: '#21252b',
+        textPrimary: '#abb2bf',
+        textMuted: '#5c6370',
+        accent: '#61afef',
+        accentMuted: '#61afef44',
+        keyword: '#c678dd',
+        string: '#98c379',
+        number: '#d19a66',
+        method: '#61afef',
+        comment: '#5c6370',
+        variable: '#abb2bf',
+        property: '#abb2bf',
+        punctuation: '#abb2bf',
+        border: '#181a1f',
+        selection: '#61afef44',
+        activeLine: '#61afef22',
     },
 };
 
