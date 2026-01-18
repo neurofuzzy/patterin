@@ -14,9 +14,13 @@ export interface PathStyle {
  */
 export const DEFAULT_STYLES = {
     /** Style for traced system connections (cells, tiles, scaffold shapes) */
-    connection: { stroke: '#999', strokeWidth: 0.5 } as PathStyle,
+    connection: { stroke: '#369', strokeWidth: 0.5 } as PathStyle,
     /** Style for placed shapes at nodes */
-    placement: { stroke: '#999', strokeWidth: 1 } as PathStyle,
+    placement: { stroke: '#a83', strokeWidth: 1 } as PathStyle,
+    /** Default style for standalone shapes */
+    shape: { stroke: '#a83', strokeWidth: 1 } as PathStyle,
+    /** Default style for lines/segments */
+    line: { stroke: '#a83', strokeWidth: 0.5 } as PathStyle,
 } as const;
 
 interface PathEntry {

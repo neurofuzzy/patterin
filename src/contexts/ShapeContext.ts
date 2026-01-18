@@ -2,7 +2,7 @@ import { Shape, BoundingBox } from '../primitives/Shape.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment, Winding } from '../primitives/Segment.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { PointContext } from './PointContext.ts';
 
 /**
@@ -178,8 +178,7 @@ export class ShapeContext {
         }
 
         const finalStyle = {
-            stroke: '#999',
-            strokeWidth: 1,
+            ...DEFAULT_STYLES.shape,
             ...style
         };
 
@@ -613,8 +612,7 @@ export class LinesContext {
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
         // Default style for connection lines - thinner than shapes
         const finalStyle = {
-            stroke: '#999',
-            strokeWidth: 0.5,
+            ...DEFAULT_STYLES.line,
             ...style
         };
 
@@ -757,8 +755,7 @@ export class ShapesContext {
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
         // Default style
         const finalStyle = {
-            stroke: '#999',
-            strokeWidth: 1,
+            ...DEFAULT_STYLES.shape,
             ...style
         };
 
