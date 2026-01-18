@@ -15,18 +15,18 @@ describe('Shapes Context - clone() and spread()', () => {
     });
 
     it('cloned shapes should be independent', () => {
-        const shapes = shape.square().size(20).clone(3);
-        shapes.shapes[0].scale(2);
+        const clones = shape.square().size(20).clone(3);
+        clones.shapes.shapes[0].scale(2);
 
         // Other shapes should not be affected
-        const bbox1 = shapes.shapes[1].boundingBox();
+        const bbox1 = clones.shapes.shapes[1].boundingBox();
         expect(bbox1.width).toBeCloseTo(20, 1);
     });
 
     it('spread should offset shapes incrementally', () => {
         const shapes = shape.square().size(20).clone(3).spread(50, 0);  // 4 shapes total
 
-        const centers = shapes.shapes.map(s => s.centroid());
+        const centers = shapes.shapes.shapes.map(s => s.centroid());
         const x0 = centers[0].x;
         const x1 = centers[1].x;
         const x2 = centers[2].x;
@@ -69,13 +69,13 @@ describe('Shapes Context - clone() and spread()', () => {
 
         // Count total segments
         let totalSegments = 0;
-        for (const s of grid.shapes) {
+        for (const s of grid.shapes.shapes) {
             totalSegments += s.segments.length;
         }
         expect(totalSegments).toBe(4 * 5 * 5);  // 4 segments per rect * 25 rects
 
         // Verify grid positions - check corners
-        const shapes = grid.shapes;
+        const shapes = grid.shapes.shapes;
         const centers = shapes.map(s => s.centroid());
 
         // Find shapes at approximate grid positions

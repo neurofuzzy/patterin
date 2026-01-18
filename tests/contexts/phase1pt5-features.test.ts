@@ -81,15 +81,15 @@ describe('ShapesContext.spreadPolar()', () => {
 
     it('should position first shape at 0 degrees (right)', () => {
         const circles = shape.circle().radius(5).clone(4).spreadPolar(50);
-        const center = circles.shapes[0].centroid();
+        const center = circles.shapes.shapes[0].centroid();
         expect(center.x).toBeCloseTo(50, 1);
         expect(center.y).toBeCloseTo(0, 1);
     });
 
     it('should support partial arc', () => {
         const circles = shape.circle().radius(5).clone(3).spreadPolar(50, 180);  // 4 shapes
-        const first = circles.shapes[0].centroid();
-        const last = circles.shapes[3].centroid();
+        const first = circles.shapes.shapes[0].centroid();
+        const last = circles.shapes.shapes[3].centroid();
         expect(first.x).toBeCloseTo(50, 1); // 0 degrees
         expect(last.x).toBeCloseTo(-50, 1); // 180 degrees
     });

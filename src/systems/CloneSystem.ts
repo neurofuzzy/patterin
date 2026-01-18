@@ -208,36 +208,21 @@ export class CloneSystem implements ISystem {
     }
 
     /**
-     * Select every nth shape.
-     * Marks non-selected shapes as ephemeral.
-     * @returns New CloneSystem with selected shapes
+     * Select every nth shape for modification.
+     * Returns a ShapesContext with selected shapes - modifications apply to them.
+     * Non-selected shapes remain unchanged and are still rendered.
+     * @returns ShapesContext with selected shapes
      */
-    every(n: number, offset = 0): CloneSystem {
+    every(n: number, offset = 0): ShapesContext {
         const selected: Shape[] = [];
-        const selectedIndices = new Set<number>();
 
         for (let i = offset; i < this._shapes.length; i += n) {
             selected.push(this._shapes[i]);
-            selectedIndices.add(i);
         }
 
-        // Mark non-selected shapes as ephemeral
-        for (let i = 0; i < this._shapes.length; i++) {
-            if (!selectedIndices.has(i)) {
-                this._shapes[i].ephemeral = true;
-            }
-        }
-
-        // Create a new CloneSystem from selected shapes
-        // Use count=0 to just wrap existing shapes without cloning
-        const result = new CloneSystem(selected[0] ?? Shape.regularPolygon(3, 1), { count: 0, offsetX: 0, offsetY: 0 });
-        result._shapes = selected;
-        result._nodes = selected.map(s => {
-            const c = s.centroid();
-            return new Vertex(c.x, c.y);
-        });
-        result._buildPathSegments();
-        return result;
+        // Return ShapesContext for modification - no ephemeral marking
+        // All shapes (selected and non-selected) will still render via this system
+        return new ShapesContext(selected);
     }
 
     /**
@@ -271,20 +256,12 @@ export class CloneSystem implements ISystem {
     }
 
     /**
-     * Select a range of shapes.
-     * @returns New CloneSystem with selected shapes
+     * Select a range of shapes for modification.
+     * @returns ShapesContext with selected shapes
      */
-    slice(start: number, end?: number): CloneSystem {
+    slice(start: number, end?: number): ShapesContext {
         const selected = this._shapes.slice(start, end);
-
-        const result = new CloneSystem(selected[0] ?? Shape.regularPolygon(3, 1), { count: 0, offsetX: 0, offsetY: 0 });
-        result._shapes = selected;
-        result._nodes = selected.map(s => {
-            const c = s.centroid();
-            return new Vertex(c.x, c.y);
-        });
-        result._buildPathSegments();
-        return result;
+        return new ShapesContext(selected);
     }
 
     /**
