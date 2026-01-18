@@ -9,6 +9,10 @@ export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 
 export interface GridOptions {
     type?: GridType;
+    // Simple API
+    count?: number | [number, number];  // Grid count (rows x cols)
+    size?: number | [number, number];   // Cell size (spacing)
+    // Detailed API (takes precedence over simple API)
     rows?: number;
     cols?: number;
     spacing?: number | { x: number; y: number };
@@ -57,21 +61,43 @@ export class GridSystem {
     private _brickOffset: number;
     private _traced = false;
 
-    private constructor(options: GridOptions) {
+    private constructor(options: GridOptions = {}) {
         this._type = options.type ?? 'square';
-        this._rows = options.rows ?? 3;
-        this._cols = options.cols ?? 3;
+
+        // Support both simple (count/size) and detailed (rows/cols/spacing) APIs
+        // Detailed API takes precedence
+        if (options.rows !== undefined || options.cols !== undefined) {
+            this._rows = options.rows ?? 3;
+            this._cols = options.cols ?? 3;
+        } else if (options.count !== undefined) {
+            if (typeof options.count === 'number') {
+                this._rows = options.count;
+                this._cols = options.count;
+            } else {
+                this._rows = options.count[0];
+                this._cols = options.count[1];
+            }
+        } else {
+            this._rows = 3;
+            this._cols = 3;
+        }
+
         this._orientation = options.orientation ?? 'pointy';
         this._brickOffset = options.brickOffset ?? 0.5;
 
-        const spacing = options.spacing ?? 30;
+        // Support both size and spacing
+        const spacing = options.spacing ?? options.size ?? 40;
         if (typeof spacing === 'number') {
             this._spacingX = spacing;
             this._spacingY = spacing;
+        } else if (Array.isArray(spacing)) {
+            this._spacingX = spacing[0];
+            this._spacingY = spacing[1];
         } else {
             this._spacingX = spacing.x;
             this._spacingY = spacing.y;
         }
+
 
         this._offsetX = options.offset?.[0] ?? 0;
         this._offsetY = options.offset?.[1] ?? 0;
@@ -342,11 +368,18 @@ export class GridSystem {
     place(shapeCtx: ShapeContext, style?: PathStyle): this {
         for (const node of this._nodes) {
             const clone = shapeCtx.shape.clone();
+            clone.ephemeral = false;  // Clones are concrete
             clone.moveTo(new Vector2(node.x, node.y));
             this._placements.push({ position: new Vector2(node.x, node.y), shape: clone, style });
         }
+
+        // Mark source shape as ephemeral AFTER cloning (construction geometry)
+        shapeCtx.shape.ephemeral = true;
+
         return this;
     }
+
+
 
 
     /** Get computed bounds */

@@ -8,8 +8,11 @@ import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../con
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 
 export interface TessellationOptions {
-    pattern: TessellationPattern;
-    bounds: { width: number; height: number };
+    // Simple API
+    size?: number;  // Tile size (default 40)
+    // Detailed API (takes precedence)
+    pattern?: TessellationPattern;
+    bounds?: { width: number; height: number };
     seed?: number;
     // Truchet-specific
     tileSize?: number;
@@ -36,26 +39,32 @@ interface TileInfo {
 export class TessellationSystem {
     private _tiles: TileInfo[] = [];
     private _nodes: Vector2[] = [];
+    private _placements: { position: Vector2; shape: Shape; style?: PathStyle }[] = [];
     private _traced = false;
     private _bounds: { width: number; height: number };
     private _pattern: TessellationPattern;
 
-    private constructor(options: TessellationOptions) {
-        this._bounds = options.bounds;
-        this._pattern = options.pattern;
+    private constructor(options: TessellationOptions = {}) {
+        // Support simple size API with defaults
+        const pattern = options.pattern ?? 'truchet';
+        const bounds = options.bounds ?? { width: 400, height: 400 };
+        const tileSize = options.tileSize ?? options.size ?? 40;
 
-        switch (options.pattern) {
+        this._bounds = bounds;
+        this._pattern = pattern;
+
+        switch (pattern) {
             case 'truchet':
-                this.buildTruchet(options);
+                this.buildTruchet({ ...options, pattern, bounds, tileSize });
                 break;
             case 'trihexagonal':
-                this.buildTrihexagonal(options);
+                this.buildTrihexagonal({ ...options, pattern, bounds });
                 break;
             case 'penrose':
-                this.buildPenrose(options);
+                this.buildPenrose({ ...options, pattern, bounds });
                 break;
             case 'custom':
-                this.buildCustom(options);
+                this.buildCustom({ ...options, pattern, bounds });
                 break;
         }
     }
@@ -407,6 +416,21 @@ export class TessellationSystem {
         return this;
     }
 
+    /** Place a shape at each node in the system */
+    place(shapeCtx: ShapeContext, style?: PathStyle): this {
+        for (const node of this._nodes) {
+            const clone = shapeCtx.shape.clone();
+            clone.ephemeral = false;  // Clones are concrete
+            clone.moveTo(node);
+            this._placements.push({ position: node, shape: clone, style });
+        }
+
+        // Mark source shape as ephemeral AFTER cloning (construction geometry)
+        shapeCtx.shape.ephemeral = true;
+
+        return this;
+    }
+
     /** Stamp system to collector (for auto-rendering) */
     stamp(collector: SVGCollector, style?: PathStyle): void {
         const finalStyle = style ?? { stroke: '#999', strokeWidth: 1 };
@@ -416,8 +440,12 @@ export class TessellationSystem {
                 collector.addShape(tile.shape, finalStyle);
             }
         }
-    }
 
+        // Add placements
+        for (const p of this._placements) {
+            collector.addShape(p.shape, p.style ?? finalStyle);
+        }
+    }
 
     // ==================== Export ====================
 

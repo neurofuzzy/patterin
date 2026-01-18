@@ -1,4 +1,4 @@
-import { API_DATA, getAllMethods, getAllGetters } from './api-data';
+import { API_DATA } from './api-data';
 
 /**
  * Generate a .d.ts string from the API registry.
@@ -76,16 +76,26 @@ export function generateDSLTypeDefinition(): string {
         triangle(radius?: number): TriangleContext;
     };
 
+    declare const system: {
+        /** Create a grid system */
+        grid(options?: GridOptions): GridSystem;
+        /** Create a tessellation system */
+        tessellation(options: TessellationOptions): TessellationSystem;
+        /** Create a system from a shape (vertices → nodes, segments → edges) */
+        fromShape(source: ShapeContext | Shape, options?: ShapeSystemOptions): ShapeSystem;
+    };
+
     declare const points: PointsContext;
     declare const lines: LinesContext;
     declare const shapes: ShapesContext;
     
-    // Global Constructors/Systems (avail as consts)
-    // GridSystem, TessellationSystem, SVGCollector are already defined as consts with static methods above or need to be
-    // Actually, if we defined 'const GridSystem: {...}', typescript sees it as a value.
-    
-    // Let's ensure top-level access
-    // declare const GridSystem: ... (already handled by the static block logic above if applied correctly)
+    // Shape system options
+    interface ShapeSystemOptions {
+        /** Include center point as a node */
+        includeCenter?: boolean;
+        /** Subdivide edges into n parts */
+        subdivide?: number;
+    }
     `;
 
     return dts;

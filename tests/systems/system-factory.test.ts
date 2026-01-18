@@ -92,6 +92,16 @@ describe('System Factory', () => {
             expect(result).toBe(sys); // Returns this for chaining
         });
 
+        it('should mark placed shape as ephemeral', () => {
+            const hex = shape.hexagon().radius(50);
+            const sys = system.fromShape(hex);
+            const circle = shape.circle().radius(5);
+
+            expect(circle.shape.ephemeral).toBe(false); // Before
+            sys.place(circle);
+            expect(circle.shape.ephemeral).toBe(true); // After - construction geometry
+        });
+
         it('should render placements but not source shape without trace()', () => {
             const hex = shape.hexagon().radius(50);
             const sys = system.fromShape(hex);

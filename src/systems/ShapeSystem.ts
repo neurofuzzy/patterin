@@ -157,11 +157,18 @@ export class ShapeSystem {
 
         for (const node of allNodes) {
             const clone = shapeCtx.shape.clone();
+            clone.ephemeral = false;  // Clones are concrete
             clone.moveTo(node.position);
             this._placements.push({ position: node.position, shape: clone, style });
         }
+
+        // Mark source shape as ephemeral AFTER cloning (construction geometry)
+        shapeCtx.shape.ephemeral = true;
+
         return this;
     }
+
+
 
 
     /**
