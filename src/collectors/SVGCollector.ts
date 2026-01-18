@@ -8,6 +8,17 @@ export interface PathStyle {
     dash?: number[];
 }
 
+/**
+ * Default styles for system rendering.
+ * Traced connections use thinner strokes than placed shapes.
+ */
+export const DEFAULT_STYLES = {
+    /** Style for traced system connections (cells, tiles, scaffold shapes) */
+    connection: { stroke: '#999', strokeWidth: 0.5 } as PathStyle,
+    /** Style for placed shapes at nodes */
+    placement: { stroke: '#999', strokeWidth: 1 } as PathStyle,
+} as const;
+
 interface PathEntry {
     d: string;
     style: PathStyle;

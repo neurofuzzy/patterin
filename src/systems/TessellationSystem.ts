@@ -1,8 +1,9 @@
+import { renderSystemToSVG } from './SystemUtils.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext.ts';
 import type { ISystem } from '../interfaces.ts';
 
@@ -460,10 +461,8 @@ export class TessellationSystem implements ISystem {
 
     /** Stamp system to collector (for auto-rendering) */
     stamp(collector: SVGCollector, style?: PathStyle): void {
-        // Tiles (connections) use thinner stroke
-        const tileStyle = style ?? { stroke: '#999', strokeWidth: 0.5 };
-        // Placements (shapes at nodes) use standard stroke
-        const placementStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+        const tileStyle = style ?? DEFAULT_STYLES.connection;
+        const placementStyle = style ?? DEFAULT_STYLES.placement;
 
         // Add tiles in their own group
         const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
@@ -488,77 +487,34 @@ export class TessellationSystem implements ISystem {
     // ==================== Export ====================
 
     /** Generate SVG output */
+    /** Generate SVG output */
     toSVG(options: {
         width: number;
         height: number;
         margin?: number;
     }): string {
         const { width, height, margin = 10 } = options;
-        const collector = new SVGCollector();
 
-        const tileRenderables = this._tiles.filter(t => !t.shape.ephemeral);
-        const placementRenderables = this._placements;
+        const tileItems = this._tiles
+            .filter(t => !t.shape.ephemeral)
+            .map(t => ({ shape: t.shape }));
 
-        if (tileRenderables.length === 0 && placementRenderables.length === 0) {
-            return collector.toString({ width, height });
-        }
+        const placementItems = this._placements.map(p => ({
+            shape: p.shape,
+            style: p.style
+        }));
 
-        // Compute bounds
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const tile of tileRenderables) {
-            const bbox = tile.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        for (const p of placementRenderables) {
-            const bbox = p.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        const contentWidth = maxX - minX || 1;
-        const contentHeight = maxY - minY || 1;
-
-        // Scale to fit
-        const availW = width - margin * 2;
-        const availH = height - margin * 2;
-        const scale = Math.min(availW / contentWidth, availH / contentHeight);
-
-        // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - minY * scale;
-
-        // Render tiles in 'tiles' group
-        if (tileRenderables.length > 0) {
-            collector.beginGroup('tiles');
-            for (const tile of tileRenderables) {
-                const clone = tile.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, { stroke: '#999', strokeWidth: 0.5 });
+        return renderSystemToSVG(width, height, margin, [
+            {
+                name: 'tiles',
+                items: tileItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            },
+            {
+                name: 'placements',
+                items: placementItems,
+                defaultStyle: DEFAULT_STYLES.placement
             }
-            collector.endGroup();
-        }
-
-        // Render placements in 'placements' group
-        if (placementRenderables.length > 0) {
-            collector.beginGroup('placements');
-            for (const p of placementRenderables) {
-                const clone = p.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, p.style ?? { stroke: '#999', strokeWidth: 1 });
-            }
-            collector.endGroup();
-        }
-
-        return collector.toString({ width, height });
+        ]);
     }
 }

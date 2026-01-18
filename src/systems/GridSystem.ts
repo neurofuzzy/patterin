@@ -1,8 +1,9 @@
+import { renderSystemToSVG } from './SystemUtils.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
 import type { ISystem } from '../interfaces.ts';
 
@@ -442,10 +443,8 @@ export class GridSystem implements ISystem {
 
     /** Stamp system to collector (for auto-rendering) */
     stamp(collector: SVGCollector, style?: PathStyle): void {
-        // Traced cells (connections) use thinner stroke
-        const cellStyle = style ?? { stroke: '#999', strokeWidth: 0.5 };
-        // Placements (shapes at nodes) use standard stroke
-        const placementStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+        const cellStyle = style ?? DEFAULT_STYLES.connection;
+        const placementStyle = style ?? DEFAULT_STYLES.placement;
 
         // Add traced cells in their own group
         if (this._traced) {
@@ -470,77 +469,37 @@ export class GridSystem implements ISystem {
 
 
     /** Generate SVG output */
+    /** Generate SVG output */
     toSVG(options: {
         width: number;
         height: number;
         margin?: number;
     }): string {
         const { width, height, margin = 10 } = options;
-        const collector = new SVGCollector();
 
-        // Collect all renderable shapes, grouped by type
-        const cellRenderables: { shape: Shape; style?: PathStyle }[] = [];
-        const placementRenderables: { shape: Shape; style?: PathStyle }[] = [];
+        const cellItems = this._traced
+            ? this._cells
+                .filter(c => !c.shape.ephemeral)
+                .map(c => ({ shape: c.shape }))
+            : [];
 
-        // Add traced cells
-        if (this._traced) {
-            for (const cell of this._cells) {
-                if (!cell.shape.ephemeral) {
-                    cellRenderables.push({ shape: cell.shape });
-                }
+        const placementItems = this._placements.map(p => ({
+            shape: p.shape,
+            style: p.style
+        }));
+
+        return renderSystemToSVG(width, height, margin, [
+            {
+                name: 'cells',
+                items: cellItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            },
+            {
+                name: 'placements',
+                items: placementItems,
+                defaultStyle: DEFAULT_STYLES.placement
             }
-        }
-
-        // Add placements
-        for (const p of this._placements) {
-            placementRenderables.push({ shape: p.shape, style: p.style });
-        }
-
-        const allRenderables = [...cellRenderables, ...placementRenderables];
-
-        if (allRenderables.length === 0) {
-            return collector.toString({ width, height });
-        }
-
-        // Compute bounds
-        const bounds = this.getBounds();
-        const contentWidth = bounds.maxX - bounds.minX || 1;
-        const contentHeight = bounds.maxY - bounds.minY || 1;
-
-        // Scale to fit
-        const availW = width - margin * 2;
-        const availH = height - margin * 2;
-        const scale = Math.min(availW / contentWidth, availH / contentHeight);
-
-        // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
-
-        // Render cells in 'cells' group
-        if (cellRenderables.length > 0) {
-            collector.beginGroup('cells');
-            for (const item of cellRenderables) {
-                const clone = item.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 0.5 });
-            }
-            collector.endGroup();
-        }
-
-        // Render placements in 'placements' group
-        if (placementRenderables.length > 0) {
-            collector.beginGroup('placements');
-            for (const item of placementRenderables) {
-                const clone = item.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
-            }
-            collector.endGroup();
-        }
-
-        return collector.toString({ width, height });
+        ]);
     }
 }
 

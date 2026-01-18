@@ -1,8 +1,9 @@
+import { renderSystemToSVG } from './SystemUtils.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape, BoundingBox } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext.ts';
 import { PointContext } from '../contexts/PointContext.ts';
 import type { ISystem } from '../interfaces.ts';
@@ -239,10 +240,8 @@ export class ShapeSystem implements ISystem {
      * Stamp system to collector (for auto-rendering)
      */
     stamp(collector: SVGCollector, style?: PathStyle): void {
-        // Source shape (scaffold) uses thinner stroke
-        const shapeStyle = style ?? { stroke: '#999', strokeWidth: 0.5 };
-        // Placements (shapes at nodes) use standard stroke
-        const placementStyle = style ?? { stroke: '#999', strokeWidth: 1 };
+        const shapeStyle = style ?? DEFAULT_STYLES.connection;
+        const placementStyle = style ?? DEFAULT_STYLES.placement;
 
         // Add traced source shape in its own group
         if (this._traced && !this._sourceShape.ephemeral) {
@@ -264,73 +263,36 @@ export class ShapeSystem implements ISystem {
     /**
      * Generate SVG output
      */
+    /** Generate SVG output */
     toSVG(options: {
         width: number;
         height: number;
         margin?: number;
     }): string {
         const { width, height, margin = 10 } = options;
-        const collector = new SVGCollector();
 
-        // Collect renderables by type
-        const shapeRenderables: { shape: Shape; style?: PathStyle }[] = [];
-        const placementRenderables: { shape: Shape; style?: PathStyle }[] = [];
-
-        // Add traced source shape
+        const shapeItems: { shape: Shape; style?: PathStyle }[] = [];
         if (this._traced && !this._sourceShape.ephemeral) {
-            shapeRenderables.push({ shape: this._sourceShape });
+            shapeItems.push({ shape: this._sourceShape });
         }
 
-        // Add placements
-        for (const p of this._placements) {
-            placementRenderables.push({ shape: p.shape, style: p.style });
-        }
+        const placementItems = this._placements.map(p => ({
+            shape: p.shape,
+            style: p.style
+        }));
 
-        const allRenderables = [...shapeRenderables, ...placementRenderables];
-
-        if (allRenderables.length === 0) {
-            return collector.toString({ width, height });
-        }
-
-        // Compute bounds
-        const bounds = this.getBounds();
-        const contentWidth = bounds.maxX - bounds.minX || 1;
-        const contentHeight = bounds.maxY - bounds.minY || 1;
-
-        // Scale to fit
-        const availW = width - margin * 2;
-        const availH = height - margin * 2;
-        const scale = Math.min(availW / contentWidth, availH / contentHeight);
-
-        // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
-
-        // Render source shape in 'shape' group
-        if (shapeRenderables.length > 0) {
-            collector.beginGroup('shape');
-            for (const item of shapeRenderables) {
-                const clone = item.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 0.5 });
+        return renderSystemToSVG(width, height, margin, [
+            {
+                name: 'shape',
+                items: shapeItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            },
+            {
+                name: 'placements',
+                items: placementItems,
+                defaultStyle: DEFAULT_STYLES.placement
             }
-            collector.endGroup();
-        }
-
-        // Render placements in 'placements' group
-        if (placementRenderables.length > 0) {
-            collector.beginGroup('placements');
-            for (const item of placementRenderables) {
-                const clone = item.shape.clone();
-                clone.scale(scale);
-                clone.translate(new Vector2(offsetX, offsetY));
-                collector.addShape(clone, item.style ?? { stroke: '#999', strokeWidth: 1 });
-            }
-            collector.endGroup();
-        }
-
-        return collector.toString({ width, height });
+        ]);
     }
 }
 
