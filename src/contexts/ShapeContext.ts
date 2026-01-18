@@ -10,6 +10,12 @@ import { PointContext } from './PointContext.ts';
  * Wraps a Shape and provides fluent API for transformations.
  */
 export class ShapeContext {
+    /**
+     * Global collector for auto-stamping (used by playground).
+     * When set, shapes created via specialized contexts will auto-register.
+     */
+    static globalCollector: SVGCollector | null = null;
+
     constructor(protected _shape: Shape) { }
 
     /** Get the underlying shape */
@@ -93,6 +99,36 @@ export class ShapeContext {
     /** Offset shape by delta */
     offset(x: number, y: number): this {
         this._shape.translate(new Vector2(x, y));
+        return this;
+    }
+
+    /** Translate shape by delta (alias for offset) */
+    translate(x: number, y: number): this {
+        return this.offset(x, y);
+    }
+
+    /** Set x position (moves centroid to x, keeping y) */
+    x(xPos: number): this {
+        const center = this._shape.centroid();
+        const dx = xPos - center.x;
+        this._shape.translate(new Vector2(dx, 0));
+        return this;
+    }
+
+    /** Set y position (moves centroid to y, keeping x) */
+    y(yPos: number): this {
+        const center = this._shape.centroid();
+        const dy = yPos - center.y;
+        this._shape.translate(new Vector2(0, dy));
+        return this;
+    }
+
+    /** Set x and y position (moves centroid) */
+    xy(xPos: number, yPos: number): this {
+        const center = this._shape.centroid();
+        const dx = xPos - center.x;
+        const dy = yPos - center.y;
+        this._shape.translate(new Vector2(dx, dy));
         return this;
     }
 

@@ -250,3 +250,32 @@ body {
     border-bottom: 1px solid var(--border);
   }
 }
+
+/* Lint gutter and error styling */
+.cm-lintRange-error {
+  background: rgba(248, 81, 73, 0.15);
+  border-bottom: 2px wavy #f85149;
+}
+
+.cm-lintRange-warning {
+  background: rgba(210, 153, 34, 0.15);
+  border-bottom: 2px wavy #d29922;
+}
+
+.cm-lint-marker-error {
+  content: "●";
+  color: #f85149;
+}
+
+.cm-lint-marker-warning {
+  content: "●";
+  color: #d29922;
+}
+
+.cm-gutter-lint {
+  width: 1.4em;
+}
+
+.cm-gutter-lint .cm-gutterElement {
+  padding: 0 3px;
+}

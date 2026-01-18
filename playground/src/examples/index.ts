@@ -1,155 +1,115 @@
 /**
  * Patterin Examples Collection
+ * Updated for auto-render mode (no explicit SVGCollector needed for simple shapes)
  */
 
 export interface Example {
-    name: string;
-    category: string;
-    description: string;
-    code: string;
-    preview?: string; // SVG string for thumbnail
+  name: string;
+  category: string;
+  description: string;
+  code: string;
+  preview?: string; // SVG string for thumbnail
 }
 
 export const EXAMPLES: Example[] = [
-    // ═══════════════════════════════════════════════════════════════════════════
-    // BASICS
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-        name: 'Circle',
-        category: 'Basics',
-        description: 'Simple circle',
-        code: `const svg = new SVGCollector();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BASICS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Circle',
+    category: 'Basics',
+    description: 'Simple circle',
+    code: `// Just create shapes - they render automatically!
+shape.circle().radius(50).numSegments(32)`,
+  },
+  {
+    name: 'Star',
+    category: 'Basics',
+    description: 'Star pattern from circle',
+    code: `// Create a circle and modify every other point
+const star = shape.circle().radius(50).numSegments(10)
+star.points.every(2).inset(25)`,
+  },
+  {
+    name: 'Gear',
+    category: 'Basics',
+    description: 'Gear from extruded circle',
+    code: `// Extrude every other edge to create teeth
+const gear = shape.circle().radius(50).numSegments(16)
+gear.lines.every(2).extrude(15)`,
+  },
+  {
+    name: 'Hexagon',
+    category: 'Basics',
+    description: 'Regular hexagon',
+    code: `shape.hexagon().radius(50)`,
+  },
+  {
+    name: 'Multiple Shapes',
+    category: 'Basics',
+    description: 'Position shapes with xy()',
+    code: `// Multiple shapes are auto-collected
+shape.circle().radius(30).xy(-50, 0)
+shape.square().size(50).xy(50, 0)
+shape.hexagon().radius(25).xy(0, 60)`,
+  },
 
-const circle = shape.circle().radius(50).numSegments(32);
-circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPERATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Point Expansion',
+    category: 'Operations',
+    description: 'Circles at each vertex',
+    code: `// Create circles at each vertex
+const hex = shape.hexagon().radius(50)
+hex.points.expandToCircles(10, 16)`,
+  },
+  {
+    name: 'Offset Shape',
+    category: 'Operations',
+    description: 'Inset and outset outlines',
+    code: `// Create concentric offset shapes
+const hex = shape.hexagon().radius(30)
 
-render(svg);`,
-    },
-    {
-        name: 'Star',
-        category: 'Basics',
-        description: 'Star pattern from circle',
-        code: `const svg = new SVGCollector();
+hex.offsetShape(20)  // outer
+hex.offsetShape(10)  // middle
+hex.offsetShape(-10) // inner (inset)`,
+  },
+  {
+    name: 'Clone & Spread',
+    category: 'Operations',
+    description: 'Clone and distribute shapes',
+    code: `// Clone a shape and spread copies
+shape.circle().radius(15)
+  .clone(5)
+  .spread(40, 0)`,
+  },
 
-const circle = shape.circle().radius(50).numSegments(10);
-circle.points.every(2).inset(25);
-circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
-
-render(svg);`,
-    },
-    {
-        name: 'Gear',
-        category: 'Basics',
-        description: 'Gear from extruded circle',
-        code: `const svg = new SVGCollector();
-
-const circle = shape.circle().radius(50).numSegments(16);
-circle.lines.every(2).extrude(15);
-circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
-
-render(svg);`,
-    },
-    {
-        name: 'Hexagon',
-        category: 'Basics',
-        description: 'Regular hexagon',
-        code: `const svg = new SVGCollector();
-
-const hex = shape.hexagon().radius(50);
-hex.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
-
-render(svg);`,
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // OPERATIONS
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-        name: 'Point Expansion',
-        category: 'Operations',
-        description: 'Circles at each vertex',
-        code: `const svg = new SVGCollector();
-
-const hex = shape.hexagon().radius(50);
-hex.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1 });
-
-hex.points.expandToCircles(10, 16).stamp(svg, 0, 0, { 
-  stroke: '#f778ba', 
-  strokeWidth: 1.5 
-});
-
-render(svg);`,
-    },
-    {
-        name: 'Raycast',
-        category: 'Operations',
-        description: 'Rays from each vertex',
-        code: `const svg = new SVGCollector();
-
-const circle = shape.circle().radius(30).numSegments(8);
-circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1 });
-
-// Cast rays outward
-const rays = circle.points.raycast(40, 'outward');
-for (let i = 0; i < rays.length; i++) {
-  const v = rays.vertices[i];
-  svg.addPath(\`M \${circle.vertices[i].x} \${circle.vertices[i].y} L \${v.x} \${v.y}\`, {
-    stroke: '#f778ba',
-    strokeWidth: 1
-  });
-}
-
-render(svg);`,
-    },
-    {
-        name: 'Offset Shape',
-        category: 'Operations',
-        description: 'Inset and outset outlines',
-        code: `const svg = new SVGCollector();
-
-const hex = shape.hexagon().radius(30);
-
-// Outset
-hex.offsetShape(20).stamp(svg, 0, 0, { stroke: '#30363d', strokeWidth: 1 });
-hex.offsetShape(10).stamp(svg, 0, 0, { stroke: '#484f58', strokeWidth: 1 });
-hex.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
-// Inset
-hex.offsetShape(-10).stamp(svg, 0, 0, { stroke: '#f778ba', strokeWidth: 1 });
-
-render(svg);`,
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // GRIDS
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-        name: 'Square Grid',
-        category: 'Grids',
-        description: 'Basic square grid',
-        code: `const grid = GridSystem.create({
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GRIDS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Square Grid',
+    category: 'Grids',
+    description: 'Basic square grid',
+    code: `// Grid system with node placement
+const grid = GridSystem.create({
   rows: 5,
   cols: 5,
   spacing: 30,
   x: -60,
   y: -60,
-});
+})
 
-grid.trace();
-grid.nodes().place(shape.circle().radius(3), { 
-  fill: '#58a6ff' 
-});
-
-render(grid.toSVG({ width: 400, height: 400, margin: 20 }));
-
-function render(svgString) {
-  document.querySelector('.svg-container').innerHTML = svgString;
-}`,
-    },
-    {
-        name: 'Hex Grid',
-        category: 'Grids',
-        description: 'Hexagonal grid pattern',
-        code: `const grid = GridSystem.create({
+grid.trace()
+grid.nodes().place(shape.circle().radius(5))`,
+  },
+  {
+    name: 'Hex Grid',
+    category: 'Grids',
+    description: 'Hexagonal grid pattern',
+    code: `const grid = GridSystem.create({
   type: 'hexagonal',
   rows: 4,
   cols: 5,
@@ -157,79 +117,55 @@ function render(svgString) {
   x: -60,
   y: -50,
   orientation: 'pointy',
-});
+})
 
-grid.trace();
-grid.nodes().place(shape.circle().radius(4), { 
-  fill: '#f778ba' 
-});
+grid.trace()
+grid.nodes().place(shape.circle().radius(6))`,
+  },
 
-render(grid.toSVG({ width: 400, height: 400, margin: 20 }));
-
-function render(svgString) {
-  document.querySelector('.svg-container').innerHTML = svgString;
-}`,
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SYSTEMS
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-        name: 'Mandala',
-        category: 'Systems',
-        description: 'Radial polar spread',
-        code: `const svg = new SVGCollector();
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SYSTEMS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Mandala',
+    category: 'Systems',
+    description: 'Radial polar spread',
+    code: `// Create rings of shapes using polar spread
 for (let ring = 1; ring <= 4; ring++) {
-  const count = ring * 6;
-  const circles = shape.circle().radius(5)
+  const count = ring * 6
+  shape.circle().radius(5)
     .clone(count)
-    .spreadPolar(ring * 20);
-  circles.stamp(svg, 0, 0, { 
-    stroke: '#58a6ff', 
-    strokeWidth: 1,
-    fill: ring % 2 ? '#161b22' : 'none'
-  });
-}
-
-render(svg);`,
-    },
-    {
-        name: 'Penrose Tiling',
-        category: 'Systems',
-        description: 'Aperiodic Penrose pattern',
-        code: `const tess = TessellationSystem.create({
+    .spreadPolar(ring * 20)
+}`,
+  },
+  {
+    name: 'Penrose Tiling',
+    category: 'Systems',
+    description: 'Aperiodic Penrose pattern',
+    code: `// Note: TessellationSystem uses explicit render
+const tess = TessellationSystem.create({
   pattern: 'penrose',
   bounds: { width: 200, height: 200 },
   iterations: 5,
-});
+})
 
-tess.trace();
-
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }));
-
-function render(svgString) {
-  document.querySelector('.svg-container').innerHTML = svgString;
-}`,
-    },
-    {
-        name: 'Truchet Tiles',
-        category: 'Systems',
-        description: 'Random Truchet pattern',
-        code: `const tess = TessellationSystem.create({
+tess.trace()
+render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
+  },
+  {
+    name: 'Truchet Tiles',
+    category: 'Systems',
+    description: 'Random Truchet pattern',
+    code: `// Truchet tiling with quarter-circles
+const tess = TessellationSystem.create({
   pattern: 'truchet',
   bounds: { width: 200, height: 200 },
   tileSize: 25,
   variant: 'quarter-circles',
   seed: 42,
-});
+})
 
-tess.trace();
-
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }));
-
-function render(svgString) {
-  document.querySelector('.svg-container').innerHTML = svgString;
-}`,
-    },
+tess.trace()
+render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
+  },
 ];
