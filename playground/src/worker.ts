@@ -25,37 +25,128 @@ export type WorkerResponse = {
 /**
  * Create auto-collecting shape factory.
  * Every shape created through this factory is tracked and auto-rendered.
+ * Uses Proxy wrappers to also track shapes returned by operations.
  */
 function createAutoCollectContext() {
-    const createdShapes: patterin.ShapeContext[] = [];
+    // Registry for all shape contexts (both factory-created and operation-returned)
+    const shapeRegistry = new Set<patterin.ShapeContext | patterin.ShapesContext>();
+
+    /**
+     * Wrap a sub-context (PointsContext, LinesContext) to track returned shapes
+     */
+    function wrapSubContext<T extends object>(ctx: T): T {
+        return new Proxy(ctx, {
+            get(target, prop, receiver) {
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function') {
+                    return function (this: T, ...args: unknown[]) {
+                        const result = value.apply(target, args);
+                        // Track returned ShapeContext or ShapesContext
+                        if (result instanceof patterin.ShapeContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapeContext(result);
+                        }
+                        if (result instanceof patterin.ShapesContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapesContext(result);
+                        }
+                        return result;
+                    };
+                }
+                return value;
+            }
+        }) as T;
+    }
+
+    /**
+     * Wrap ShapesContext to track it
+     */
+    function wrapShapesContext(ctx: patterin.ShapesContext): patterin.ShapesContext {
+        return new Proxy(ctx, {
+            get(target, prop, receiver) {
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function') {
+                    return function (this: patterin.ShapesContext, ...args: unknown[]) {
+                        const result = value.apply(target, args);
+                        if (result instanceof patterin.ShapeContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapeContext(result);
+                        }
+                        if (result instanceof patterin.ShapesContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapesContext(result);
+                        }
+                        return result;
+                    };
+                }
+                // Wrap property accessors
+                if (value instanceof patterin.PointsContext || value instanceof patterin.LinesContext) {
+                    return wrapSubContext(value);
+                }
+                return value;
+            }
+        });
+    }
+
+    /**
+     * Wrap ShapeContext to track returned contexts from operations
+     */
+    function wrapShapeContext<T extends patterin.ShapeContext>(ctx: T): T {
+        return new Proxy(ctx, {
+            get(target, prop, receiver) {
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function') {
+                    return function (this: T, ...args: unknown[]) {
+                        const result = value.apply(target, args);
+                        // Track returned ShapeContext or ShapesContext
+                        if (result instanceof patterin.ShapeContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapeContext(result);
+                        }
+                        if (result instanceof patterin.ShapesContext) {
+                            shapeRegistry.add(result);
+                            return wrapShapesContext(result);
+                        }
+                        return result;
+                    };
+                }
+                // Wrap property accessors like .points and .lines
+                if (value instanceof patterin.PointsContext || value instanceof patterin.LinesContext) {
+                    return wrapSubContext(value);
+                }
+                return value;
+            }
+        }) as T;
+    }
+
     const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem)[] = [];
 
     // Wrap shape factory to track created shapes
     const autoShape = {
         circle: () => {
             const ctx = new patterin.CircleContext();
-            createdShapes.push(ctx);
-            return ctx;
+            shapeRegistry.add(ctx);
+            return wrapShapeContext(ctx);
         },
         rect: () => {
             const ctx = new patterin.RectContext();
-            createdShapes.push(ctx);
-            return ctx;
+            shapeRegistry.add(ctx);
+            return wrapShapeContext(ctx);
         },
         square: () => {
             const ctx = new patterin.SquareContext();
-            createdShapes.push(ctx);
-            return ctx;
+            shapeRegistry.add(ctx);
+            return wrapShapeContext(ctx);
         },
         hexagon: () => {
             const ctx = new patterin.HexagonContext();
-            createdShapes.push(ctx);
-            return ctx;
+            shapeRegistry.add(ctx);
+            return wrapShapeContext(ctx);
         },
         triangle: () => {
             const ctx = new patterin.TriangleContext();
-            createdShapes.push(ctx);
-            return ctx;
+            shapeRegistry.add(ctx);
+            return wrapShapeContext(ctx);
         },
     };
 
@@ -83,7 +174,7 @@ function createAutoCollectContext() {
         },
     };
 
-    return { autoShape, autoSystem, createdShapes, createdSystems };
+    return { autoShape, autoSystem, shapeRegistry, createdSystems };
 }
 
 /**
@@ -149,7 +240,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     if (type === 'execute') {
         try {
             // Create fresh auto-collect context for this run
-            const { autoShape, autoSystem, createdShapes, createdSystems } = createAutoCollectContext();
+            const { autoShape, autoSystem, shapeRegistry, createdSystems } = createAutoCollectContext();
 
             // Create collector for this run
             const collector = new patterin.SVGCollector();
@@ -189,9 +280,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             sandbox(...paramValues);
 
             // Auto-render: if shapes or systems were created and render() wasn't called explicitly
-            if ((createdShapes.length > 0 || createdSystems.length > 0) && !renderCalled) {
-                // Stamp all created shapes to the collector
-                for (const shapeCtx of createdShapes) {
+            if ((shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
+                // Stamp all registered shapes to the collector
+                for (const shapeCtx of shapeRegistry) {
                     if (typeof shapeCtx.stamp === 'function') {
                         shapeCtx.stamp(collector);
                     }
