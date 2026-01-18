@@ -94,7 +94,7 @@ shape.circle().radius(15)
     category: 'Grids',
     description: 'Basic square grid',
     code: `// Grid system with node placement
-const grid = GridSystem.create({
+const grid = system.grid({
   rows: 5,
   cols: 5,
   spacing: 30,
@@ -103,13 +103,13 @@ const grid = GridSystem.create({
 })
 
 grid.trace()
-grid.nodes().place(shape.circle().radius(5))`,
+grid.place(shape.circle().radius(5))`,
   },
   {
     name: 'Hex Grid',
     category: 'Grids',
     description: 'Hexagonal grid pattern',
-    code: `const grid = GridSystem.create({
+    code: `const grid = system.grid({
   type: 'hexagonal',
   rows: 4,
   cols: 5,
@@ -120,7 +120,7 @@ grid.nodes().place(shape.circle().radius(5))`,
 })
 
 grid.trace()
-grid.nodes().place(shape.circle().radius(6))`,
+grid.place(shape.circle().radius(6))`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -143,7 +143,7 @@ for (let ring = 1; ring <= 4; ring++) {
     category: 'Systems',
     description: 'Aperiodic Penrose pattern',
     code: `// Note: TessellationSystem uses explicit render
-const tess = TessellationSystem.create({
+const tess = system.tessellation({
   pattern: 'penrose',
   bounds: { width: 200, height: 200 },
   iterations: 5,

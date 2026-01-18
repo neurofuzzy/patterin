@@ -74,7 +74,7 @@ function createWorker(): Worker {
 /**
  * Run code via worker with timeout
  */
-function runCode(code: string): void {
+function runCode(code: string, options?: { resetView?: boolean }): void {
     // Terminate any existing worker
     terminateWorker();
 
@@ -109,6 +109,11 @@ function runCode(code: string): void {
                 // Update lastCollector for export (create a minimal one from SVG)
                 lastCollector = new patterin.SVGCollector();
                 (lastCollector as any)._svgCache = response.svg;
+
+                // Reset view if requested (e.g. on example load)
+                if (options?.resetView) {
+                    preview.resetView();
+                }
             }
             if (response.stats) {
                 preview.setStats(response.stats.shapes, response.stats.segments);
@@ -176,8 +181,7 @@ new Menu({
     button: menuBtn,
     onExampleLoad: (code: string) => {
         editor.setCode(code);
-        runCode(code);
-        preview.resetView(); // Auto-fit when loading example
+        runCode(code, { resetView: true });
     },
 });
 

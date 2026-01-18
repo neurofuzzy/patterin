@@ -192,6 +192,21 @@ export class LSystem implements ISystem {
             }
         }
 
+        // Add final connecting segment if path returns to start (within tolerance)
+        // This fixes visual gaps in closed L-systems like Koch Snowflake
+        const epsilon = len * 0.01; // 1% of step length tolerance
+        const distToStart = Math.sqrt(
+            Math.pow(x - origin[0], 2) + Math.pow(y - origin[1], 2)
+        );
+
+        if (distToStart < epsilon && distToStart > 0 && segments.length > 0) {
+            // Add segment from final position back to start
+            const finalV = new Vertex(x, y);
+            const startV = new Vertex(origin[0], origin[1]);
+            segments.push(new Segment(finalV, startV));
+            nodes.push(startV);
+        }
+
         // Final position is also an endpoint
         endpoints.push(new Vertex(x, y));
 
