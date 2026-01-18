@@ -35,9 +35,14 @@ export class ShapeSystem {
 
     constructor(source: ShapeContext | Shape, options: ShapeSystemOptions = {}) {
         // Extract the Shape from ShapeContext if needed
-        this._sourceShape = source instanceof ShapeContext
-            ? source.shape.clone()
-            : source.clone();
+        // Mark the original source as ephemeral since it's now construction geometry
+        if (source instanceof ShapeContext) {
+            source.shape.ephemeral = true;  // Original becomes construction geometry
+            this._sourceShape = source.shape.clone();
+        } else {
+            source.ephemeral = true;  // Original becomes construction geometry
+            this._sourceShape = source.clone();
+        }
 
         this._sourceShape.ephemeral = true;
 
@@ -140,6 +145,24 @@ export class ShapeSystem {
     addPlacement(position: Vector2, shape: Shape, style?: PathStyle): void {
         this._placements.push({ position, shape, style });
     }
+
+    /**
+     * Place a shape at each node in the system
+     */
+    place(shapeCtx: ShapeContext, style?: PathStyle): this {
+        // Include center node if present
+        const allNodes = this._centerNode
+            ? [...this._nodes, this._centerNode]
+            : [...this._nodes];
+
+        for (const node of allNodes) {
+            const clone = shapeCtx.shape.clone();
+            clone.moveTo(node.position);
+            this._placements.push({ position: node.position, shape: clone, style });
+        }
+        return this;
+    }
+
 
     /**
      * Get computed bounds

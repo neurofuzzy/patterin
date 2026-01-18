@@ -9,9 +9,9 @@ export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 
 export interface GridOptions {
     type?: GridType;
-    rows: number;
-    cols: number;
-    spacing: number | { x: number; y: number };
+    rows?: number;
+    cols?: number;
+    spacing?: number | { x: number; y: number };
     offset?: [number, number];
     // Hexagonal-specific
     orientation?: 'pointy' | 'flat';
@@ -59,17 +59,18 @@ export class GridSystem {
 
     private constructor(options: GridOptions) {
         this._type = options.type ?? 'square';
-        this._rows = options.rows;
-        this._cols = options.cols;
+        this._rows = options.rows ?? 3;
+        this._cols = options.cols ?? 3;
         this._orientation = options.orientation ?? 'pointy';
         this._brickOffset = options.brickOffset ?? 0.5;
 
-        if (typeof options.spacing === 'number') {
-            this._spacingX = options.spacing;
-            this._spacingY = options.spacing;
+        const spacing = options.spacing ?? 30;
+        if (typeof spacing === 'number') {
+            this._spacingX = spacing;
+            this._spacingY = spacing;
         } else {
-            this._spacingX = options.spacing.x;
-            this._spacingY = options.spacing.y;
+            this._spacingX = spacing.x;
+            this._spacingY = spacing.y;
         }
 
         this._offsetX = options.offset?.[0] ?? 0;
@@ -336,6 +337,17 @@ export class GridSystem {
     addPlacement(position: Vector2, shape: Shape, style?: PathStyle): void {
         this._placements.push({ position, shape, style });
     }
+
+    /** Place a shape at each node in the system */
+    place(shapeCtx: ShapeContext, style?: PathStyle): this {
+        for (const node of this._nodes) {
+            const clone = shapeCtx.shape.clone();
+            clone.moveTo(new Vector2(node.x, node.y));
+            this._placements.push({ position: new Vector2(node.x, node.y), shape: clone, style });
+        }
+        return this;
+    }
+
 
     /** Get computed bounds */
     getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
