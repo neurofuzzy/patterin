@@ -4,6 +4,7 @@ import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
+import type { ISystem } from '../interfaces.ts';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 
@@ -46,7 +47,7 @@ interface Placement {
  * GridSystem - creates various grid structures.
  * Supports: square (default), hexagonal, triangular, brick.
  */
-export class GridSystem {
+export class GridSystem implements ISystem {
     private _nodes: GridNode[] = [];
     private _cells: GridCell[] = [];
     private _rows: number;

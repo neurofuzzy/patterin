@@ -4,6 +4,7 @@ import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
 import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext.ts';
+import type { ISystem } from '../interfaces.ts';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 
@@ -36,7 +37,7 @@ interface TileInfo {
  * Unlike GridSystem (regular infinite grids), TessellationSystem
  * handles patterns requiring algorithmic generation or randomization.
  */
-export class TessellationSystem {
+export class TessellationSystem implements ISystem {
     private _tiles: TileInfo[] = [];
     private _nodes: Vector2[] = [];
     private _placements: { position: Vector2; shape: Shape; style?: PathStyle }[] = [];

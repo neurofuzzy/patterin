@@ -10,24 +10,86 @@ export function generateDSLTypeDefinition(): string {
     // Basic types
     type Winding = 'CW' | 'CCW';
     type PathStyle = { stroke?: string; fill?: string; strokeWidth?: number; };
-    type GridOptions = { size?: number | [number, number]; count?: number | [number, number]; };
-    type TessellationOptions = { size: number; };
+    type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
+    type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
+    type TruchetVariant = 'quarter-circles' | 'diagonal' | 'triangles';
+
+    /** Grid system options */
+    interface GridOptions {
+        /** Grid type - square (default), hexagonal, triangular, or brick */
+        type?: GridType;
+        /** Simple: Grid count (rows x cols) - number or [rows, cols] */
+        count?: number | [number, number];
+        /** Simple: Cell size (spacing) - number or [x, y] */
+        size?: number | [number, number];
+        /** Detailed: Number of rows */
+        rows?: number;
+        /** Detailed: Number of columns */
+        cols?: number;
+        /** Detailed: Spacing - number or {x, y} */
+        spacing?: number | { x: number; y: number };
+        /** Grid offset as [x, y] */
+        offset?: [number, number];
+        /** Hexagonal orientation - pointy or flat */
+        orientation?: 'pointy' | 'flat';
+        /** Brick offset ratio (0-1, default 0.5) */
+        brickOffset?: number;
+    }
+
+    /** Tessellation system options */
+    interface TessellationOptions {
+        /** Simple: Tile size (default 40) */
+        size?: number;
+        /** Pattern type - truchet (default), trihexagonal, penrose, or custom */
+        pattern?: TessellationPattern;
+        /** Bounds - { width, height } */
+        bounds?: { width: number; height: number };
+        /** Random seed for reproducible patterns */
+        seed?: number;
+        /** Truchet: Tile size (if different from size) */
+        tileSize?: number;
+        /** Truchet: Variant - quarter-circles, diagonal, or triangles */
+        variant?: TruchetVariant;
+        /** Trihexagonal: Spacing between tiles */
+        spacing?: number;
+        /** Penrose: Subdivision iterations (default 4) */
+        iterations?: number;
+    }
+
+    /** Shape system options */
+    interface ShapeSystemOptions {
+        /** Include center point as a node */
+        includeCenter?: boolean;
+        /** Subdivide edges into n parts */
+        subdivide?: number;
+    }
+
+    /** Shared interface for drawable objects */
+    interface IDrawable {
+        /** Make object concrete (renderable) */
+        trace(): this;
+        /** Render to collector */
+        stamp(collector: SVGCollector, style?: PathStyle): void;
+    }
+
+    /** System interface - all coordinate systems implement this */
+    interface ISystem extends IDrawable {
+        /** Place a shape at each node */
+        place(shapeCtx: ShapeContext, style?: PathStyle): this;
+        /** Generate SVG output */
+        toSVG(options: { width: number; height: number; margin?: number }): string;
+    }
 
     `;
 
     // 1. Generate Interfaces/Classes
     for (const [name, info] of Object.entries(API_DATA)) {
-        if (name === 'shape') continue; // Skip the global object for now
+        if (name === 'shape' || name === 'system') continue; // Skip globals
 
-        const typeKeyword = info.type === 'class' ? 'interface' : 'interface'; // Use interface for everything for simplicity
+        const typeKeyword = info.type === 'class' ? 'interface' : 'interface';
         const extendsClause = info.extends ? `extends ${info.extends}` : '';
 
         dts += `    ${typeKeyword} ${name} ${extendsClause} {\n`;
-
-        // Static methods (if any)
-        if (info.static) {
-            // Note: In interfaces, static isn't really expressible this way but we can simulate exports later
-        }
 
         // Getters
         if (info.getters) {
@@ -80,7 +142,7 @@ export function generateDSLTypeDefinition(): string {
         /** Create a grid system */
         grid(options?: GridOptions): GridSystem;
         /** Create a tessellation system */
-        tessellation(options: TessellationOptions): TessellationSystem;
+        tessellation(options?: TessellationOptions): TessellationSystem;
         /** Create a system from a shape (vertices → nodes, segments → edges) */
         fromShape(source: ShapeContext | Shape, options?: ShapeSystemOptions): ShapeSystem;
     };
@@ -88,14 +150,6 @@ export function generateDSLTypeDefinition(): string {
     declare const points: PointsContext;
     declare const lines: LinesContext;
     declare const shapes: ShapesContext;
-    
-    // Shape system options
-    interface ShapeSystemOptions {
-        /** Include center point as a node */
-        includeCenter?: boolean;
-        /** Subdivide edges into n parts */
-        subdivide?: number;
-    }
     `;
 
     return dts;

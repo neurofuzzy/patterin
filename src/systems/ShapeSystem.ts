@@ -5,6 +5,7 @@ import { Shape, BoundingBox } from '../primitives/Shape.ts';
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext.ts';
 import { PointContext } from '../contexts/PointContext.ts';
+import type { ISystem } from '../interfaces.ts';
 
 export interface ShapeSystemOptions {
     /** Include center point as a node */
@@ -25,7 +26,7 @@ interface Placement {
  * Treats shape vertices as nodes and segments as edges.
  * Useful for creating radial patterns, star scaffolds, etc.
  */
-export class ShapeSystem {
+export class ShapeSystem implements ISystem {
     private _nodes: Vertex[] = [];
     private _edges: Segment[] = [];
     private _centerNode: Vertex | null = null;

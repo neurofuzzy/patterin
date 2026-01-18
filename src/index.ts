@@ -4,6 +4,9 @@ export { Vertex } from './primitives/Vertex.ts';
 export { Segment, type Winding } from './primitives/Segment.ts';
 export { Shape, type BoundingBox } from './primitives/Shape.ts';
 
+// Interfaces
+export type { IDrawable, ISystem } from './interfaces.ts';
+
 // Contexts
 export {
     ShapeContext,
