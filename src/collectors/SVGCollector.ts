@@ -80,17 +80,43 @@ export class SVGCollector {
         height?: number;
         margin?: number;
         background?: string;
+        autoScale?: boolean;
     } = {}): string {
-        const { margin = 10, background } = options;
-        const bounds = this.getBounds(margin);
+        const { margin = 10, background, autoScale = true } = options;
+        let width = options.width ?? 100;
+        let height = options.height ?? 100;
 
-        const width = options.width ?? bounds.width;
-        const height = options.height ?? bounds.height;
+        let viewBox: string;
+        let bounds: { x: number, y: number, width: number, height: number };
+
+        if (autoScale) {
+            bounds = this.getBounds(margin);
+
+            // If scale to fit, we use the bounds as viewBox
+            // But we still render at the requested width/height size
+            viewBox = `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`;
+
+            // If we didn't specify dimensions, use the bounds
+            if (!options.width) width = bounds.width;
+            if (!options.height) height = bounds.height;
+        } else {
+            // Native 1:1 coordinate system
+            // We do NOT set viewBox, so it uses the viewport (0 0 width height)
+            // But we add overflow: visible to allow drawing outside
+            viewBox = '';
+            bounds = { x: 0, y: 0, width, height }; // Used for background rect
+        }
 
         const lines: string[] = [];
-        lines.push(
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" width="${width}" height="${height}">`
-        );
+        if (viewBox) {
+            lines.push(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}">`
+            );
+        } else {
+            lines.push(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="overflow: visible;">`
+            );
+        }
 
         if (background) {
             lines.push(

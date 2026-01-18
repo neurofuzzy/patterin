@@ -183,9 +183,136 @@ export class Preview {
     }
 
     resetView(): void {
+        this.fitToContent();
+    }
+
+    /**
+     * Fit view to content or center 0,0 if empty
+     */
+    fitToContent(): void {
+        const svg = this.svgContainer.querySelector('svg');
+        if (!svg) {
+            this.resetToOrigin();
+            return;
+        }
+
+        try {
+            // Get content bounds using SVG API
+            const bbox = (svg as SVGGraphicsElement).getBBox();
+
+            if (bbox.width === 0 || bbox.height === 0) {
+                // Empty content - reset to 100% at origin
+                this.resetToOrigin();
+                return;
+            }
+
+            // Get container dimensions
+            const containerRect = this.container.getBoundingClientRect();
+            const margin = 20;
+            const availWidth = containerRect.width - margin * 2;
+            const availHeight = containerRect.height - margin * 2;
+
+            // Compute scale to fit
+            const scaleX = availWidth / bbox.width;
+            const scaleY = availHeight / bbox.height;
+            const newZoom = Math.min(scaleX, scaleY, 1); // Don't zoom in past 100% by default? Actually auto-fit might want max zoom.
+            // But let's cap at something reasonable if content is tiny. Maybe allow up to 2x?
+            // "zoom to extents" usually implies fitting exactly. Let's start with raw fit, clamped to [0.1, 10].
+            const constrainedZoom = Math.max(0.1, Math.min(10, Math.min(scaleX, scaleY) * 0.9)); // 0.9 for padding factor within margin
+
+            // Compute center of bounding box in local coords
+            const contentCenterX = bbox.x + bbox.width / 2;
+            const contentCenterY = bbox.y + bbox.height / 2;
+
+            // We want (contentCenterX, contentCenterY) to be at (0,0) offset from center of canvas?
+            // No, we want it at the visual center.
+            // Canvas (svgContainer) is transformed by translate(panX, panY).
+            // (0,0) of canvas maps to (panX, panY) relative to center of view? 
+            // Wait, CSS says: justify-content: center.
+            // Let's check updateTransform logic:
+            // translate(panX, panY) scale(zoom)
+            // Initial panX=0, panY=0 places (0,0) of SVG at the center of the viewport (because of flexbox centering of .preview-canvas?)
+            // Let's check layout.css: 
+            // .preview-canvas { display: flex; align-items: center; justify-content: center; }
+            // So if SVG is 100x100, and no transform, it's centered.
+            // SVG origin (top-left of svg element) is centered in the viewport minus half width/height?
+            // This is tricky because we changed SVG to autoScale=false and width/height=SVG content size?
+            // In native mode: SVG has width/height set to what?
+            // In `main.ts`: width: 400, height: 400.
+            // So the 400x400 box is centered. The (0,0) is at top-left of that box.
+
+            // WE NEED TO IGNORE THE SVG "WIDTH/HEIGHT" ATTRIBUTES AND FOCUS ON CONTENT.
+            // If we pan such that content visual center matches viewport center.
+
+            // Viewport Center (0,0 in flexbox) coincides with SVG Element Center.
+            // SVG Element (400x400) center is at (200, 200) local coords.
+            // So default (pan=0) puts local (200,200) at viewport center.
+
+            // If we want Content Center (cx, cy) to be at Viewport Center:
+            // We need to shift the SVG such that (cx, cy) is at (SVG Width/2, SVG Height/2).
+            // Shift = (SVG Width/2 - cx, SVG Height/2 - cy).
+            // Multiplied by zoom? The pan applies before? No, usually translate is outer? 
+            // transform = translate(pan) scale(zoom).
+            // So we shift the whole scaled element.
+
+            // Better strategy:
+            // Calculate panX/panY such that the transformed point (cx, cy) ends up at viewport center.
+            // Current center of view = (0,0) relative to flexbox center.
+            // Transformed (cx, cy) = (cx * zoom + panX, cy * zoom + panY) ? 
+            // No, origin of SVG is top-left of SVG element. 
+            // Center of SVG element is at (0,0) of flexbox? Or is top-left at (0,0)?
+            // CSS: justify-content: center.
+            // So SVG center is at viewport center.
+            // SVG Left = Viewport Center - SVGWidth/2.
+            // SVG Top = Viewport Center - SVGHeight/2.
+
+            // We want (cx, cy) * zoom + offset to be at Viewport Center.
+            // SVG Origin (0,0) is at (-SVGWidth/2, -SVGHeight/2) relative to Viewport Center (before transform?).
+            // With transform:
+            // Effective Center = (SVGWidth/2, SVGHeight/2).
+            // Local Point (cx, cy).
+            // Distance from center = (cx - SVGWidth/2, cy - SVGHeight/2).
+            // We need to counteract this distance with pan.
+            // panX = -(cx - SVGWidth/2) * zoom
+            // panY = -(cy - SVGHeight/2) * zoom
+
+            // Let's verify SVG dimensions. They are fixed at 400x400 in main.ts.
+            const svgWidth = parseFloat(svg.getAttribute('width') || '0');
+            const svgHeight = parseFloat(svg.getAttribute('height') || '0');
+
+            this.zoom = constrainedZoom;
+            this.panX = -(contentCenterX - svgWidth / 2) * this.zoom;
+            this.panY = -(contentCenterY - svgHeight / 2) * this.zoom;
+
+            this.updateTransform();
+            this.updateStatus();
+
+        } catch (e) {
+            console.error('Fit to content failed:', e);
+            this.resetToOrigin();
+        }
+    }
+
+    private resetToOrigin(): void {
+        // Center (0,0) in the viewport
+        // If SVG is 400x400, center is (200,200).
+        // To put (0,0) at center, we shift by (200, 200) * zoom?
+        // Wait, if (0,0) is top-left.
+        // We want (0,0) to be at Viewport Center.
+        // SVG Center (200,200) is at Viewport Center.
+        // We need (0,0) -> (200,200) distance.
+        // Shift = (200, 200).
+        // panX = (SVGWidth/2 - 0) * zoom = 200 * 1 = 200.
+        // Let's try.
+
+        const svg = this.svgContainer.querySelector('svg');
+        const svgWidth = parseFloat(svg?.getAttribute('width') || '400');
+        const svgHeight = parseFloat(svg?.getAttribute('height') || '400');
+
         this.zoom = 1;
-        this.panX = 0;
-        this.panY = 0;
+        this.panX = (svgWidth / 2);
+        this.panY = (svgHeight / 2);
+
         this.updateTransform();
         this.updateStatus();
     }

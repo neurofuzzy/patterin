@@ -10,6 +10,7 @@ import { createSettingsModal } from '../modals/SettingsModal.ts';
 export interface MenuOptions {
     button: HTMLElement;
     onExampleLoad?: (code: string) => void;
+    onExport?: () => void;
 }
 
 interface MenuItem {
@@ -23,10 +24,12 @@ export class Menu {
     private isOpen = false;
     private button: HTMLElement;
     private onExampleLoad?: (code: string) => void;
+    private onExport?: () => void;
 
     constructor(options: MenuOptions) {
         this.button = options.button;
         this.onExampleLoad = options.onExampleLoad;
+        this.onExport = options.onExport;
 
         this.button.addEventListener('click', () => this.toggle());
 
@@ -44,7 +47,10 @@ export class Menu {
             {
                 label: 'Export SVG...',
                 icon: '↓',
-                action: () => this.showExportModal(),
+                action: () => {
+                    if (this.onExport) this.onExport();
+                    else this.showExportModal(); // Fallback
+                },
             },
             {
                 label: 'Theme...',

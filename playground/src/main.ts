@@ -24,14 +24,19 @@ const preview = new Preview({
     container: previewPane,
 });
 
+
+let lastCollector: any;
+
 // Create sandbox context with all patterin exports + render helper
 const sandboxContext = {
     ...patterin,
     render: (collector: patterin.SVGCollector) => {
+        lastCollector = collector;
         const svgString = collector.toString({
             width: 400,
             height: 400,
-            margin: 20
+            margin: 20,
+            autoScale: false // Use native coordinates for preview
         });
         preview.setSVG(svgString);
     },
@@ -85,6 +90,14 @@ new Menu({
     onExampleLoad: (code: string) => {
         editor.setCode(code);
         runCode(code);
+        preview.resetView(); // Auto-fit when loading example
+    },
+    onExport: () => {
+        // Reuse export logic
+        Modal.show({
+            title: 'Export SVG',
+            content: createExportModal(lastCollector),
+        });
     },
 });
 
@@ -93,7 +106,7 @@ initKeyboardShortcuts({
     onExport: () => {
         Modal.show({
             title: 'Export SVG',
-            content: createExportModal(),
+            content: createExportModal(lastCollector),
         });
     },
     onToggleGrid: () => {

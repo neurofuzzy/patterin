@@ -16,14 +16,15 @@
   --text-secondary: #8b949e;
   --accent: #58a6ff;
   --accent-secondary: #f778ba;
-  
+
   /* Editor */
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-size: 14px;
   --line-height: 1.7;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   font-family: system-ui, -apple-system, sans-serif;
   background: var(--bg-primary);
@@ -97,6 +98,7 @@ html, body {
 .preview-canvas svg {
   max-width: none;
   max-height: none;
+  overflow: visible;
 }
 
 /* Grid Overlay */
@@ -105,7 +107,7 @@ html, body {
   inset: 0;
   pointer-events: none;
   opacity: 0.3;
-  background-image: 
+  background-image:
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 20px 20px;
@@ -235,14 +237,14 @@ html, body {
   #app {
     flex-direction: column;
   }
-  
+
   .editor-pane,
   .preview-pane {
     width: 100%;
     min-width: unset;
     height: 50%;
   }
-  
+
   .editor-pane {
     border-right: none;
     border-bottom: 1px solid var(--border);
