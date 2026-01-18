@@ -227,6 +227,17 @@ export class Preview {
         }
     }
 
+    /**
+     * Show or hide loading overlay during code execution
+     */
+    setLoading(loading: boolean): void {
+        if (loading) {
+            this.canvas.classList.add('loading');
+        } else {
+            this.canvas.classList.remove('loading');
+        }
+    }
+
     resetView(): void {
         this.fitToContent();
     }

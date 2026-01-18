@@ -101,14 +101,45 @@ body {
   overflow: visible;
 }
 
+/* Loading State */
+.preview-canvas.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 17, 23, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-canvas.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Grid Overlay */
 .grid-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0.3;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
+  background-image: linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 20px 20px;
 }
