@@ -75,7 +75,7 @@ describe('LinesContext.expandToRect()', () => {
 
 describe('ShapesContext.spreadPolar()', () => {
     it('should distribute shapes around circle', () => {
-        const circles = shape.circle().radius(5).clone(8).spreadPolar(50);
+        const circles = shape.circle().radius(5).clone(7).spreadPolar(50);  // 8 shapes total
         expect(circles.length).toBe(8);
     });
 
@@ -87,7 +87,7 @@ describe('ShapesContext.spreadPolar()', () => {
     });
 
     it('should support partial arc', () => {
-        const circles = shape.circle().radius(5).clone(4).spreadPolar(50, 180);
+        const circles = shape.circle().radius(5).clone(3).spreadPolar(50, 180);  // 4 shapes
         const first = circles.shapes[0].centroid();
         const last = circles.shapes[3].centroid();
         expect(first.x).toBeCloseTo(50, 1); // 0 degrees
@@ -98,10 +98,11 @@ describe('ShapesContext.spreadPolar()', () => {
         const collector = new SVGCollector();
 
         for (let ring = 1; ring <= 3; ring++) {
+            // clone(n) returns n+1 shapes, so we use ring*6-1 to get ring*6 shapes
             const circles = shape.circle().radius(6)
-                .clone(ring * 6)
+                .clone(ring * 6 - 1)   // ring*6 shapes total
                 .spreadPolar(ring * 25);
-            circles.stamp(collector, 100, 100, { stroke: '#000', strokeWidth: 1, fill: '#ffc' });
+            circles.stamp(collector);
         }
 
         const svg = collector.toString({ width: 400, height: 400 });

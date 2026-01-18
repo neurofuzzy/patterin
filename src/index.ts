@@ -32,6 +32,7 @@ export { GridSystem, type GridOptions, type GridType } from './systems/index.ts'
 export { TessellationSystem, type TessellationOptions, type TessellationPattern } from './systems/index.ts';
 export { ShapeSystem, type ShapeSystemOptions } from './systems/index.ts';
 export { LSystem, type LSystemOptions } from './systems/index.ts';
+export { CloneSystem, type CloneOptions } from './systems/index.ts';
 
 // System Factory
 export { system } from './systems/index.ts';

@@ -4,6 +4,7 @@ import { Vertex } from '../primitives/Vertex.ts';
 import { Segment, Winding } from '../primitives/Segment.ts';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { PointContext } from './PointContext.ts';
+import { CloneSystem } from '../systems/CloneSystem.ts';
 
 /**
  * Base context for all shape operations.
@@ -58,13 +59,19 @@ export class ShapeContext {
         return new LinesContext(this._shape, this._shape.segments);
     }
 
-    /** Clone this shape n times */
-    clone(n: number = 1): ShapesContext {
-        const shapes: Shape[] = [];
-        for (let i = 0; i < n; i++) {
-            shapes.push(this._shape.clone());
-        }
-        return new ShapesContext(shapes);
+    /**
+     * Clone this shape n times with optional offset between each.
+     * Returns a CloneSystem containing original + n clones.
+     * Marks the original shape as ephemeral (construction geometry).
+     * @param n - Number of clones to create (default 1)
+     * @param x - Horizontal offset between each clone (default 0)
+     * @param y - Vertical offset between each clone (default 0)
+     */
+    clone(n: number = 1, x: number = 0, y: number = 0): CloneSystem {
+        // Mark original as ephemeral - it will only render through the CloneSystem
+        this._shape.ephemeral = true;
+
+        return new CloneSystem(this._shape, { count: n, offsetX: x, offsetY: y });
     }
 
     /** Scale shape by factor */
@@ -703,12 +710,24 @@ export class ShapesContext {
         return this;
     }
 
-    /** Clone each shape n times */
-    clone(n: number): ShapesContext {
-        const newShapes: Shape[] = [];
-        for (const shape of this._shapes) {
-            for (let i = 0; i < n; i++) {
-                newShapes.push(shape.clone());
+    /**
+     * Clone the entire selection n times with optional offset.
+     * Each copy of the ENTIRE selection is offset by (x*i, y*i).
+     * Returns originals + (n * selection.length) new shapes.
+     * @param n - Number of copies to create
+     * @param x - Horizontal offset between each copy (default 0)
+     * @param y - Vertical offset between each copy (default 0)
+     */
+    clone(n: number, x: number = 0, y: number = 0): ShapesContext {
+        const offset = new Vector2(x, y);
+        const newShapes: Shape[] = [...this._shapes]; // Include originals
+
+        // Create n copies of the entire selection
+        for (let copyNum = 1; copyNum <= n; copyNum++) {
+            for (const shape of this._shapes) {
+                const clone = shape.clone();
+                clone.translate(offset.multiply(copyNum));
+                newShapes.push(clone);
             }
         }
         return new ShapesContext(newShapes);

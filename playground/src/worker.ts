@@ -107,6 +107,11 @@ function createAutoCollectContext() {
                             shapeRegistry.add(result);
                             return wrapShapesContext(result);
                         }
+                        // Track CloneSystem from clone() calls
+                        if (result instanceof patterin.CloneSystem) {
+                            createdSystems.push(result);
+                            return wrapCloneSystem(result);
+                        }
                         return result;
                     };
                 }
@@ -119,7 +124,30 @@ function createAutoCollectContext() {
         }) as T;
     }
 
-    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem)[] = [];
+    /**
+     * Wrap CloneSystem to track nested clone() calls
+     */
+    function wrapCloneSystem(sys: patterin.CloneSystem): patterin.CloneSystem {
+        return new Proxy(sys, {
+            get(target, prop, receiver) {
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function') {
+                    return function (this: patterin.CloneSystem, ...args: unknown[]) {
+                        const result = value.apply(target, args);
+                        // Track nested CloneSystem from clone() calls
+                        if (result instanceof patterin.CloneSystem) {
+                            createdSystems.push(result);
+                            return wrapCloneSystem(result);
+                        }
+                        return result;
+                    };
+                }
+                return value;
+            }
+        });
+    }
+
+    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem | patterin.LSystem | patterin.CloneSystem)[] = [];
 
     // Wrap shape factory to track created shapes
     const autoShape = {
