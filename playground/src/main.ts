@@ -23,8 +23,34 @@ const editorContainer = document.querySelector('.editor-container') as HTMLDivEl
 const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
 const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
+const autoRenderCheckbox = document.getElementById('auto-render-checkbox') as HTMLInputElement;
 
 let lastCollector: patterin.SVGCollector | null = null;
+
+// Auto-render setting
+const AUTO_RENDER_KEY = 'patterin-auto-render';
+let autoRenderEnabled = true;
+
+function loadAutoRenderSetting(): boolean {
+    try {
+        const stored = localStorage.getItem(AUTO_RENDER_KEY);
+        return stored === null ? true : stored === 'true';
+    } catch {
+        return true;
+    }
+}
+
+function saveAutoRenderSetting(enabled: boolean): void {
+    try {
+        localStorage.setItem(AUTO_RENDER_KEY, String(enabled));
+    } catch (e) {
+        console.warn('Failed to save auto-render setting:', e);
+    }
+}
+
+// Initialize auto-render from localStorage
+autoRenderEnabled = loadAutoRenderSetting();
+autoRenderCheckbox.checked = autoRenderEnabled;
 
 // Worker management
 const WORKER_TIMEOUT_MS = 5000;
@@ -104,20 +130,36 @@ function runCode(code: string, options?: { resetView?: boolean }): void {
         const response = e.data;
 
         if (response.type === 'success') {
-            if (response.svg) {
-                preview.setSVG(response.svg);
-                // Update lastCollector for export (create a minimal one from SVG)
+            // Always update SVG (even if empty, to clear previous output)
+            preview.setSVG(response.svg);
+            
+            if (response.svg && response.collectorData) {
+                // Reconstruct collector from worker data
                 lastCollector = new patterin.SVGCollector();
-                (lastCollector as any)._svgCache = response.svg;
+                
+                // Restore internal state
+                (lastCollector as any).paths = response.collectorData.paths;
+                (lastCollector as any).minX = response.collectorData.bounds.minX;
+                (lastCollector as any).minY = response.collectorData.bounds.minY;
+                (lastCollector as any).maxX = response.collectorData.bounds.maxX;
+                (lastCollector as any).maxY = response.collectorData.bounds.maxY;
 
                 // Reset view if requested (e.g. on example load)
                 if (options?.resetView) {
                     preview.resetView();
                 }
+            } else {
+                // No content, clear lastCollector
+                lastCollector = null;
             }
+            
+            // Always update stats (will clear if null)
             if (response.stats) {
                 preview.setStats(response.stats.shapes, response.stats.segments);
+            } else {
+                preview.setStats(0, 0);
             }
+            
             hideError();
             editor.clearDiagnostics();
             editor.saveCode(code);
@@ -145,7 +187,8 @@ function runCode(code: string, options?: { resetView?: boolean }): void {
     // Send code to worker
     worker.postMessage({
         type: 'execute',
-        code
+        code,
+        autoRender: autoRenderEnabled
     } as WorkerMessage);
 }
 
@@ -185,6 +228,14 @@ new Menu({
     },
 });
 
+// Handle auto-render checkbox changes
+autoRenderCheckbox.addEventListener('change', () => {
+    autoRenderEnabled = autoRenderCheckbox.checked;
+    saveAutoRenderSetting(autoRenderEnabled);
+    // Re-run code with new setting
+    runCode(editor.getCode());
+});
+
 // Initialize Keyboard Shortcuts
 initKeyboardShortcuts({
     onExport: () => {
@@ -209,4 +260,5 @@ runCode(editor.getCode());
 console.log('Patterin Playground loaded');
 console.log('Available:', Object.keys(patterin));
 console.log('Shortcuts: ⌘E Export, ⌘G Grid, ⌘0 Reset');
-console.log('Auto-render: Just type shape.circle() and it appears!');
+console.log('Auto-render enabled: Just type shape.circle() and it appears!');
+console.log('Manual mode: Uncheck auto-render and use svg.stamp() + render()');

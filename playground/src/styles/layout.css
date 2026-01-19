@@ -48,6 +48,39 @@ body {
   overflow: hidden;
 }
 
+/* Editor Header */
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  min-height: 44px;
+}
+
+.auto-render-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+
+.auto-render-toggle:hover {
+  color: var(--text-primary);
+}
+
+.auto-render-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .editor-container {
   flex: 1;
   overflow: hidden;
@@ -266,11 +299,8 @@ body {
   display: none;
 }
 
-/* Hamburger Menu (placeholder) */
+/* Hamburger Menu */
 .menu-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -278,11 +308,11 @@ body {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  z-index: 100;
+  transition: all 0.15s;
 }
 
 .menu-btn:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   color: var(--text-primary);
 }
 

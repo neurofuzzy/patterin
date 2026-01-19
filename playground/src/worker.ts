@@ -9,12 +9,17 @@ import * as patterin from 'patterin';
 export type WorkerMessage = {
     type: 'execute';
     code: string;
+    autoRender?: boolean;
 };
 
 export type WorkerResponse = {
     type: 'success';
     svg: string;
     stats: { shapes: number; segments: number } | null;
+    collectorData?: {
+        paths: Array<{ d: string; style: any; group?: string }>;
+        bounds: { minX: number; minY: number; maxX: number; maxY: number };
+    };
 } | {
     type: 'error';
     error: string;
@@ -347,7 +352,7 @@ function parseError(err: unknown): { message: string; line?: number; column?: nu
 
 // Handle incoming messages
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
-    const { type, code } = e.data;
+    const { type, code, autoRender = true } = e.data;
 
     if (type === 'execute') {
         try {
@@ -391,8 +396,8 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             const sandbox = new Function(...paramNames, code);
             sandbox(...paramValues);
 
-            // Auto-render: if shapes or systems were created and render() wasn't called explicitly
-            if ((shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
+            // Auto-render: if autoRender is enabled, shapes or systems were created, and render() wasn't called explicitly
+            if (autoRender && (shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
                 // Stamp all created systems to the collector (skip consumed systems)
                 for (const sys of createdSystems) {
                     if (!consumedSystems.has(sys) && typeof sys.stamp === 'function') {
@@ -420,13 +425,49 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 if (stats) {
                     resultStats = { shapes: stats.shapes, segments: stats.segments };
                 }
+            } else if (!renderCalled) {
+                // render() was not called explicitly
+                // Check if user manually stamped anything to the collector
+                const collectorLength = (collector as any).length || 0;
+                
+                if (collectorLength > 0) {
+                    // User manually stamped content - render it
+                    resultSVG = (collector as any).toString({
+                        width: 400,
+                        height: 400,
+                        margin: 20,
+                        autoScale: false
+                    });
+                    const stats = (collector as any).stats;
+                    if (stats) {
+                        resultStats = { shapes: stats.shapes, segments: stats.segments };
+                    }
+                } else {
+                    // Collector is empty and auto-render is OFF - clear preview
+                    resultSVG = '';
+                    resultStats = null;
+                }
+            }
+
+            // Extract collector data for export
+            let collectorData = undefined;
+            if (resultSVG && collector) {
+                const paths = (collector as any).paths || [];
+                const bounds = {
+                    minX: (collector as any).minX ?? 0,
+                    minY: (collector as any).minY ?? 0,
+                    maxX: (collector as any).maxX ?? 0,
+                    maxY: (collector as any).maxY ?? 0,
+                };
+                collectorData = { paths, bounds };
             }
 
             // Send back result
             self.postMessage({
                 type: 'success',
                 svg: resultSVG,
-                stats: resultStats
+                stats: resultStats,
+                collectorData
             } as WorkerResponse);
         } catch (err) {
             console.error('Worker execution error:', err);
