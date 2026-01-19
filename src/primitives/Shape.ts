@@ -219,6 +219,7 @@ export class Shape {
 
         const shape = new Shape(segments, this.winding);
         shape.ephemeral = this.ephemeral;
+        shape.open = this.open;
         shape.connectSegments();
         return shape;
     }
@@ -265,6 +266,74 @@ export class Shape {
     }
 
     /**
+     * Test if a point is inside the shape using ray casting algorithm.
+     * Uses y-axis jitter to avoid exact vertex intersection issues.
+     */
+    containsPoint(point: Vector2, epsilon = 1e-10): boolean {
+        const verts = this.vertices;
+        if (verts.length < 3) return false;
+
+        // Try with the original point first
+        const result = this.containsPointInternal(point, epsilon);
+
+        // If the result might be affected by edge cases, jitter and retry
+        // This handles cases where ray passes exactly through vertices
+        if (this.isNearVertex(point, epsilon * 100)) {
+            // Jitter the point slightly and check multiple times
+            const jitters = [
+                new Vector2(point.x, point.y + epsilon * 10),
+                new Vector2(point.x, point.y - epsilon * 10),
+                new Vector2(point.x + epsilon * 10, point.y),
+            ];
+
+            let insideCount = result ? 1 : 0;
+            for (const jittered of jitters) {
+                if (this.containsPointInternal(jittered, epsilon)) {
+                    insideCount++;
+                }
+            }
+            // Majority vote
+            return insideCount >= 2;
+        }
+
+        return result;
+    }
+
+    /** Check if point is near any vertex */
+    private isNearVertex(point: Vector2, threshold: number): boolean {
+        for (const v of this.vertices) {
+            if (point.distanceTo(v.position) < threshold) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Internal ray casting implementation */
+    private containsPointInternal(point: Vector2, epsilon: number): boolean {
+        const verts = this.vertices;
+        let inside = false;
+
+        for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+            const vi = verts[i].position;
+            const vj = verts[j].position;
+
+            // Check if ray from point going right intersects this edge
+            const intersects = ((vi.y > point.y) !== (vj.y > point.y)) &&
+                (point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y + epsilon) + vi.x);
+
+            if (intersects) {
+                inside = !inside;
+            }
+        }
+
+        return inside;
+    }
+
+    /** Flag for open paths (no closing Z) */
+    open = false;
+
+    /**
      * Convert shape to SVG path data string.
      */
     toPathData(): string {
@@ -277,7 +346,10 @@ export class Shape {
         for (let i = 1; i < verts.length; i++) {
             parts.push(`L ${verts[i].x} ${verts[i].y}`);
         }
-        parts.push('Z');
+
+        if (!this.open) {
+            parts.push('Z');
+        }
 
         return parts.join(' ');
     }

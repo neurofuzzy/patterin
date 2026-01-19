@@ -1,15 +1,20 @@
+import { renderSystemToSVG } from './SystemUtils.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext.ts';
+import type { ISystem } from '../interfaces.ts';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 
 export interface TessellationOptions {
-    pattern: TessellationPattern;
-    bounds: { width: number; height: number };
+    // Simple API
+    size?: number;  // Tile size (default 40)
+    // Detailed API (takes precedence)
+    pattern?: TessellationPattern;
+    bounds?: { width: number; height: number };
     seed?: number;
     // Truchet-specific
     tileSize?: number;
@@ -33,29 +38,35 @@ interface TileInfo {
  * Unlike GridSystem (regular infinite grids), TessellationSystem
  * handles patterns requiring algorithmic generation or randomization.
  */
-export class TessellationSystem {
+export class TessellationSystem implements ISystem {
     private _tiles: TileInfo[] = [];
     private _nodes: Vector2[] = [];
+    private _placements: { position: Vector2; shape: Shape; style?: PathStyle }[] = [];
     private _traced = false;
     private _bounds: { width: number; height: number };
     private _pattern: TessellationPattern;
 
-    private constructor(options: TessellationOptions) {
-        this._bounds = options.bounds;
-        this._pattern = options.pattern;
+    private constructor(options: TessellationOptions = {}) {
+        // Support simple size API with defaults
+        const pattern = options.pattern ?? 'truchet';
+        const bounds = options.bounds ?? { width: 400, height: 400 };
+        const tileSize = options.tileSize ?? options.size ?? 40;
 
-        switch (options.pattern) {
+        this._bounds = bounds;
+        this._pattern = pattern;
+
+        switch (pattern) {
             case 'truchet':
-                this.buildTruchet(options);
+                this.buildTruchet({ ...options, pattern, bounds, tileSize });
                 break;
             case 'trihexagonal':
-                this.buildTrihexagonal(options);
+                this.buildTrihexagonal({ ...options, pattern, bounds });
                 break;
             case 'penrose':
-                this.buildPenrose(options);
+                this.buildPenrose({ ...options, pattern, bounds });
                 break;
             case 'custom':
-                this.buildCustom(options);
+                this.buildCustom({ ...options, pattern, bounds });
                 break;
         }
     }
@@ -407,8 +418,75 @@ export class TessellationSystem {
         return this;
     }
 
+    /** Place a shape at each node in the system */
+    place(shapeCtx: ShapeContext, style?: PathStyle): this {
+        for (const node of this._nodes) {
+            const clone = shapeCtx.shape.clone();
+            clone.ephemeral = false;  // Clones are concrete
+            clone.moveTo(node);
+            this._placements.push({ position: node, shape: clone, style });
+        }
+
+        // Mark source shape as ephemeral AFTER cloning (construction geometry)
+        shapeCtx.shape.ephemeral = true;
+
+        return this;
+    }
+
+    /** Clip system to mask shape boundary */
+    mask(maskShape: ShapeContext): this {
+        // Mark mask as ephemeral (construction geometry)
+        maskShape.shape.ephemeral = true;
+
+        const shape = maskShape.shape;
+
+        // Filter tiles to those with centroids inside the mask
+        this._tiles = this._tiles.filter(tile =>
+            shape.containsPoint(tile.shape.centroid())
+        );
+
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(node)
+        );
+
+        // Filter placements to those inside the mask
+        this._placements = this._placements.filter(p =>
+            shape.containsPoint(p.position)
+        );
+
+        return this;
+    }
+
+
+    /** Stamp system to collector (for auto-rendering) */
+    stamp(collector: SVGCollector, style?: PathStyle): void {
+        const tileStyle = style ?? DEFAULT_STYLES.connection;
+        const placementStyle = style ?? DEFAULT_STYLES.placement;
+
+        // Add tiles in their own group
+        const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
+        if (visibleTiles.length > 0) {
+            collector.beginGroup('tiles');
+            for (const tile of visibleTiles) {
+                collector.addShape(tile.shape, tileStyle);
+            }
+            collector.endGroup();
+        }
+
+        // Add placements in their own group
+        if (this._placements.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of this._placements) {
+                collector.addShape(p.shape, p.style ?? placementStyle);
+            }
+            collector.endGroup();
+        }
+    }
+
     // ==================== Export ====================
 
+    /** Generate SVG output */
     /** Generate SVG output */
     toSVG(options: {
         width: number;
@@ -416,46 +494,27 @@ export class TessellationSystem {
         margin?: number;
     }): string {
         const { width, height, margin = 10 } = options;
-        const collector = new SVGCollector();
 
-        const renderables = this._tiles.filter(t => !t.shape.ephemeral);
+        const tileItems = this._tiles
+            .filter(t => !t.shape.ephemeral)
+            .map(t => ({ shape: t.shape }));
 
-        if (renderables.length === 0) {
-            return collector.toString({ width, height });
-        }
+        const placementItems = this._placements.map(p => ({
+            shape: p.shape,
+            style: p.style
+        }));
 
-        // Compute bounds
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const tile of renderables) {
-            const bbox = tile.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        const contentWidth = maxX - minX || 1;
-        const contentHeight = maxY - minY || 1;
-
-        // Scale to fit
-        const availW = width - margin * 2;
-        const availH = height - margin * 2;
-        const scale = Math.min(availW / contentWidth, availH / contentHeight);
-
-        // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - minY * scale;
-
-        // Render
-        for (const tile of renderables) {
-            const clone = tile.shape.clone();
-            clone.scale(scale);
-            clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, { stroke: '#000', strokeWidth: 1 });
-        }
-
-        return collector.toString({ width, height });
+        return renderSystemToSVG(width, height, margin, [
+            {
+                name: 'tiles',
+                items: tileItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            },
+            {
+                name: 'placements',
+                items: placementItems,
+                defaultStyle: DEFAULT_STYLES.placement
+            }
+        ]);
     }
 }

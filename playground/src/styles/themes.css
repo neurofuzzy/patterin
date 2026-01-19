@@ -1,0 +1,133 @@
+/* Theme Definitions - CSS Custom Properties */
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* GITHUB DARK (Default) */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="github-dark"] {
+    /* Background */
+    --bg-primary: #0d1117;
+    --bg-secondary: #010409;
+    --bg-tertiary: #161b22;
+
+    /* Borders & Muted */
+    --border: #30363d;
+    --border-subtle: #21262d;
+
+    /* Text */
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+
+    /* Accent */
+    --accent: #58a6ff;
+    --accent-secondary: #f778ba;
+    --accent-muted: #1f6feb;
+
+    /* Syntax Highlighting */
+    --syn-keyword: #ff7b72;
+    --syn-method: #d2a8ff;
+    --syn-number: #79c0ff;
+    --syn-string: #a5d6ff;
+    --syn-comment: #8b949e;
+    --syn-operator: #ff7b72;
+
+    /* SVG Rendering */
+    --svg-stroke: #58a6ff;
+    --svg-ephemeral: #30363d;
+    --svg-grid: #161b22;
+    --svg-nodes: #d2a8ff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* NORD */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="nord"] {
+    /* Background - Polar Night */
+    --bg-primary: #2e3440;
+    --bg-secondary: #242933;
+    --bg-tertiary: #3b4252;
+
+    /* Borders */
+    --border: #434c5e;
+    --border-subtle: #3b4252;
+
+    /* Text - Snow Storm */
+    --text-primary: #eceff4;
+    --text-secondary: #d8dee9;
+    --text-muted: #616e88;
+
+    /* Accent - Frost */
+    --accent: #88c0d0;
+    --accent-secondary: #bf616a;
+    --accent-muted: #5e81ac;
+
+    /* Syntax Highlighting */
+    --syn-keyword: #81a1c1;
+    --syn-method: #88c0d0;
+    --syn-number: #b48ead;
+    --syn-string: #a3be8c;
+    --syn-comment: #616e88;
+    --syn-operator: #81a1c1;
+
+    /* SVG Rendering */
+    --svg-stroke: #88c0d0;
+    --svg-ephemeral: #3b4252;
+    --svg-grid: #2e3440;
+    --svg-nodes: #81a1c1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* TOKYO NIGHT STORM */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="tokyo-night"] {
+    /* Background */
+    --bg-primary: #24283b;
+    --bg-secondary: #1a1b26;
+    --bg-tertiary: #1f2335;
+
+    /* Borders */
+    --border: #414868;
+    --border-subtle: #292e42;
+
+    /* Text */
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --text-muted: #565f89;
+
+    /* Accent */
+    --accent: #7dcfff;
+    --accent-secondary: #f7768e;
+    --accent-muted: #364a82;
+
+    /* Syntax Highlighting */
+    --syn-keyword: #bb9af7;
+    --syn-method: #7dcfff;
+    --syn-number: #ff9e64;
+    --syn-string: #9ece6a;
+    --syn-comment: #565f89;
+    --syn-operator: #89ddff;
+
+    /* SVG Rendering */
+    --svg-stroke: #7dcfff;
+    --svg-ephemeral: #414868;
+    --svg-grid: #1f2335;
+    --svg-nodes: #bb9af7;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* THEME TRANSITIONS */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+html {
+    color-scheme: dark;
+}
+
+/* Smooth transitions when switching themes */
+body,
+.editor-pane,
+.preview-pane,
+.modal-overlay,
+.modal-container,
+.menu-dropdown {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}

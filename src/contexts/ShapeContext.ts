@@ -2,7 +2,7 @@ import { Shape, BoundingBox } from '../primitives/Shape.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment, Winding } from '../primitives/Segment.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { PointContext } from './PointContext.ts';
 
 /**
@@ -10,6 +10,12 @@ import { PointContext } from './PointContext.ts';
  * Wraps a Shape and provides fluent API for transformations.
  */
 export class ShapeContext {
+    /**
+     * Global collector for auto-stamping (used by playground).
+     * When set, shapes created via specialized contexts will auto-register.
+     */
+    static globalCollector: SVGCollector | null = null;
+
     constructor(protected _shape: Shape) { }
 
     /** Get the underlying shape */
@@ -96,6 +102,36 @@ export class ShapeContext {
         return this;
     }
 
+    /** Translate shape by delta (alias for offset) */
+    translate(x: number, y: number): this {
+        return this.offset(x, y);
+    }
+
+    /** Set x position (moves centroid to x, keeping y) */
+    x(xPos: number): this {
+        const center = this._shape.centroid();
+        const dx = xPos - center.x;
+        this._shape.translate(new Vector2(dx, 0));
+        return this;
+    }
+
+    /** Set y position (moves centroid to y, keeping x) */
+    y(yPos: number): this {
+        const center = this._shape.centroid();
+        const dy = yPos - center.y;
+        this._shape.translate(new Vector2(0, dy));
+        return this;
+    }
+
+    /** Set x and y position (moves centroid) */
+    xy(xPos: number, yPos: number): this {
+        const center = this._shape.centroid();
+        const dx = xPos - center.x;
+        const dy = yPos - center.y;
+        this._shape.translate(new Vector2(dx, dy));
+        return this;
+    }
+
     /** Reverse winding direction */
     reverse(): this {
         this._shape.reverse();
@@ -140,7 +176,13 @@ export class ShapeContext {
         if (x !== 0 || y !== 0) {
             clone.translate(new Vector2(x, y));
         }
-        collector.addShape(clone, style);
+
+        const finalStyle = {
+            ...DEFAULT_STYLES.shape,
+            ...style
+        };
+
+        collector.addShape(clone, finalStyle);
     }
 
     // ==================== Phase 1.5 Operations ====================
@@ -564,6 +606,26 @@ export class LinesContext {
     }
 
     /**
+     * Stamp segments as line paths to collector.
+     * Uses thinner default stroke width (0.5) for connection lines.
+     */
+    stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Default style for connection lines - thinner than shapes
+        const finalStyle = {
+            ...DEFAULT_STYLES.line,
+            ...style
+        };
+
+        for (const seg of this._segments) {
+            // Convert segment to path data (M startX startY L endX endY)
+            const startPos = seg.start.position;
+            const endPos = seg.end.position;
+            const pathData = `M ${startPos.x + x} ${startPos.y + y} L ${endPos.x + x} ${endPos.y + y}`;
+            collector.addPath(pathData, finalStyle);
+        }
+    }
+
+    /**
      * Expand each segment into a rectangle with square end caps.
      * Does NOT modify the original shape.
      * @param distance - Half-height of rectangle (total height = 2 * distance)
@@ -691,13 +753,19 @@ export class ShapesContext {
 
     /** Stamp all shapes to collector */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Default style
+        const finalStyle = {
+            ...DEFAULT_STYLES.shape,
+            ...style
+        };
+
         for (const shape of this._shapes) {
             if (shape.ephemeral) continue;
             const clone = shape.clone();
             if (x !== 0 || y !== 0) {
                 clone.translate(new Vector2(x, y));
             }
-            collector.addShape(clone, style);
+            collector.addShape(clone, finalStyle);
         }
     }
 

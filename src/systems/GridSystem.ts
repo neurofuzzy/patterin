@@ -1,17 +1,23 @@
+import { renderSystemToSVG } from './SystemUtils.ts';
 import { Vector2 } from '../primitives/Vector2.ts';
 import { Vertex } from '../primitives/Vertex.ts';
 import { Segment } from '../primitives/Segment.ts';
 import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
+import type { ISystem } from '../interfaces.ts';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 
 export interface GridOptions {
     type?: GridType;
-    rows: number;
-    cols: number;
-    spacing: number | { x: number; y: number };
+    // Simple API
+    count?: number | [number, number];  // Grid count (rows x cols)
+    size?: number | [number, number];   // Cell size (spacing)
+    // Detailed API (takes precedence over simple API)
+    rows?: number;
+    cols?: number;
+    spacing?: number | { x: number; y: number };
     offset?: [number, number];
     // Hexagonal-specific
     orientation?: 'pointy' | 'flat';
@@ -42,7 +48,7 @@ interface Placement {
  * GridSystem - creates various grid structures.
  * Supports: square (default), hexagonal, triangular, brick.
  */
-export class GridSystem {
+export class GridSystem implements ISystem {
     private _nodes: GridNode[] = [];
     private _cells: GridCell[] = [];
     private _rows: number;
@@ -57,20 +63,43 @@ export class GridSystem {
     private _brickOffset: number;
     private _traced = false;
 
-    private constructor(options: GridOptions) {
+    private constructor(options: GridOptions = {}) {
         this._type = options.type ?? 'square';
-        this._rows = options.rows;
-        this._cols = options.cols;
+
+        // Support both simple (count/size) and detailed (rows/cols/spacing) APIs
+        // Detailed API takes precedence
+        if (options.rows !== undefined || options.cols !== undefined) {
+            this._rows = options.rows ?? 3;
+            this._cols = options.cols ?? 3;
+        } else if (options.count !== undefined) {
+            if (typeof options.count === 'number') {
+                this._rows = options.count;
+                this._cols = options.count;
+            } else {
+                this._rows = options.count[0];
+                this._cols = options.count[1];
+            }
+        } else {
+            this._rows = 3;
+            this._cols = 3;
+        }
+
         this._orientation = options.orientation ?? 'pointy';
         this._brickOffset = options.brickOffset ?? 0.5;
 
-        if (typeof options.spacing === 'number') {
-            this._spacingX = options.spacing;
-            this._spacingY = options.spacing;
+        // Support both size and spacing
+        const spacing = options.spacing ?? options.size ?? 40;
+        if (typeof spacing === 'number') {
+            this._spacingX = spacing;
+            this._spacingY = spacing;
+        } else if (Array.isArray(spacing)) {
+            this._spacingX = spacing[0];
+            this._spacingY = spacing[1];
         } else {
-            this._spacingX = options.spacing.x;
-            this._spacingY = options.spacing.y;
+            this._spacingX = spacing.x;
+            this._spacingY = spacing.y;
         }
+
 
         this._offsetX = options.offset?.[0] ?? 0;
         this._offsetY = options.offset?.[1] ?? 0;
@@ -337,6 +366,50 @@ export class GridSystem {
         this._placements.push({ position, shape, style });
     }
 
+    /** Place a shape at each node in the system */
+    place(shapeCtx: ShapeContext, style?: PathStyle): this {
+        for (const node of this._nodes) {
+            const clone = shapeCtx.shape.clone();
+            clone.ephemeral = false;  // Clones are concrete
+            clone.moveTo(new Vector2(node.x, node.y));
+            this._placements.push({ position: new Vector2(node.x, node.y), shape: clone, style });
+        }
+
+        // Mark source shape as ephemeral AFTER cloning (construction geometry)
+        shapeCtx.shape.ephemeral = true;
+
+        return this;
+    }
+
+    /** Clip system to mask shape boundary */
+    mask(maskShape: ShapeContext): this {
+        // Mark mask as ephemeral (construction geometry)
+        maskShape.shape.ephemeral = true;
+
+        const shape = maskShape.shape;
+
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(new Vector2(node.x, node.y))
+        );
+
+        // Filter cells to those with centroids inside the mask
+        this._cells = this._cells.filter(cell =>
+            shape.containsPoint(cell.shape.centroid())
+        );
+
+        // Filter placements to those inside the mask
+        this._placements = this._placements.filter(p =>
+            shape.containsPoint(p.position)
+        );
+
+        return this;
+    }
+
+
+
+
+
     /** Get computed bounds */
     getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
         let minX = Infinity, minY = Infinity;
@@ -368,6 +441,34 @@ export class GridSystem {
         return { minX, minY, maxX, maxY };
     }
 
+    /** Stamp system to collector (for auto-rendering) */
+    stamp(collector: SVGCollector, style?: PathStyle): void {
+        const cellStyle = style ?? DEFAULT_STYLES.connection;
+        const placementStyle = style ?? DEFAULT_STYLES.placement;
+
+        // Add traced cells in their own group
+        if (this._traced) {
+            collector.beginGroup('cells');
+            for (const cell of this._cells) {
+                if (!cell.shape.ephemeral) {
+                    collector.addShape(cell.shape, cellStyle);
+                }
+            }
+            collector.endGroup();
+        }
+
+        // Add placements in their own group
+        if (this._placements.length > 0) {
+            collector.beginGroup('placements');
+            for (const p of this._placements) {
+                collector.addShape(p.shape, p.style ?? placementStyle);
+            }
+            collector.endGroup();
+        }
+    }
+
+
+    /** Generate SVG output */
     /** Generate SVG output */
     toSVG(options: {
         width: number;
@@ -375,52 +476,30 @@ export class GridSystem {
         margin?: number;
     }): string {
         const { width, height, margin = 10 } = options;
-        const collector = new SVGCollector();
 
-        // Collect all renderable shapes
-        const renderables: { shape: Shape; style?: PathStyle }[] = [];
+        const cellItems = this._traced
+            ? this._cells
+                .filter(c => !c.shape.ephemeral)
+                .map(c => ({ shape: c.shape }))
+            : [];
 
-        // Add traced cells
-        if (this._traced) {
-            for (const cell of this._cells) {
-                if (!cell.shape.ephemeral) {
-                    renderables.push({ shape: cell.shape });
-                }
+        const placementItems = this._placements.map(p => ({
+            shape: p.shape,
+            style: p.style
+        }));
+
+        return renderSystemToSVG(width, height, margin, [
+            {
+                name: 'cells',
+                items: cellItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            },
+            {
+                name: 'placements',
+                items: placementItems,
+                defaultStyle: DEFAULT_STYLES.placement
             }
-        }
-
-        // Add placements
-        for (const p of this._placements) {
-            renderables.push({ shape: p.shape, style: p.style });
-        }
-
-        if (renderables.length === 0) {
-            return collector.toString({ width, height });
-        }
-
-        // Compute bounds
-        const bounds = this.getBounds();
-        const contentWidth = bounds.maxX - bounds.minX || 1;
-        const contentHeight = bounds.maxY - bounds.minY || 1;
-
-        // Scale to fit
-        const availW = width - margin * 2;
-        const availH = height - margin * 2;
-        const scale = Math.min(availW / contentWidth, availH / contentHeight);
-
-        // Center offset
-        const offsetX = margin + (availW - contentWidth * scale) / 2 - bounds.minX * scale;
-        const offsetY = margin + (availH - contentHeight * scale) / 2 - bounds.minY * scale;
-
-        // Render all
-        for (const item of renderables) {
-            const clone = item.shape.clone();
-            clone.scale(scale);
-            clone.translate(new Vector2(offsetX, offsetY));
-            collector.addShape(clone, item.style ?? { stroke: '#000', strokeWidth: 1 });
-        }
-
-        return collector.toString({ width, height });
+        ]);
     }
 }
 
