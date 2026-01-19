@@ -1,0 +1,405 @@
+/**
+ * Default styles for system rendering.
+ * Traced connections use thinner strokes than placed shapes.
+ */
+export const DEFAULT_STYLES = {
+    /** Style for traced system connections (cells, tiles, scaffold shapes) */
+    connection: { stroke: '#39c', strokeWidth: 0.5 },
+    /** Style for placed shapes at nodes */
+    placement: { stroke: '#c93', strokeWidth: 1 },
+    /** Default style for standalone shapes */
+    shape: { stroke: '#c93', strokeWidth: 1 },
+    /** Default style for lines/segments */
+    line: { stroke: '#c93', strokeWidth: 0.5 },
+};
+/**
+ * SVG output collector for rendering shapes and paths.
+ *
+ * Collects all geometry, automatically computes viewBox bounds,
+ * and generates valid SVG output with configurable styling.
+ *
+ * Key features:
+ * - Auto-computed viewBox from geometry bounds
+ * - Optional margin and centering
+ * - Named groups for organized SVG structure
+ * - Style per path (stroke, fill, opacity, dash)
+ * - Statistics (shape count, segment count)
+ *
+ * @example
+ * ```typescript
+ * import { shape, SVGCollector } from 'patterin';
+ *
+ * const svg = new SVGCollector();
+ *
+ * // Add shapes
+ * const circle = shape.circle().radius(50);
+ * circle.stamp(svg);
+ *
+ * // Add with custom style
+ * const rect = shape.rect().size(40).xy(100, 0);
+ * rect.stamp(svg, 0, 0, {
+ *   stroke: '#f00',
+ *   strokeWidth: 2,
+ *   fill: 'none'
+ * });
+ *
+ * // Render to string
+ * const svgString = svg.toString({
+ *   width: 800,
+ *   height: 600,
+ *   margin: 20,
+ *   autoScale: true
+ * });
+ *
+ * console.log(svgString);
+ * ```
+ */
+export class SVGCollector {
+    constructor() {
+        this.paths = [];
+        this.minX = Infinity;
+        this.minY = Infinity;
+        this.maxX = -Infinity;
+        this.maxY = -Infinity;
+        this._segmentCount = 0;
+    }
+    /**
+     * Add a path (raw SVG path data) to the collector.
+     *
+     * @param pathData - SVG path data string (e.g. "M 0 0 L 10 10")
+     * @param style - Optional PathStyle for stroke, fill, etc.
+     *
+     * @example
+     * ```typescript
+     * svg.addPath('M 0 0 L 100 100', { stroke: '#00f', strokeWidth: 2 });
+     * ```
+     */
+    addPath(pathData, style = {}) {
+        this.paths.push({ d: pathData, style, group: this.currentGroup });
+        this.updateBoundsFromPath(pathData);
+        // simple segment count approximation (count all commands except M/m)
+        const commands = pathData.match(/[LlHhVvCcSsQqTtAaZz]/g);
+        if (commands) {
+            this._segmentCount += commands.length;
+        }
+    }
+    /**
+     * Add a shape to the collector.
+     *
+     * Ephemeral shapes are skipped automatically.
+     *
+     * @param shape - The Shape primitive to add
+     * @param style - Optional PathStyle for stroke, fill, etc.
+     *
+     * @example
+     * ```typescript
+     * const s = Shape.circle(50);
+     * svg.addShape(s, { stroke: '#0f0', strokeWidth: 1.5 });
+     * ```
+     */
+    addShape(shape, style = {}) {
+        if (shape.ephemeral)
+            return;
+        this.addPath(shape.toPathData(), style);
+    }
+    /**
+     * Begin a named group for organizational purposes.
+     *
+     * All paths added after this call will be tagged with the group name.
+     * Groups can be used to organize SVG structure or apply group-level styling.
+     *
+     * @param name - The group name/identifier
+     *
+     * @example
+     * ```typescript
+     * svg.beginGroup('circles');
+     * shape.circle().radius(10).stamp(svg);
+     * shape.circle().radius(20).stamp(svg);
+     * svg.endGroup();
+     *
+     * svg.beginGroup('rectangles');
+     * shape.rect().size(30).stamp(svg);
+     * svg.endGroup();
+     * ```
+     */
+    beginGroup(name) {
+        this.currentGroup = name;
+    }
+    /**
+     * End the current group.
+     *
+     * Subsequent paths will not be associated with a group until
+     * `beginGroup()` is called again.
+     */
+    endGroup() {
+        this.currentGroup = undefined;
+    }
+    /**
+     * Parse path data to update bounds.
+     */
+    updateBoundsFromPath(d) {
+        // Simple regex to extract coordinates from path data
+        const coordPattern = /[ML]\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/gi;
+        let match;
+        while ((match = coordPattern.exec(d)) !== null) {
+            const x = parseFloat(match[1]);
+            const y = parseFloat(match[2]);
+            this.minX = Math.min(this.minX, x);
+            this.minY = Math.min(this.minY, y);
+            this.maxX = Math.max(this.maxX, x);
+            this.maxY = Math.max(this.maxY, y);
+        }
+    }
+    /**
+     * Get the computed bounding box of all collected geometry.
+     *
+     * @param margin - Optional margin to add around bounds (default 0)
+     * @returns Bounding box with x, y, width, height
+     *
+     * @example
+     * ```typescript
+     * const svg = new SVGCollector();
+     * shape.circle().radius(50).stamp(svg);
+     *
+     * const bounds = svg.getBounds(10); // 10px margin
+     * console.log(bounds); // { x: -60, y: -60, width: 120, height: 120 }
+     * ```
+     */
+    getBounds(margin = 0) {
+        if (this.paths.length === 0 || this.minX === Infinity) {
+            return { x: 0, y: 0, width: 100, height: 100 };
+        }
+        return {
+            x: this.minX - margin,
+            y: this.minY - margin,
+            width: this.maxX - this.minX + margin * 2,
+            height: this.maxY - this.minY + margin * 2,
+        };
+    }
+    /**
+     * Generate complete SVG string with all collected geometry.
+     *
+     * Automatically computes viewBox from geometry bounds. Supports
+     * auto-scaling, margins, background, and flatten mode.
+     *
+     * @param options - Configuration for SVG output
+     * @param options.width - SVG width in pixels (default: auto from bounds)
+     * @param options.height - SVG height in pixels (default: auto from bounds)
+     * @param options.margin - Margin around geometry (default: 10)
+     * @param options.background - Background color (default: transparent)
+     * @param options.autoScale - Scale geometry to fit viewport (default: true)
+     * @param options.flatten - Flatten coordinates (no viewBox transform) (default: false)
+     * @returns Complete SVG markup as a string
+     *
+     * @example
+     * ```typescript
+     * const svg = new SVGCollector();
+     * shape.circle().radius(50).stamp(svg);
+     *
+     * // Auto-sized SVG
+     * const svg1 = svg.toString();
+     *
+     * // Fixed size with auto-scaling
+     * const svg2 = svg.toString({
+     *   width: 800,
+     *   height: 600,
+     *   margin: 20,
+     *   autoScale: true
+     * });
+     *
+     * // With background
+     * const svg3 = svg.toString({
+     *   width: 400,
+     *   height: 400,
+     *   background: '#f0f0f0',
+     *   margin: 10
+     * });
+     *
+     * // Flatten mode (for precise coordinate control)
+     * const svg4 = svg.toString({
+     *   width: 1000,
+     *   height: 1000,
+     *   flatten: true,
+     *   autoScale: false
+     * });
+     * ```
+     */
+    toString(options = {}) {
+        const { margin = 10, background, autoScale = true, flatten = false } = options;
+        let width = options.width ?? 100;
+        let height = options.height ?? 100;
+        const bounds = this.getBounds(margin);
+        // If we didn't specify dimensions, use the bounds
+        if (!options.width)
+            width = bounds.width;
+        if (!options.height)
+            height = bounds.height;
+        const lines = [];
+        if (flatten || !autoScale) {
+            // Flatten mode: transform coordinates directly, no viewBox
+            lines.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`);
+            // Calculate transform for flatten mode
+            let scale = 1;
+            let offsetX = 0;
+            let offsetY = 0;
+            if (autoScale && bounds.width > 0 && bounds.height > 0) {
+                // Scale to fit viewport
+                const scaleX = width / bounds.width;
+                const scaleY = height / bounds.height;
+                scale = Math.min(scaleX, scaleY);
+                // Center in viewport
+                const scaledWidth = bounds.width * scale;
+                const scaledHeight = bounds.height * scale;
+                offsetX = (width - scaledWidth) / 2 - bounds.x * scale;
+                offsetY = (height - scaledHeight) / 2 - bounds.y * scale;
+            }
+            if (background) {
+                lines.push(`  <rect x="0" y="0" width="${width}" height="${height}" fill="${background}"/>`);
+            }
+            // Render paths, grouping by group name
+            this.renderPathsGrouped(lines, (path) => {
+                const transformedD = this.transformPathData(path.d, scale, offsetX, offsetY);
+                return this.renderPathWithData(transformedD, path.style);
+            });
+        }
+        else {
+            // Original viewBox mode for backward compatibility
+            const viewBox = `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`;
+            lines.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}">`);
+            if (background) {
+                lines.push(`  <rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="${background}"/>`);
+            }
+            // Render paths, grouping by group name
+            this.renderPathsGrouped(lines, (path) => this.renderPath(path));
+        }
+        lines.push('</svg>');
+        return lines.join('\n');
+    }
+    /**
+     * Render paths grouped by their group name.
+     */
+    renderPathsGrouped(lines, renderFn) {
+        // Group paths by their group name, maintaining order
+        const groups = [];
+        let currentGroupName = undefined;
+        let currentGroupPaths = [];
+        for (const path of this.paths) {
+            if (path.group !== currentGroupName) {
+                if (currentGroupPaths.length > 0) {
+                    groups.push({ name: currentGroupName, paths: currentGroupPaths });
+                }
+                currentGroupName = path.group;
+                currentGroupPaths = [path];
+            }
+            else {
+                currentGroupPaths.push(path);
+            }
+        }
+        if (currentGroupPaths.length > 0) {
+            groups.push({ name: currentGroupName, paths: currentGroupPaths });
+        }
+        // Render groups
+        for (const group of groups) {
+            if (group.name) {
+                lines.push(`  <g id="${group.name}">`);
+                for (const path of group.paths) {
+                    lines.push(`    ${renderFn(path)}`);
+                }
+                lines.push(`  </g>`);
+            }
+            else {
+                for (const path of group.paths) {
+                    lines.push(`  ${renderFn(path)}`);
+                }
+            }
+        }
+    }
+    /**
+     * Transform path data coordinates by scale and offset.
+     */
+    transformPathData(d, scale, offsetX, offsetY) {
+        // Match coordinates in M, L commands and transform them
+        return d.replace(/([ML])\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s+(-?\d+\.?\d*(?:e[+-]?\d+)?)/gi, (_match, cmd, xStr, yStr) => {
+            const x = parseFloat(xStr) * scale + offsetX;
+            const y = parseFloat(yStr) * scale + offsetY;
+            return `${cmd} ${x} ${y}`;
+        });
+    }
+    /**
+     * Render a path element with pre-transformed data.
+     */
+    renderPathWithData(d, style) {
+        const attrs = [`d="${d}"`];
+        if (style.fill !== undefined) {
+            attrs.push(`fill="${style.fill}"`);
+        }
+        else {
+            attrs.push('fill="none"');
+        }
+        if (style.stroke !== undefined) {
+            attrs.push(`stroke="${style.stroke}"`);
+        }
+        if (style.strokeWidth !== undefined) {
+            attrs.push(`stroke-width="${style.strokeWidth}"`);
+        }
+        if (style.opacity !== undefined) {
+            attrs.push(`opacity="${style.opacity}"`);
+        }
+        if (style.dash && style.dash.length > 0) {
+            attrs.push(`stroke-dasharray="${style.dash.join(' ')}"`);
+        }
+        return `<path ${attrs.join(' ')}/>`;
+    }
+    /**
+     * Render a single path element.
+     */
+    renderPath(entry) {
+        const attrs = [`d="${entry.d}"`];
+        const style = entry.style;
+        if (style.fill !== undefined) {
+            attrs.push(`fill="${style.fill}"`);
+        }
+        else {
+            attrs.push('fill="none"');
+        }
+        if (style.stroke !== undefined) {
+            attrs.push(`stroke="${style.stroke}"`);
+        }
+        if (style.strokeWidth !== undefined) {
+            attrs.push(`stroke-width="${style.strokeWidth}"`);
+        }
+        if (style.opacity !== undefined) {
+            attrs.push(`opacity="${style.opacity}"`);
+        }
+        if (style.dash && style.dash.length > 0) {
+            attrs.push(`stroke-dasharray="${style.dash.join(' ')}"`);
+        }
+        return `<path ${attrs.join(' ')}/>`;
+    }
+    /**
+     * Get statistics about collected paths.
+     */
+    get stats() {
+        return {
+            shapes: this.paths.length,
+            segments: this._segmentCount
+        };
+    }
+    /**
+     * Clear all paths.
+     */
+    clear() {
+        this.paths = [];
+        this._segmentCount = 0;
+        this.minX = Infinity;
+        this.minY = Infinity;
+        this.maxX = -Infinity;
+        this.maxY = -Infinity;
+    }
+    /**
+     * Get the number of paths collected.
+     */
+    get length() {
+        return this.paths.length;
+    }
+}

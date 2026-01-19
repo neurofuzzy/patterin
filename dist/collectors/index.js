@@ -1,0 +1,1 @@
+export { SVGCollector } from './SVGCollector';
