@@ -228,8 +228,8 @@ export class LSystem extends BaseSystem {
         // Filter endpoints
         this._endpoints = this._endpoints.filter(node => shape.containsPoint(node.position));
 
-        // Filter segments (midpoint inside)
-        this._segments = this._segments.filter(seg => shape.containsPoint(seg.midpoint()));
+        // Filter segments using base class helper
+        this._segments = this.filterEdgesByMask(this._segments, shape);
 
         // Update shape segments
         this._shape.segments = this._segments;
@@ -277,17 +277,7 @@ export class LSystem extends BaseSystem {
     }
 
     protected getGeometryBounds(): SystemBounds {
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const node of this._nodes) {
-            minX = Math.min(minX, node.x);
-            minY = Math.min(minY, node.y);
-            maxX = Math.max(maxX, node.x);
-            maxY = Math.max(maxY, node.y);
-        }
-
-        return { minX, minY, maxX, maxY };
+        return this.boundsFromPositions(this._nodes);
     }
 
     protected getSourceForSelection(): Shape[] {

@@ -316,4 +316,32 @@ export abstract class BaseSystem implements ISystem {
 
         return renderSystemToSVG(width, height, margin, allGroups);
     }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Helper: Filter array of edges by midpoint containment.
+     * Useful for subclasses that need to filter edges during masking.
+     */
+    protected filterEdgesByMask(edges: Segment[], mask: Shape): Segment[] {
+        return edges.filter(edge => mask.containsPoint(edge.midpoint()));
+    }
+
+    /**
+     * Helper: Compute bounds from array of positions.
+     * Useful for subclasses that compute bounds from node positions.
+     */
+    protected boundsFromPositions(positions: {x: number, y: number}[]): SystemBounds {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for (const pos of positions) {
+            minX = Math.min(minX, pos.x);
+            minY = Math.min(minY, pos.y);
+            maxX = Math.max(maxX, pos.x);
+            maxY = Math.max(maxY, pos.y);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
 }

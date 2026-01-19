@@ -293,10 +293,8 @@ export class CloneSystem extends BaseSystem {
         // Filter nodes
         this._nodes = this._nodes.filter(n => shape.containsPoint(n.position));
 
-        // Rebuild segments based on remaining nodes
-        this._segments = this._segments.filter(seg =>
-            shape.containsPoint(seg.midpoint())
-        );
+        // Filter segments using base class helper
+        this._segments = this.filterEdgesByMask(this._segments, shape);
     }
 
     protected scaleGeometry(factor: number): void {

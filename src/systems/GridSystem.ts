@@ -1,7 +1,7 @@
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
-import { BaseSystem, type RenderGroup } from './BaseSystem';
+import { EdgeBasedSystem } from './EdgeBasedSystem';
 import type { SystemBounds } from '../types';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
@@ -33,9 +33,8 @@ interface GridNode {
  * GridSystem - creates various grid structures.
  * Supports: square (default), hexagonal, triangular, brick.
  */
-export class GridSystem extends BaseSystem {
-    private _nodes: GridNode[] = [];
-    private _edges: Segment[] = [];
+export class GridSystem extends EdgeBasedSystem {
+    private _gridNodes: GridNode[] = [];
     private _rows: number;
     private _cols: number;
     private _spacingX: number;
@@ -116,12 +115,13 @@ export class GridSystem extends BaseSystem {
         // Create nodes (grid intersections)
         for (let row = 0; row <= this._rows; row++) {
             for (let col = 0; col <= this._cols; col++) {
-                this._nodes.push({
-                    x: this._offsetX + col * this._spacingX,
-                    y: this._offsetY + row * this._spacingY,
-                    row,
-                    col,
-                });
+                const x = this._offsetX + col * this._spacingX;
+                const y = this._offsetY + row * this._spacingY;
+                
+                // Store metadata
+                this._gridNodes.push({ x, y, row, col });
+                // Store position for base class
+                this._nodes.push(new Vector2(x, y));
             }
         }
     }
@@ -179,7 +179,9 @@ export class GridSystem extends BaseSystem {
             }
         }
 
-        this._nodes = Array.from(nodeMap.values());
+        // Convert to arrays
+        this._gridNodes = Array.from(nodeMap.values());
+        this._nodes = this._gridNodes.map(n => new Vector2(n.x, n.y));
     }
 
     private buildTriangularGrid(): void {
@@ -229,7 +231,9 @@ export class GridSystem extends BaseSystem {
             }
         }
 
-        this._nodes = Array.from(nodeMap.values());
+        // Convert to arrays
+        this._gridNodes = Array.from(nodeMap.values());
+        this._nodes = this._gridNodes.map(n => new Vector2(n.x, n.y));
     }
 
     private buildBrickGrid(): void {
@@ -268,7 +272,9 @@ export class GridSystem extends BaseSystem {
             }
         }
 
-        this._nodes = Array.from(nodeMap.values());
+        // Convert to arrays
+        this._gridNodes = Array.from(nodeMap.values());
+        this._nodes = this._gridNodes.map(n => new Vector2(n.x, n.y));
     }
 
     /**
@@ -351,117 +357,27 @@ export class GridSystem extends BaseSystem {
     /** Get all grid nodes as PointsContext */
     get nodes(): GridPointsContext {
         const vertices = this._nodes.map((n) => new Vertex(n.x, n.y));
-        return new GridPointsContext(this, vertices, this._nodes);
+        return new GridPointsContext(this, vertices, this._gridNodes);
     }
 
-    // ==================== BaseSystem Implementation ====================
+    // ==================== EdgeBasedSystem Implementation ====================
+
+    protected getEdgeGroupName(): string {
+        return 'grid-edges';
+    }
 
     protected getNodes(): Vertex[] {
         return this._nodes.map((n) => new Vertex(n.x, n.y));
     }
 
     protected filterByMask(shape: Shape): void {
-        // Filter nodes to those inside the mask
-        this._nodes = this._nodes.filter(node =>
+        // Filter GridNode metadata
+        this._gridNodes = this._gridNodes.filter(node =>
             shape.containsPoint(new Vector2(node.x, node.y))
         );
-
-        // Filter edges to those with midpoints inside mask
-        this._edges = this._edges.filter(edge =>
-            shape.containsPoint(edge.midpoint())
-        );
-    }
-
-    protected scaleGeometry(factor: number): void {
-        // Scale nodes
-        for (const node of this._nodes) {
-            node.x *= factor;
-            node.y *= factor;
-        }
-        // Scale edges
-        for (const edge of this._edges) {
-            edge.start.x *= factor;
-            edge.start.y *= factor;
-            edge.end.x *= factor;
-            edge.end.y *= factor;
-        }
-    }
-
-    protected rotateGeometry(angleRad: number): void {
-        const cos = Math.cos(angleRad);
-        const sin = Math.sin(angleRad);
         
-        // Rotate nodes
-        for (const node of this._nodes) {
-            const x = node.x * cos - node.y * sin;
-            const y = node.x * sin + node.y * cos;
-            node.x = x;
-            node.y = y;
-        }
-        // Rotate edges
-        for (const edge of this._edges) {
-            let x = edge.start.x * cos - edge.start.y * sin;
-            let y = edge.start.x * sin + edge.start.y * cos;
-            edge.start.x = x;
-            edge.start.y = y;
-            
-            x = edge.end.x * cos - edge.end.y * sin;
-            y = edge.end.x * sin + edge.end.y * cos;
-            edge.end.x = x;
-            edge.end.y = y;
-        }
-    }
-
-    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
-        const edgeStyle = style ?? DEFAULT_STYLES.connection;
-
-        // Add traced edges in their own group
-        if (this._traced && this._edges.length > 0) {
-            collector.beginGroup('grid-edges');
-            // Stamp each edge segment as a line
-            for (const seg of this._edges) {
-                const pathData = `M ${seg.start.x} ${seg.start.y} L ${seg.end.x} ${seg.end.y}`;
-                collector.addPath(pathData, edgeStyle);
-            }
-            collector.endGroup();
-        }
-    }
-
-    protected getGeometryRenderGroups(): RenderGroup[] {
-        if (!this._traced || this._edges.length === 0) {
-            return [];
-        }
-
-        // Create a shape from edges for rendering
-        const edgeShape = new Shape(this._edges, 'ccw');
-        edgeShape.open = true;
-
-        return [
-            {
-                name: 'grid-edges',
-                items: [{ shape: edgeShape, style: DEFAULT_STYLES.connection }],
-                defaultStyle: DEFAULT_STYLES.connection
-            }
-        ];
-    }
-
-    protected getGeometryBounds(): SystemBounds {
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const node of this._nodes) {
-            minX = Math.min(minX, node.x);
-            minY = Math.min(minY, node.y);
-            maxX = Math.max(maxX, node.x);
-            maxY = Math.max(maxY, node.y);
-        }
-
-        return { minX, minY, maxX, maxY };
-    }
-
-    protected getSourceForSelection(): Shape[] {
-        // No source shapes needed for node-based selection
-        return [];
+        // Call parent to filter _nodes and _edges
+        super.filterByMask(shape);
     }
 
     /** Get row lines (more horizontal edges) */

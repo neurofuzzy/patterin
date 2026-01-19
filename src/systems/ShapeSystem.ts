@@ -158,11 +158,8 @@ export class ShapeSystem extends BaseSystem {
             this._centerNode = null;
         }
 
-        // Filter edges - for now, filter by midpoint being inside
-        // TODO: Clip edges at mask boundary for partial edges
-        this._edges = this._edges.filter(edge =>
-            shape.containsPoint(edge.midpoint())
-        );
+        // Filter edges using base class helper
+        this._edges = this.filterEdgesByMask(this._edges, shape);
     }
 
     protected scaleGeometry(factor: number): void {
@@ -200,24 +197,10 @@ export class ShapeSystem extends BaseSystem {
     }
 
     protected getGeometryBounds(): SystemBounds {
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const node of this._nodes) {
-            minX = Math.min(minX, node.x);
-            minY = Math.min(minY, node.y);
-            maxX = Math.max(maxX, node.x);
-            maxY = Math.max(maxY, node.y);
-        }
-
-        if (this._centerNode) {
-            minX = Math.min(minX, this._centerNode.x);
-            minY = Math.min(minY, this._centerNode.y);
-            maxX = Math.max(maxX, this._centerNode.x);
-            maxY = Math.max(maxY, this._centerNode.y);
-        }
-
-        return { minX, minY, maxX, maxY };
+        const allNodes = this._centerNode 
+            ? [...this._nodes, this._centerNode]
+            : this._nodes;
+        return this.boundsFromPositions(allNodes);
     }
 
     protected getSourceForSelection(): Shape[] {
