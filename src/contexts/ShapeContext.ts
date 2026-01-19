@@ -113,13 +113,17 @@ export class ShapeContext {
     /**
      * Offset (inset/outset) the shape outline.
      * @param distance - Offset distance (positive = outward, negative = inward)
-     * @param count - Number of copies to generate. 0 = in-place modification. >0 = returns original + copies.
+     * @param count - Number of copies to generate. 0 = in-place modification. >0 = returns offset copies.
      * @param miterLimit - Miter limit for sharp corners (default 4)
+     * @param includeOriginal - When count > 0, include the original shape in result (default false)
      * @returns ShapeContext (if count=0) or ShapesContext (if count>0)
      */
-    offset(distance: number, count: number = 0, miterLimit = 4): any {
+    offset(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): any {
         if (count > 0) {
-            const shapes: Shape[] = [this._shape];
+            const shapes: Shape[] = [];
+            if (includeOriginal) {
+                shapes.push(this._shape);
+            }
             let current = this._shape;
             for (let i = 0; i < count; i++) {
                 const nextCtx = new ShapeContext(current).offsetShape(distance, miterLimit);
@@ -140,8 +144,8 @@ export class ShapeContext {
     /**
      * Expand shape (outset) by distance.
      */
-    expand(distance: number, count: number = 0, miterLimit = 4): any {
-        return this.offset(Math.abs(distance), count, miterLimit);
+    expand(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): any {
+        return this.offset(Math.abs(distance), count, miterLimit, includeOriginal);
     }
 
     /**
@@ -836,14 +840,17 @@ export class ShapesContext {
     /**
      * Offset (inset/outset) all shape outlines.
      * @param distance - Offset distance
-     * @param count - Number of copies per shape. 0 = in-place. >0 = generative.
+     * @param count - Number of copies per shape. 0 = in-place. >0 = returns offset copies.
      * @param miterLimit - Miter limit
+     * @param includeOriginal - When count > 0, include original shapes in result (default false)
      */
-    offset(distance: number, count: number = 0, miterLimit = 4): ShapesContext {
+    offset(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): ShapesContext {
         if (count > 0) {
             const newShapes: Shape[] = [];
             for (const shape of this._shapes) {
-                newShapes.push(shape); // Original
+                if (includeOriginal) {
+                    newShapes.push(shape); // Original
+                }
                 let current = shape;
                 for (let i = 0; i < count; i++) {
                     const ctx = new ShapeContext(current);
@@ -868,8 +875,8 @@ export class ShapesContext {
     }
 
     /** Expand all shapes */
-    expand(distance: number, count: number = 0, miterLimit = 4): ShapesContext {
-        return this.offset(Math.abs(distance), count, miterLimit);
+    expand(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): ShapesContext {
+        return this.offset(Math.abs(distance), count, miterLimit, includeOriginal);
     }
 
     /** Inset all shapes */

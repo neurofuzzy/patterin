@@ -83,11 +83,9 @@ function createAutoCollectContext() {
                     return function (this: patterin.ShapesContext, ...args: unknown[]) {
                         const result = value.apply(target, args);
                         if (result instanceof patterin.ShapeContext) {
-                            // If method returns a NEW context (not part of target), it's generative
+                            // Generative operation that returns a ShapeContext
                             // Mark the source as consumed
-                            if (result !== target) {
-                                consumedContexts.add(target);
-                            }
+                            consumedContexts.add(target);
                             shapeRegistry.add(result);
                             return wrapShapeContext(result);
                         }
@@ -163,7 +161,8 @@ function createAutoCollectContext() {
      * - If method returns THE SAME context (this), keep it wrapped but DO NOT add to registry 
      *   (it's a view/subset that the System already renders).
      * - If method returns a NEW context (generative), ADD to registry and wrap normally.
-     * - Mark parent system as consumed when generative operations are called on subsets.
+     * - DO NOT mark the parent system as consumed - the system should still render all its shapes.
+     *   Only the subset context itself should be marked as consumed (handled elsewhere).
      */
     function wrapSystemReturnedContext<T extends object>(ctx: T, parentSystem?: any): T {
         return new Proxy(ctx, {
@@ -179,18 +178,16 @@ function createAutoCollectContext() {
                         }
 
                         // If it returns a NEW ShapeContext/ShapesContext, it's likely generative (offset)
-                        // So we MUST track it AND mark the parent system as consumed
+                        // Track the NEW result (not the original subset)
                         if (result instanceof patterin.ShapeContext) {
-                            if (parentSystem) {
-                                consumedSystems.add(parentSystem);
-                            }
+                            // Mark the SOURCE (target) as consumed, NOT the parent system
+                            consumedContexts.add(target as any);
                             shapeRegistry.add(result);
                             return wrapShapeContext(result);
                         }
                         if (result instanceof patterin.ShapesContext) {
-                            if (parentSystem) {
-                                consumedSystems.add(parentSystem);
-                            }
+                            // Mark the SOURCE (target) as consumed, NOT the parent system
+                            consumedContexts.add(target as any);
                             shapeRegistry.add(result);
                             return wrapShapesContext(result);
                         }
