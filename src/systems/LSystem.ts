@@ -1,6 +1,6 @@
-import { Shape, Segment, Vector2, Vertex } from '../primitives';
+import { Shape, Segment, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
+import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
 

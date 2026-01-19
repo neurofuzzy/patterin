@@ -9,10 +9,6 @@ import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
 
-// Avoid circular import - use Shape directly
-// ShapeContext is only used for place/mask ISystem methods
-type ShapeContextLike = { shape: Shape };
-
 export interface CloneOptions {
     count: number;
     offsetX: number;

@@ -1,8 +1,6 @@
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext';
+import { PointsContext, LinesContext, ShapeContext } from '../contexts/ShapeContext';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
-import type { SystemBounds } from '../types';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 

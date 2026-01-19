@@ -28,7 +28,7 @@ describe('CloneSystem - Subset Offset', () => {
         offsetResult.stamp(svg);
         
         // Generate SVG
-        const output = (svg as any).toString({
+        const output = svg.toString({
             width: 400,
             height: 400,
             margin: 20,
@@ -68,7 +68,7 @@ describe('CloneSystem - Subset Offset', () => {
         // Stamp the system
         system.stamp(svg);
         
-        const output = (svg as any).toString({
+        const output = svg.toString({
             width: 400,
             height: 400,
             margin: 20,
@@ -106,7 +106,7 @@ describe('CloneSystem - Subset Offset', () => {
         // Stamp offset results
         subset.stamp(svg);
         
-        const output = (svg as any).toString({
+        const output = svg.toString({
             width: 400,
             height: 400,
             margin: 20,

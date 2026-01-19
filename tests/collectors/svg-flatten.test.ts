@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { SVGCollector, GridSystem, shape } from '../../src/index.ts';
+import { SVGCollector, GridSystem, shape, Vector2 } from '../../src/index.ts';
 
 describe('SVGCollector flatten mode', () => {
     it('flatten mode should produce SVG without viewBox', () => {
         const collector = new SVGCollector();
         const rect = shape.square().size(100).shape;
-        rect.translate({ x: 50, y: 50, subtract: () => ({ x: 0, y: 0 }), add: () => ({ x: 0, y: 0 }) } as any);
+        rect.translate(new Vector2(50, 50));
         collector.addShape(rect, { stroke: '#000', strokeWidth: 2 });
 
         const svg = collector.toString({

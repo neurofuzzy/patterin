@@ -2,12 +2,10 @@
 import { describe, it, expect } from 'vitest';
 import { shape } from '../../src/index';
 import { ShapesContext } from '../../src/contexts/ShapeContext';
-import { Vector2 } from '../../src/primitives/Vector2';
 
 describe('Generative Offset', () => {
     it('should modify in-place when count=0', () => {
         const s = shape.rect().size(10);
-        const original = s.clone(); // keep ref
 
         s.offset(5); // +5 padding
 
@@ -24,9 +22,9 @@ describe('Generative Offset', () => {
 
         expect(result instanceof ShapesContext).toBe(true);
         // 2 copies only (no original)
-        expect((result as any).length).toBe(2); // cast because return type is union
+        expect(result.length).toBe(2);
 
-        const shapes = (result as ShapesContext).shapes;
+        const shapes = result.shapes;
         expect(shapes[0].boundingBox().width).toBeCloseTo(20);
         expect(shapes[1].boundingBox().width).toBeCloseTo(30);
     });
@@ -52,15 +50,15 @@ describe('Generative Offset', () => {
     it('expand and inset should work as aliases', () => {
         const s = shape.rect().size(10);
 
-        const expanded = s.expand(5, 1); // [20] - only the copy, no original
-        const inset = s.inset(2, 1); // [6] - only the copy, no original
+        const expanded = s.expand(5, 1) as ShapesContext; // [20] - only the copy, no original
+        const inset = s.inset(2, 1) as ShapesContext; // [6] - only the copy, no original
 
         // Expand returns ShapesContext with 1 copy
-        expect((expanded as any).length).toBe(1);
-        expect((expanded as any).shapes[0].boundingBox().width).toBeCloseTo(20);
+        expect(expanded.length).toBe(1);
+        expect(expanded.shapes[0].boundingBox().width).toBeCloseTo(20);
 
         // Inset returns ShapesContext with 1 copy
-        expect((inset as any).length).toBe(1);
-        expect((inset as any).shapes[0].boundingBox().width).toBeCloseTo(6);
+        expect(inset.length).toBe(1);
+        expect(inset.shapes[0].boundingBox().width).toBeCloseTo(6);
     });
 });

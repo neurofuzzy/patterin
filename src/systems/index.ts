@@ -4,7 +4,6 @@ import { ShapeSystem, ShapeSystemOptions } from './ShapeSystem';
 import { ShapeContext } from '../contexts/ShapeContext';
 import { Shape } from '../primitives/Shape';
 import { LSystem, LSystemOptions } from './LSystem';
-import { CloneSystem, CloneOptions } from './CloneSystem';
 
 export { BaseSystem, type Placement, type RenderGroup } from './BaseSystem';
 export { EdgeBasedSystem } from './EdgeBasedSystem';

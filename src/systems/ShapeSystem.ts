@@ -1,6 +1,6 @@
 import { BoundingBox, Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext';
+import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext';
 import { PointContext } from '../contexts/PointContext';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
@@ -70,7 +70,7 @@ export class ShapeSystem extends BaseSystem {
         this.buildEdges(subdivide);
     }
 
-    private buildEdges(subdivide?: number): void {
+    private buildEdges(_subdivide?: number): void {
         // Create edge segments connecting consecutive nodes
         const n = this._nodes.length;
         if (n < 2) return;

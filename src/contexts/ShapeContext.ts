@@ -226,7 +226,7 @@ export class ShapeContext {
      * @param includeOriginal - When count > 0, include the original shape in result (default false)
      * @returns ShapeContext (if count=0) or ShapesContext (if count>0)
      */
-    offset(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): any {
+    offset(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): ShapeContext | ShapesContext {
         if (count > 0) {
             const shapes: Shape[] = [];
             if (includeOriginal) {
@@ -252,14 +252,14 @@ export class ShapeContext {
     /**
      * Expand shape (outset) by distance.
      */
-    expand(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): any {
+    expand(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): ShapeContext | ShapesContext {
         return this.offset(Math.abs(distance), count, miterLimit, includeOriginal);
     }
 
     /**
      * Inset shape by distance.
      */
-    inset(distance: number, count: number = 0, miterLimit = 4): any {
+    inset(distance: number, count: number = 0, miterLimit = 4): ShapeContext | ShapesContext {
         return this.offset(-Math.abs(distance), count, miterLimit);
     }
 

@@ -1,8 +1,7 @@
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
+import { PathStyle } from '../collectors/SVGCollector';
+import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
-import type { SystemBounds } from '../types';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 

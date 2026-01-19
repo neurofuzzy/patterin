@@ -1,6 +1,5 @@
 import { test, expect } from 'vitest';
 import { LSystem } from '../../src/systems/LSystem.ts';
-import { Vertex } from '../../src/primitives/Vertex.ts';
 
 test('LSystem: Koch Curve', () => {
     const koch = LSystem.create({
