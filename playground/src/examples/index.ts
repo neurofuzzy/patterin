@@ -149,8 +149,7 @@ const tess = system.tessellation({
   iterations: 5,
 })
 
-tess.trace()
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
+tess.trace()`,
   },
   {
     name: 'Truchet Tiles',
@@ -165,8 +164,7 @@ const tess = TessellationSystem.create({
   seed: 42,
 })
 
-tess.trace()
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
+tess.trace()`,
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // L-SYSTEMS
@@ -184,8 +182,7 @@ render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
   origin: [-150, 0]
 })
 
-koch.trace()
-render(koch.toSVG({ width: 400, height: 400 }))`,
+koch.trace()`,
   },
   {
     name: 'Koch Snowflake',
@@ -200,8 +197,7 @@ render(koch.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -50]
 })
 
-snowflake.trace()
-render(snowflake.toSVG({ width: 400, height: 400 }))`,
+snowflake.trace()`,
   },
   {
     name: 'Dragon Curve',
@@ -219,8 +215,7 @@ render(snowflake.toSVG({ width: 400, height: 400 }))`,
   origin: [-50, 0]
 })
 
-dragon.trace()
-render(dragon.toSVG({ width: 400, height: 400 }))`,
+dragon.trace()`,
   },
   {
     name: 'Hilbert Curve',
@@ -238,8 +233,7 @@ render(dragon.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -100]
 })
 
-hilbert.trace()
-render(hilbert.toSVG({ width: 400, height: 400 }))`,
+hilbert.trace()`,
   },
   {
     name: 'Sierpinski Triangle',
@@ -257,8 +251,7 @@ render(hilbert.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, 80]
 })
 
-sierpinski.trace()
-render(sierpinski.toSVG({ width: 400, height: 400 }))`,
+sierpinski.trace()`,
   },
   {
     name: 'Gosper Curve',
@@ -276,7 +269,6 @@ render(sierpinski.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -80]
 })
 
-gosper.trace()
-render(gosper.toSVG({ width: 400, height: 400 }))`,
+gosper.trace()`,
   },
 ];

@@ -4,7 +4,7 @@
  */
 
 import type { ISystem } from '../interfaces';
-import { Shape, Vector2, Vertex } from '../primitives';
+import { Shape, Vector2, Vertex, Segment } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { ShapeContext, ShapesContext } from '../contexts';
 import { renderSystemToSVG } from './SystemUtils';

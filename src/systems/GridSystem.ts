@@ -265,7 +265,7 @@ export class GridSystem extends EdgeBasedSystem {
 
             // Use edge-key map for de-duplication
             const edgeMap = new Map<string, Segment>();
-            const edgeKey = (v1: GridNode, v2: GridNode): string => {
+            const edgeKey = (v1: { x: number, y: number }, v2: { x: number, y: number }): string => {
                 const x1 = v1.x.toFixed(6), y1 = v1.y.toFixed(6);
                 const x2 = v2.x.toFixed(6), y2 = v2.y.toFixed(6);
                 // Sort to ensure consistent key regardless of order

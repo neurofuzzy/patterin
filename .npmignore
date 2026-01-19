@@ -1,0 +1,37 @@
+# Source files (already compiled to dist/)
+src/
+tests/
+*.test.ts
+
+# Build config and tools
+tsconfig.json
+vitest.config.ts
+eslint.config.js
+.eslintcache
+
+# Development files
+.git
+.github/
+.vscode/
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Playground (not needed in npm package)
+playground/
+
+# Documentation for development only
+specs/
+test-output/
+docs/
+
+# Example outputs
+examples/output/
+
+# Git files
+.gitignore
+.gitattributes
+
+# Assessment docs (internal)
+DOCUMENTATION-ASSESSMENT.md
+DOCUMENTATION-IMPROVEMENTS.md

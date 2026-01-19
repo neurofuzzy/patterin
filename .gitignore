@@ -138,4 +138,8 @@ dist
 # Patterin test output
 test-output/
 
+# GitHub Pages build output (docs/playground/)
+# Keep the docs directory structure but ignore built files
+docs/playground/
+
 .DS_Store

@@ -1,6 +1,6 @@
 {
   "name": "patterin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Declarative procedural 2D vector graphics with system scaffolds",
   "keywords": [
     "svg",
@@ -46,6 +46,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:playground": "cd playground && npm install && npm run build",
+    "deploy": "npm run build && npm run build:playground",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

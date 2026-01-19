@@ -5,7 +5,7 @@
  */
 
 import { BaseSystem, type RenderGroup } from './BaseSystem';
-import { Shape, Segment, Vector2 } from '../primitives';
+import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import type { SystemBounds } from '../types';
 
@@ -38,43 +38,41 @@ export abstract class EdgeBasedSystem extends BaseSystem {
     }
 
     protected scaleGeometry(factor: number): void {
-        // Scale nodes
-        for (const node of this._nodes) {
-            node.x *= factor;
-            node.y *= factor;
-        }
-        // Scale edges
-        for (const edge of this._edges) {
-            edge.start.x *= factor;
-            edge.start.y *= factor;
-            edge.end.x *= factor;
-            edge.end.y *= factor;
-        }
+        // Scale nodes (Vector2 is immutable, so create new instances)
+        this._nodes = this._nodes.map(node => 
+            new Vector2(node.x * factor, node.y * factor)
+        );
+        // Scale edges (create new Segments with scaled Vertices)
+        this._edges = this._edges.map(edge => {
+            const scaledStart = new Vertex(edge.start.x * factor, edge.start.y * factor);
+            const scaledEnd = new Vertex(edge.end.x * factor, edge.end.y * factor);
+            return new Segment(scaledStart, scaledEnd);
+        });
     }
 
     protected rotateGeometry(angleRad: number): void {
         const cos = Math.cos(angleRad);
         const sin = Math.sin(angleRad);
         
-        // Rotate nodes
-        for (const node of this._nodes) {
+        // Rotate nodes (Vector2 is immutable, so create new instances)
+        this._nodes = this._nodes.map(node => {
             const x = node.x * cos - node.y * sin;
             const y = node.x * sin + node.y * cos;
-            node.x = x;
-            node.y = y;
-        }
-        // Rotate edges
-        for (const edge of this._edges) {
-            let x = edge.start.x * cos - edge.start.y * sin;
-            let y = edge.start.x * sin + edge.start.y * cos;
-            edge.start.x = x;
-            edge.start.y = y;
+            return new Vector2(x, y);
+        });
+        
+        // Rotate edges (create new Segments with rotated Vertices)
+        this._edges = this._edges.map(edge => {
+            const startX = edge.start.x * cos - edge.start.y * sin;
+            const startY = edge.start.x * sin + edge.start.y * cos;
+            const endX = edge.end.x * cos - edge.end.y * sin;
+            const endY = edge.end.x * sin + edge.end.y * cos;
             
-            x = edge.end.x * cos - edge.end.y * sin;
-            y = edge.end.x * sin + edge.end.y * cos;
-            edge.end.x = x;
-            edge.end.y = y;
-        }
+            return new Segment(
+                new Vertex(startX, startY),
+                new Vertex(endX, endY)
+            );
+        });
     }
 
     protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
