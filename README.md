@@ -229,6 +229,7 @@ console.log(tree.toSVG({ width: 600, height: 800 }));
 ## Documentation
 
 - **[Complete API Reference](API.md)** - Detailed documentation for every method and option
+- **[Examples Directory](examples/)** - 25+ runnable examples from basic to advanced
 - **[Playground](https://neurofuzzy.github.io/patterin/playground)** - Interactive live coding environment
 
 ## API Overview
@@ -377,12 +378,20 @@ Patterin works in all modern browsers and Node.js environments:
 
 ## Examples Gallery
 
-Check out `test-output/` for generated SVG examples:
-- Truchet tiles patterns
-- L-system fractals (Dragon, Hilbert, Koch)
-- Tessellations (Penrose, Trihexagonal)
-- Grid systems with transformations
-- Complex clone and offset patterns
+The **[examples/ directory](examples/)** contains 25+ runnable examples organized by concept:
+- **Basics**: Circles, stars, gears, multiple shapes
+- **Transformations**: Cloning, scaling, rotating, offsetting
+- **Contexts**: Point expansion, line extrusion, polar spreads
+- **Grids**: Square, hexagonal, triangular grids
+- **Tessellations**: Truchet tiles, Penrose, trihexagonal
+- **Fractals**: Koch curves, dragon, Hilbert, Sierpiński, plants
+- **Advanced**: Complex mandalas, geometric patterns, plotter art
+
+Run any example:
+```bash
+npx tsx examples/01-basics/star.ts
+# ✓ Generated: examples/output/star.svg
+```
 
 ## Contributing
 
