@@ -5,19 +5,24 @@ import { createGingham } from './GinghamPattern';
 import { createHoundstooth } from './HoundstoothPattern';
 import { createHerringbone } from './HerringbonePattern';
 import { createBrick } from './BrickPattern';
-import { createPinwheel } from './PinwheelPattern';
-import { createLogCabin } from './LogCabinPattern';
-import { createBowTie } from './BowTiePattern';
-import { createBrokenDishes } from './BrokenDishesPattern';
-import { createFriendshipStar } from './FriendshipStarPattern';
-import { createShooFly } from './ShooFlyPattern';
-import { createSnowball } from './SnowballPattern';
-import { createFlyingGeese } from './FlyingGeesePattern';
-import { createDutchmansPuzzle } from './DutchmansPuzzlePattern';
-import { createSawtoothStar } from './SawtoothStarPattern';
-import { createEightPointedStar } from './EightPointedStarPattern';
+import {
+    createQuiltPattern,
+    createQuiltPatternFromTemplate,
+    quiltBlockTemplates,
+    QuiltPatternOptions,
+    QuiltBlockTemplate,
+    BlockRotation,
+    CellDefinition
+} from './QuiltPattern';
 
 export * from './PatternTypes';
+export { quiltBlockTemplates } from './QuiltPattern';
+export type {
+    QuiltBlockTemplate,
+    BlockRotation,
+    CellDefinition,
+    QuiltPatternOptions
+} from './QuiltPattern';
 
 /**
  * Pattern factory - orchestrates shapes and systems to create visual textile patterns.
@@ -35,9 +40,16 @@ export * from './PatternTypes';
  *   bounds: { width: 400, height: 400 }
  * });
  * 
+ * // Quilt block pattern
+ * const pinwheel = pattern.quilt({
+ *   blockName: 'pinwheel',
+ *   blockSize: 100,
+ *   bounds: { width: 400, height: 400 }
+ * });
+ * 
  * // Access grouped shapes for styling
- * const lightChecks = checker.shapes.filter(s => s.group === 'light');
- * const darkChecks = checker.shapes.filter(s => s.group === 'dark');
+ * const lightShapes = pinwheel.shapes.filter(s => s.group === 'light');
+ * const darkShapes = pinwheel.shapes.filter(s => s.group === 'dark');
  * ```
  */
 export const pattern = {
@@ -59,7 +71,7 @@ export const pattern = {
     checker(options: import('./PatternTypes').CheckerOptions): ShapesContext {
         return createChecker(options);
     },
-    
+
     /**
      * Create a chevron (zigzag) pattern.
      * Diagonal stripes forming V-shapes tagged as 'stripe1' and 'stripe2'.
@@ -79,7 +91,7 @@ export const pattern = {
     chevron(options: import('./PatternTypes').ChevronOptions): ShapesContext {
         return createChevron(options);
     },
-    
+
     /**
      * Create a gingham pattern.
      * Overlapping horizontal and vertical bands creating a woven appearance.
@@ -101,7 +113,7 @@ export const pattern = {
     gingham(options: import('./PatternTypes').GinghamOptions): ShapesContext {
         return createGingham(options);
     },
-    
+
     /**
      * Create a houndstooth pattern.
      * Classic jagged check pattern tagged as 'light' and 'dark'.
@@ -120,7 +132,7 @@ export const pattern = {
     houndstooth(options: import('./PatternTypes').HoundstoothOptions): ShapesContext {
         return createHoundstooth(options);
     },
-    
+
     /**
      * Create a herringbone pattern.
      * V-shaped weaving arrangement of rectangles tagged as 'angle1' and 'angle2'.
@@ -141,7 +153,7 @@ export const pattern = {
     herringbone(options: import('./PatternTypes').HerringboneOptions): ShapesContext {
         return createHerringbone(options);
     },
-    
+
     /**
      * Create a brick pattern with various bond types.
      * Supports running bond, stack bond, basket weave, and Flemish bond.
@@ -172,133 +184,74 @@ export const pattern = {
     brick(options: import('./PatternTypes').BrickOptions): ShapesContext {
         return createBrick(options);
     },
-    
+
     /**
-     * Create a traditional Pinwheel quilt block pattern.
-     * Made from four half-square triangles arranged to create a spinning effect.
+     * Create a quilt block pattern from a named template.
      * 
-     * @param options - Pinwheel pattern configuration
+     * Available blocks:
+     * - `pinwheel` - Four HSTs in a spinning pattern
+     * - `brokenDishes` - Four HSTs with dark at outer corners
+     * - `friendshipStar` - Nine-patch with HST star points
+     * - `shooFly` - Nine-patch with corner HSTs
+     * - `bowTie` - Four HSTs creating a bow tie shape
+     * - `dutchmansPuzzle` - Four Flying Geese in a pinwheel
+     * - `sawtoothStar` - Nine-patch with Flying Geese points
+     * 
+     * All shapes are tagged as 'light' or 'dark' for easy styling.
+     * 
+     * @param options - Quilt pattern configuration
      * @returns ShapesContext with grouped shapes
      * 
      * @example
      * ```typescript
-     * const pinwheel = pattern.pinwheel({
-     *   blockSize: 80,
+     * const pinwheel = pattern.quilt({
+     *   blockName: 'pinwheel',
+     *   blockSize: 100,
      *   bounds: { width: 400, height: 400 }
+     * });
+     * 
+     * // Style by group
+     * pinwheel.shapes.forEach(shape => {
+     *   const color = shape.group === 'dark' ? '#3498db' : '#ecf0f1';
+     *   svg.addShape(shape, { fill: color });
      * });
      * ```
      */
-    pinwheel(options: import('./PatternTypes').PinwheelOptions): ShapesContext {
-        return createPinwheel(options);
+    quilt(options: QuiltPatternOptions): ShapesContext {
+        return createQuiltPattern(options);
     },
-    
+
     /**
-     * Create a traditional Log Cabin quilt block pattern.
-     * Strips arranged around a center square with light and dark sides.
+     * Create a quilt pattern from a custom block template.
      * 
-     * @param options - Log Cabin pattern configuration
+     * @param template - Custom block template
+     * @param blockSize - Size of each block
+     * @param bounds - Pattern bounds
      * @returns ShapesContext with grouped shapes
-     */
-    logCabin(options: import('./PatternTypes').LogCabinOptions): ShapesContext {
-        return createLogCabin(options);
-    },
-    
-    /**
-     * Create a traditional Bow Tie quilt block pattern.
-     * Four patch with corner triangles creating a bow tie shape.
      * 
-     * @param options - Bow Tie pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    bowTie(options: import('./PatternTypes').BowTieOptions): ShapesContext {
-        return createBowTie(options);
-    },
-    
-    /**
-     * Create a traditional Broken Dishes quilt block pattern.
-     * Four half-square triangles in a pinwheel-like arrangement.
+     * @example
+     * ```typescript
+     * const customBlock: QuiltBlockTemplate = {
+     *   name: 'custom',
+     *   grid: 2,
+     *   cells: [
+     *     [{ type: 'hst', rotation: 0 }, { type: 'square', group: 'dark' }],
+     *     [{ type: 'square', group: 'light' }, { type: 'hst', rotation: 180 }]
+     *   ]
+     * };
      * 
-     * @param options - Broken Dishes pattern configuration
-     * @returns ShapesContext with grouped shapes
+     * const custom = pattern.quiltFromTemplate(
+     *   customBlock,
+     *   100,
+     *   { width: 400, height: 400 }
+     * );
+     * ```
      */
-    brokenDishes(options: import('./PatternTypes').BrokenDishesOptions): ShapesContext {
-        return createBrokenDishes(options);
-    },
-    
-    /**
-     * Create a traditional Friendship Star quilt block pattern.
-     * Nine-patch with center square, corner squares, and HST star points.
-     * 
-     * @param options - Friendship Star pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    friendshipStar(options: import('./PatternTypes').FriendshipStarOptions): ShapesContext {
-        return createFriendshipStar(options);
-    },
-    
-    /**
-     * Create a traditional Shoo Fly quilt block pattern.
-     * Nine-patch with corner HSTs creating an X pattern.
-     * 
-     * @param options - Shoo Fly pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    shooFly(options: import('./PatternTypes').ShooFlyOptions): ShapesContext {
-        return createShooFly(options);
-    },
-    
-    /**
-     * Create a traditional Snowball quilt block pattern.
-     * Square with cut corners creating an octagonal appearance.
-     * 
-     * @param options - Snowball pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    snowball(options: import('./PatternTypes').SnowballOptions): ShapesContext {
-        return createSnowball(options);
-    },
-    
-    /**
-     * Create a traditional Flying Geese quilt pattern.
-     * Central triangle (goose) with two smaller side triangles (sky).
-     * 
-     * @param options - Flying Geese pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    flyingGeese(options: import('./PatternTypes').FlyingGeeseOptions): ShapesContext {
-        return createFlyingGeese(options);
-    },
-    
-    /**
-     * Create a traditional Dutchman's Puzzle quilt block pattern.
-     * Four Flying Geese units arranged around a center.
-     * 
-     * @param options - Dutchman's Puzzle pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    dutchmansPuzzle(options: import('./PatternTypes').DutchmansPuzzleOptions): ShapesContext {
-        return createDutchmansPuzzle(options);
-    },
-    
-    /**
-     * Create a traditional Sawtooth Star quilt block pattern.
-     * Center square with four Flying Geese star points and corner squares.
-     * 
-     * @param options - Sawtooth Star pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    sawtoothStar(options: import('./PatternTypes').SawtoothStarOptions): ShapesContext {
-        return createSawtoothStar(options);
-    },
-    
-    /**
-     * Create a traditional Eight-Pointed Star quilt block pattern.
-     * Also known as LeMoyne Star, featuring 8 diamond points radiating from center.
-     * 
-     * @param options - Eight-Pointed Star pattern configuration
-     * @returns ShapesContext with grouped shapes
-     */
-    eightPointedStar(options: import('./PatternTypes').EightPointedStarOptions): ShapesContext {
-        return createEightPointedStar(options);
+    quiltFromTemplate(
+        template: QuiltBlockTemplate,
+        blockSize: number,
+        bounds: { width: number; height: number }
+    ): ShapesContext {
+        return createQuiltPatternFromTemplate(template, blockSize, bounds);
     },
 };

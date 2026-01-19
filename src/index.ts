@@ -158,24 +158,21 @@ export { system } from './systems/index';
  * ```
  */
 export { pattern } from './patterns/index';
-export type { 
-    PatternType, 
-    CheckerOptions, 
-    ChevronOptions, 
-    GinghamOptions, 
-    HoundstoothOptions, 
+export type {
+    PatternType,
+    CheckerOptions,
+    ChevronOptions,
+    GinghamOptions,
+    HoundstoothOptions,
     HerringboneOptions,
     BrickOptions,
     BrickBondType,
-    PinwheelOptions,
-    LogCabinOptions,
-    BowTieOptions,
-    BrokenDishesOptions,
-    FriendshipStarOptions,
-    ShooFlyOptions,
-    SnowballOptions,
-    FlyingGeeseOptions,
-    DutchmansPuzzleOptions,
-    SawtoothStarOptions,
-    EightPointedStarOptions
 } from './patterns/index';
+export type {
+    QuiltPatternOptions,
+    QuiltBlockTemplate,
+    BlockRotation,
+    CellDefinition,
+} from './patterns/index';
+export { quiltBlockTemplates } from './patterns/index';
+

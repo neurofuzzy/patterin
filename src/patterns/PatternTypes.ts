@@ -1,21 +1,11 @@
-export type PatternType = 
-    | 'checker' 
-    | 'chevron' 
-    | 'gingham' 
-    | 'houndstooth' 
+export type PatternType =
+    | 'checker'
+    | 'chevron'
+    | 'gingham'
+    | 'houndstooth'
     | 'herringbone'
     | 'brick'
-    | 'pinwheel'
-    | 'logCabin'
-    | 'bowTie'
-    | 'brokenDishes'
-    | 'friendshipStar'
-    | 'shooFly'
-    | 'snowball'
-    | 'flyingGeese'
-    | 'dutchmansPuzzle'
-    | 'sawtoothStar'
-    | 'eightPointedStar';
+    | 'quilt';
 
 export interface PatternBounds {
     width: number;
@@ -57,51 +47,4 @@ export interface BrickOptions extends BasePatternOptions {
     brickWidth: number;    // Width of each brick
     brickHeight: number;   // Height of each brick
     mortarWidth?: number;  // Gap between bricks (default 2)
-}
-
-export interface PinwheelOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each pinwheel block (HST-based quilt block)
-}
-
-export interface LogCabinOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each log cabin block
-    stripWidth: number;    // Width of each strip/log
-}
-
-export interface BowTieOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each bow tie block
-}
-
-export interface BrokenDishesOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each broken dishes block
-}
-
-export interface FriendshipStarOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each friendship star block
-}
-
-export interface ShooFlyOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each shoo fly block
-}
-
-export interface SnowballOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each snowball block
-    cornerSize?: number;   // Size of corner triangles (default: blockSize / 4)
-}
-
-export interface FlyingGeeseOptions extends BasePatternOptions {
-    unitSize: number;      // Size of each square flying geese unit
-    direction?: 'horizontal' | 'vertical';  // Direction of flight (default 'horizontal')
-}
-
-export interface DutchmansPuzzleOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each Dutchman's Puzzle block
-}
-
-export interface SawtoothStarOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each sawtooth star block
-}
-
-export interface EightPointedStarOptions extends BasePatternOptions {
-    blockSize: number;     // Size of each eight-pointed star block
 }
