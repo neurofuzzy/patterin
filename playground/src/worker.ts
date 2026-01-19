@@ -30,9 +30,18 @@ export type WorkerResponse = {
 function createAutoCollectContext() {
     // Registry for all shape contexts (both factory-created and operation-returned)
     const shapeRegistry = new Set<patterin.ShapeContext | patterin.ShapesContext>();
+    
+    // Track contexts that have been consumed by generative operations (don't render these)
+    const consumedContexts = new WeakSet<patterin.ShapeContext | patterin.ShapesContext>();
+    
+    // Track systems whose subsets have been consumed (don't render these)
+    const consumedSystems = new WeakSet<any>();
 
     /**
      * Wrap a sub-context (PointsContext, LinesContext) to track returned shapes
+     * Note: Sub-contexts are accessed via .points or .lines on a ShapeContext,
+     * so when they create new shapes, we DON'T mark the parent as consumed
+     * because the sub-context operations are typically additive/generative by nature.
      */
     function wrapSubContext<T extends object>(ctx: T): T {
         return new Proxy(ctx, {
@@ -69,10 +78,19 @@ function createAutoCollectContext() {
                     return function (this: patterin.ShapesContext, ...args: unknown[]) {
                         const result = value.apply(target, args);
                         if (result instanceof patterin.ShapeContext) {
+                            // If method returns a NEW context (not part of target), it's generative
+                            // Mark the source as consumed
+                            if (result !== target) {
+                                consumedContexts.add(target);
+                            }
                             shapeRegistry.add(result);
                             return wrapShapeContext(result);
                         }
                         if (result instanceof patterin.ShapesContext) {
+                            // If method returns a NEW context (not self), it's generative
+                            if (result !== target) {
+                                consumedContexts.add(target);
+                            }
                             shapeRegistry.add(result);
                             return wrapShapesContext(result);
                         }
@@ -100,18 +118,78 @@ function createAutoCollectContext() {
                         const result = value.apply(target, args);
                         // Track returned ShapeContext or ShapesContext
                         if (result instanceof patterin.ShapeContext) {
+                            // If method returns a NEW context (not self), it's generative
+                            // Mark the source as consumed so we don't render it
+                            if (result !== target) {
+                                consumedContexts.add(target);
+                            }
                             shapeRegistry.add(result);
                             return wrapShapeContext(result);
                         }
                         if (result instanceof patterin.ShapesContext) {
+                            // Generative operation that returns multiple shapes
+                            // Mark the source as consumed
+                            consumedContexts.add(target);
                             shapeRegistry.add(result);
                             return wrapShapesContext(result);
                         }
                         // Track CloneSystem from clone() calls
                         if (result instanceof patterin.CloneSystem) {
+                            // Clone is generative, mark source as consumed
+                            consumedContexts.add(target);
                             createdSystems.push(result);
                             return wrapCloneSystem(result);
                         }
+                        return result;
+                    };
+                }
+                // Wrap property accessors like .points and .lines
+                if (value instanceof patterin.PointsContext || value instanceof patterin.LinesContext) {
+                    return wrapSubContext(value);
+                }
+                return value;
+            }
+        }) as T;
+    }
+
+    /**
+     * Wrap a context returned from a System method.
+     * LOGIC:
+     * - If method returns THE SAME context (this), keep it wrapped but DO NOT add to registry 
+     *   (it's a view/subset that the System already renders).
+     * - If method returns a NEW context (generative), ADD to registry and wrap normally.
+     * - Mark parent system as consumed when generative operations are called on subsets.
+     */
+    function wrapSystemReturnedContext<T extends object>(ctx: T, parentSystem?: any): T {
+        return new Proxy(ctx, {
+            get(target, prop, receiver) {
+                const value = Reflect.get(target, prop, receiver);
+                if (typeof value === 'function') {
+                    return function (this: T, ...args: unknown[]) {
+                        const result = value.apply(target, args);
+
+                        // If chaining (returns itself), return this wrapper (still not in registry)
+                        if (result === target) {
+                            return wrapSystemReturnedContext(result, parentSystem);
+                        }
+
+                        // If it returns a NEW ShapeContext/ShapesContext, it's likely generative (offset)
+                        // So we MUST track it AND mark the parent system as consumed
+                        if (result instanceof patterin.ShapeContext) {
+                            if (parentSystem) {
+                                consumedSystems.add(parentSystem);
+                            }
+                            shapeRegistry.add(result);
+                            return wrapShapeContext(result);
+                        }
+                        if (result instanceof patterin.ShapesContext) {
+                            if (parentSystem) {
+                                consumedSystems.add(parentSystem);
+                            }
+                            shapeRegistry.add(result);
+                            return wrapShapesContext(result);
+                        }
+
                         return result;
                     };
                 }
@@ -138,6 +216,12 @@ function createAutoCollectContext() {
                         if (result instanceof patterin.CloneSystem) {
                             createdSystems.push(result);
                             return wrapCloneSystem(result);
+                        }
+                        // Handle ShapeContext/ShapesContext returned from system methods (e.g. every, slice)
+                        if (result instanceof patterin.ShapeContext || result instanceof patterin.ShapesContext) {
+                            // Do NOT add to registry yet (avoid double render of system subsets)
+                            // But wrap it so subsequent generative calls ARE tracked
+                            return wrapSystemReturnedContext(result, target);
                         }
                         return result;
                     };
@@ -202,7 +286,7 @@ function createAutoCollectContext() {
         },
     };
 
-    return { autoShape, autoSystem, shapeRegistry, createdSystems };
+    return { autoShape, autoSystem, shapeRegistry, createdSystems, consumedContexts, consumedSystems };
 }
 
 /**
@@ -268,7 +352,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     if (type === 'execute') {
         try {
             // Create fresh auto-collect context for this run
-            const { autoShape, autoSystem, shapeRegistry, createdSystems } = createAutoCollectContext();
+            const { autoShape, autoSystem, shapeRegistry, createdSystems, consumedContexts, consumedSystems } = createAutoCollectContext();
 
             // Create collector for this run
             const collector = new patterin.SVGCollector();
@@ -309,17 +393,17 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
             // Auto-render: if shapes or systems were created and render() wasn't called explicitly
             if ((shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
-                // Stamp all registered shapes to the collector
-                for (const shapeCtx of shapeRegistry) {
-                    if (typeof shapeCtx.stamp === 'function') {
-                        shapeCtx.stamp(collector);
+                // Stamp all created systems to the collector (skip consumed systems)
+                for (const sys of createdSystems) {
+                    if (!consumedSystems.has(sys) && typeof sys.stamp === 'function') {
+                        sys.stamp(collector);
                     }
                 }
 
-                // Stamp all created systems to the collector
-                for (const sys of createdSystems) {
-                    if (typeof sys.stamp === 'function') {
-                        sys.stamp(collector);
+                // Stamp all registered shapes to the collector (skip consumed contexts)
+                for (const shapeCtx of shapeRegistry) {
+                    if (!consumedContexts.has(shapeCtx) && typeof shapeCtx.stamp === 'function') {
+                        shapeCtx.stamp(collector);
                     }
                 }
 

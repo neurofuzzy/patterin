@@ -112,13 +112,43 @@ export class ShapeContext {
 
     /**
      * Offset (inset/outset) the shape outline.
-     * Positive = outward, negative = inward.
-     * @param distance - Offset distance
+     * @param distance - Offset distance (positive = outward, negative = inward)
+     * @param count - Number of copies to generate. 0 = in-place modification. >0 = returns original + copies.
      * @param miterLimit - Miter limit for sharp corners (default 4)
-     * @returns New ShapeContext with offset shape
+     * @returns ShapeContext (if count=0) or ShapesContext (if count>0)
      */
-    offset(distance: number, miterLimit = 4): ShapeContext {
-        return this.offsetShape(distance, miterLimit);
+    offset(distance: number, count: number = 0, miterLimit = 4): any {
+        if (count > 0) {
+            const shapes: Shape[] = [this._shape];
+            let current = this._shape;
+            for (let i = 0; i < count; i++) {
+                const nextCtx = new ShapeContext(current).offsetShape(distance, miterLimit);
+                shapes.push(nextCtx.shape);
+                current = nextCtx.shape;
+            }
+            return new ShapesContext(shapes);
+        }
+
+        // In-place modification for count=0
+        const offsetCtx = this.offsetShape(distance, miterLimit);
+        this._shape.segments = offsetCtx.shape.segments;
+        this._shape.winding = offsetCtx.shape.winding;
+        this._shape.connectSegments();
+        return this;
+    }
+
+    /**
+     * Expand shape (outset) by distance.
+     */
+    expand(distance: number, count: number = 0, miterLimit = 4): any {
+        return this.offset(Math.abs(distance), count, miterLimit);
+    }
+
+    /**
+     * Inset shape by distance.
+     */
+    inset(distance: number, count: number = 0, miterLimit = 4): any {
+        return this.offset(-Math.abs(distance), count, miterLimit);
     }
 
     /** Set x position (moves centroid to x, keeping y) */
@@ -805,12 +835,26 @@ export class ShapesContext {
 
     /**
      * Offset (inset/outset) all shape outlines.
-     * Positive = outward, negative = inward.
      * @param distance - Offset distance
-     * @param miterLimit - Miter limit for sharp corners (default 4)
-     * @returns This ShapesContext (modified in place)
+     * @param count - Number of copies per shape. 0 = in-place. >0 = generative.
+     * @param miterLimit - Miter limit
      */
-    offset(distance: number, miterLimit = 4): this {
+    offset(distance: number, count: number = 0, miterLimit = 4): ShapesContext {
+        if (count > 0) {
+            const newShapes: Shape[] = [];
+            for (const shape of this._shapes) {
+                newShapes.push(shape); // Original
+                let current = shape;
+                for (let i = 0; i < count; i++) {
+                    const ctx = new ShapeContext(current);
+                    const offsetCtx = ctx.offsetShape(distance, miterLimit);
+                    newShapes.push(offsetCtx.shape);
+                    current = offsetCtx.shape;
+                }
+            }
+            return new ShapesContext(newShapes);
+        }
+
         for (let i = 0; i < this._shapes.length; i++) {
             const shape = this._shapes[i];
             const ctx = new ShapeContext(shape);
@@ -821,6 +865,16 @@ export class ShapesContext {
             shape.connectSegments();
         }
         return this;
+    }
+
+    /** Expand all shapes */
+    expand(distance: number, count: number = 0, miterLimit = 4): ShapesContext {
+        return this.offset(Math.abs(distance), count, miterLimit);
+    }
+
+    /** Inset all shapes */
+    inset(distance: number, count: number = 0, miterLimit = 4): ShapesContext {
+        return this.offset(-Math.abs(distance), count, miterLimit);
     }
 
     /** Move all shapes so their collective center is at position */
@@ -1011,6 +1065,12 @@ export class RectContext extends ShapeContext {
         this._width = width;
         this._height = height;
     }
+
+    /** Get width */
+    get w(): number { return this._width; }
+
+    /** Get height */
+    get h(): number { return this._height; }
 
     /** Set width */
     width(w: number): this {
