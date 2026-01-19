@@ -364,7 +364,7 @@ class ShapePointsContext extends PointsContext {
 
     /** Place a shape at each selected node */
     place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             const clone = shapeCtx.shape.clone();
             clone.moveTo(v.position);
             this._system.addPlacement(v.position, clone, style);
@@ -375,8 +375,8 @@ class ShapePointsContext extends PointsContext {
     /** Select every nth node */
     every(n: number, offset = 0): ShapePointsContext {
         const selected: Vertex[] = [];
-        for (let i = offset; i < this._vertices.length; i += n) {
-            selected.push(this._vertices[i]);
+        for (let i = offset; i < this._items.length; i += n) {
+            selected.push(this._items[i]);
         }
         return new ShapePointsContext(this._system, selected);
     }
@@ -385,8 +385,8 @@ class ShapePointsContext extends PointsContext {
     at(...indices: number[]): ShapePointsContext {
         const selected: Vertex[] = [];
         for (const i of indices) {
-            if (i >= 0 && i < this._vertices.length) {
-                selected.push(this._vertices[i]);
+            if (i >= 0 && i < this._items.length) {
+                selected.push(this._items[i]);
             }
         }
         return new ShapePointsContext(this._system, selected);

@@ -588,7 +588,7 @@ class GridPointsContext extends PointsContext {
 
     /** Place a shape at each selected node */
     place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             const clone = shapeCtx.shape.clone();
             clone.moveTo(v.position);
             this._grid.addPlacement(v.position, clone, style);
@@ -600,8 +600,8 @@ class GridPointsContext extends PointsContext {
     every(n: number, offset = 0): GridPointsContext {
         const selected: Vertex[] = [];
         const selectedNodes: GridNode[] = [];
-        for (let i = offset; i < this._vertices.length; i += n) {
-            selected.push(this._vertices[i]);
+        for (let i = offset; i < this._items.length; i += n) {
+            selected.push(this._items[i]);
             selectedNodes.push(this._gridNodes[i]);
         }
         return new GridPointsContext(this._grid, selected, selectedNodes);
@@ -612,8 +612,8 @@ class GridPointsContext extends PointsContext {
         const selected: Vertex[] = [];
         const selectedNodes: GridNode[] = [];
         for (const i of indices) {
-            if (i >= 0 && i < this._vertices.length) {
-                selected.push(this._vertices[i]);
+            if (i >= 0 && i < this._items.length) {
+                selected.push(this._items[i]);
                 selectedNodes.push(this._gridNodes[i]);
             }
         }
@@ -634,7 +634,7 @@ class GridShapesContext extends ShapesContext {
 
     /** Place a shape at each cell center */
     place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const cellShape of this._shapes) {
+        for (const cellShape of this._items) {
             const center = cellShape.centroid();
             const clone = shapeCtx.shape.clone();
             clone.moveTo(center);

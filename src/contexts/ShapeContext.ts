@@ -7,6 +7,49 @@ import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
 
 /**
+ * Base class for contexts that operate on collections with selection capabilities.
+ * Provides common selection methods: every(), at(), length
+ */
+abstract class SelectableContext<T, TSelf> {
+    constructor(protected _items: T[]) { }
+
+    /** Get number of selected items */
+    get length(): number {
+        return this._items.length;
+    }
+
+    /**
+     * Select every nth item.
+     * @param n - Select every nth item (1 = all, 2 = every other, etc.)
+     * @param offset - Starting offset (default 0)
+     */
+    every(n: number, offset = 0): TSelf {
+        const selected: T[] = [];
+        for (let i = offset; i < this._items.length; i += n) {
+            selected.push(this._items[i]);
+        }
+        return this.createNew(selected);
+    }
+
+    /**
+     * Select items at specific indices.
+     * @param indices - Zero-based indices of items to select
+     */
+    at(...indices: number[]): TSelf {
+        const selected: T[] = [];
+        for (const i of indices) {
+            if (i >= 0 && i < this._items.length) {
+                selected.push(this._items[i]);
+            }
+        }
+        return this.createNew(selected);
+    }
+
+    /** Factory method for creating new instances with selected items */
+    protected abstract createNew(items: T[]): TSelf;
+}
+
+/**
  * Base context for all shape operations.
  * 
  * Provides a fluent API for transforming shapes, accessing vertices and segments,
@@ -542,69 +585,21 @@ export class ShapeContext {
  * mandala.points.expandToCircles(10);
  * ```
  */
-export class PointsContext {
+export class PointsContext extends SelectableContext<Vertex, PointsContext> {
     constructor(
         protected _shape: Shape,
-        protected _vertices: Vertex[]
-    ) { }
+        vertices: Vertex[]
+    ) {
+        super(vertices);
+    }
 
     /** Get selected vertices */
     get vertices(): Vertex[] {
-        return this._vertices;
+        return this._items;
     }
 
-    /** Get number of selected points */
-    get length(): number {
-        return this._vertices.length;
-    }
-
-    /**
-     * Select every nth point.
-     * 
-     * @param n - Select every nth point (1 = all, 2 = every other, etc.)
-     * @param offset - Starting offset (default 0)
-     * @returns A new PointsContext with the selected points
-     * 
-     * @example
-     * ```typescript
-     * // Expand every other point
-     * shape.hexagon().radius(30).points.every(2).expand(10);
-     * 
-     * // Select every 3rd point, starting at index 1
-     * shape.circle().numSegments(12).points.every(3, 1).move(5, 0);
-     * ```
-     */
-    every(n: number, offset = 0): PointsContext {
-        const selected: Vertex[] = [];
-        for (let i = offset; i < this._vertices.length; i += n) {
-            selected.push(this._vertices[i]);
-        }
-        return new PointsContext(this._shape, selected);
-    }
-
-    /**
-     * Select points at specific indices.
-     * 
-     * @param indices - Zero-based indices of points to select
-     * @returns A new PointsContext with the selected points
-     * 
-     * @example
-     * ```typescript
-     * // Expand corners 0 and 2 of a rectangle
-     * shape.rect().size(40).points.at(0, 2).expand(5);
-     * 
-     * // Move first and last point
-     * shape.triangle().radius(30).points.at(0, 2).move(10, 0);
-     * ```
-     */
-    at(...indices: number[]): PointsContext {
-        const selected: Vertex[] = [];
-        for (const i of indices) {
-            if (i >= 0 && i < this._vertices.length) {
-                selected.push(this._vertices[i]);
-            }
-        }
-        return new PointsContext(this._shape, selected);
+    protected createNew(items: Vertex[]): PointsContext {
+        return new PointsContext(this._shape, items);
     }
 
     /**
@@ -626,7 +621,7 @@ export class PointsContext {
      * ```
      */
     expand(distance: number): ShapeContext {
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             v.moveAlongNormal(distance);
         }
         // Invalidate all segment normals
@@ -668,7 +663,7 @@ export class PointsContext {
      */
     move(x: number, y: number): PointsContext {
         const offset = new Vector2(x, y);
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             v.position = v.position.add(offset);
         }
         return this;
@@ -676,17 +671,17 @@ export class PointsContext {
 
     /** Get midpoint of selected points */
     midPoint(): Vector2 {
-        if (this._vertices.length === 0) return Vector2.zero();
+        if (this._items.length === 0) return Vector2.zero();
         let sum = Vector2.zero();
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             sum = sum.add(v.position);
         }
-        return sum.divide(this._vertices.length);
+        return sum.divide(this._items.length);
     }
 
     /** Get bounding box of selected points */
     bbox(): BoundingBox {
-        if (this._vertices.length === 0) {
+        if (this._items.length === 0) {
             return {
                 min: Vector2.zero(),
                 max: Vector2.zero(),
@@ -701,7 +696,7 @@ export class PointsContext {
         let maxX = -Infinity,
             maxY = -Infinity;
 
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             minX = Math.min(minX, v.x);
             minY = Math.min(minY, v.y);
             maxX = Math.max(maxX, v.x);
@@ -731,7 +726,7 @@ export class PointsContext {
      */
     expandToCircles(radius: number, segments = 32): ShapesContext {
         const shapes: Shape[] = [];
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             const circle = Shape.regularPolygon(segments, radius, v.position);
             shapes.push(circle);
         }
@@ -748,7 +743,7 @@ export class PointsContext {
         const endpoints: Vertex[] = [];
         const center = this._shape.centroid();
 
-        for (const v of this._vertices) {
+        for (const v of this._items) {
             let angle: number;
 
             if (typeof direction === 'number') {
@@ -785,40 +780,21 @@ export class PointsContext {
 /**
  * Context for lines/segments operations.
  */
-export class LinesContext {
+export class LinesContext extends SelectableContext<Segment, LinesContext> {
     constructor(
         protected _shape: Shape,
-        protected _segments: Segment[]
-    ) { }
+        segments: Segment[]
+    ) {
+        super(segments);
+    }
 
     /** Get selected segments */
     get segments(): Segment[] {
-        return this._segments;
+        return this._items;
     }
 
-    /** Get number of selected lines */
-    get length(): number {
-        return this._segments.length;
-    }
-
-    /** Select every nth line */
-    every(n: number, offset = 0): LinesContext {
-        const selected: Segment[] = [];
-        for (let i = offset; i < this._segments.length; i += n) {
-            selected.push(this._segments[i]);
-        }
-        return new LinesContext(this._shape, selected);
-    }
-
-    /** Select lines at specific indices */
-    at(...indices: number[]): LinesContext {
-        const selected: Segment[] = [];
-        for (const i of indices) {
-            if (i >= 0 && i < this._segments.length) {
-                selected.push(this._segments[i]);
-            }
-        }
-        return new LinesContext(this._shape, selected);
+    protected createNew(items: Segment[]): LinesContext {
+        return new LinesContext(this._shape, items);
     }
 
     /**
@@ -828,10 +804,10 @@ export class LinesContext {
      * Returns the modified ShapeContext.
      */
     extrude(distance: number): ShapeContext {
-        if (this._segments.length === 0) return new ShapeContext(this._shape);
+        if (this._items.length === 0) return new ShapeContext(this._shape);
 
         // Build a set of selected segments for quick lookup
-        const selectedSet = new Set(this._segments);
+        const selectedSet = new Set(this._items);
         const newPoints: Vector2[] = [];
         const allSegments = this._shape.segments;
 
@@ -884,7 +860,7 @@ export class LinesContext {
     divide(n: number): PointsContext {
         const vertices: Vertex[] = [];
 
-        for (const seg of this._segments) {
+        for (const seg of this._items) {
             for (let i = 1; i < n; i++) {
                 const t = i / n;
                 const point = seg.pointAt(t);
@@ -897,12 +873,12 @@ export class LinesContext {
 
     /** Get midpoint of all selected lines */
     midPoint(): Vector2 {
-        if (this._segments.length === 0) return Vector2.zero();
+        if (this._items.length === 0) return Vector2.zero();
         let sum = Vector2.zero();
-        for (const seg of this._segments) {
+        for (const seg of this._items) {
             sum = sum.add(seg.midpoint());
         }
-        return sum.divide(this._segments.length);
+        return sum.divide(this._items.length);
     }
 
     // ==================== Phase 1.5 Operations ====================
@@ -915,7 +891,7 @@ export class LinesContext {
     collapse(): PointsContext {
         const midpoints: Vertex[] = [];
 
-        for (const seg of this._segments) {
+        for (const seg of this._items) {
             const mid = seg.midpoint();
             midpoints.push(new Vertex(mid.x, mid.y));
         }
@@ -936,7 +912,7 @@ export class LinesContext {
             ...style
         };
 
-        for (const seg of this._segments) {
+        for (const seg of this._items) {
             // Convert segment to path data (M startX startY L endX endY)
             const startPos = seg.start.position;
             const endPos = seg.end.position;
@@ -954,7 +930,7 @@ export class LinesContext {
     expandToRect(distance: number): ShapesContext {
         const shapes: Shape[] = [];
 
-        for (const seg of this._segments) {
+        for (const seg of this._items) {
             const start = seg.start.position;
             const end = seg.end.position;
             const normal = seg.normal.multiply(distance);
@@ -999,65 +975,18 @@ export class LinesContext {
  * subset.translate(100, 0);
  * ```
  */
-export class ShapesContext {
-    constructor(protected _shapes: Shape[]) { }
+export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
+    constructor(shapes: Shape[]) {
+        super(shapes);
+    }
 
     /** Get all shapes */
     get shapes(): Shape[] {
-        return this._shapes;
+        return this._items;
     }
 
-    /** Get number of shapes */
-    get length(): number {
-        return this._shapes.length;
-    }
-
-    /**
-     * Select every nth shape.
-     * 
-     * @param n - Select every nth shape (1 = all, 2 = every other, etc.)
-     * @param offset - Starting offset (default 0)
-     * @returns A new ShapesContext with the selected shapes
-     * 
-     * @example
-     * ```typescript
-     * // Transform alternating shapes in a grid
-     * const grid = shape.square()
-     *   .size(10)
-     *   .clone(10, 20, 0)
-     *   .clone(10, 0, 20);
-     * grid.every(2).scale(2).rotate(45);
-     * ```
-     */
-    every(n: number, offset = 0): ShapesContext {
-        const selected: Shape[] = [];
-        for (let i = offset; i < this._shapes.length; i += n) {
-            selected.push(this._shapes[i]);
-        }
-        return new ShapesContext(selected);
-    }
-
-    /**
-     * Select shapes at specific indices.
-     * 
-     * @param indices - Zero-based indices of shapes to select
-     * @returns A new ShapesContext with the selected shapes
-     * 
-     * @example
-     * ```typescript
-     * // Scale first and last shape only
-     * const shapes = shape.circle().radius(10).offset(5, 5);
-     * shapes.at(0, 4).scale(2);
-     * ```
-     */
-    at(...indices: number[]): ShapesContext {
-        const selected: Shape[] = [];
-        for (const i of indices) {
-            if (i >= 0 && i < this._shapes.length) {
-                selected.push(this._shapes[i]);
-            }
-        }
-        return new ShapesContext(selected);
+    protected createNew(items: Shape[]): ShapesContext {
+        return new ShapesContext(items);
     }
 
     /**
@@ -1075,7 +1004,7 @@ export class ShapesContext {
      * ```
      */
     slice(start: number, end?: number): ShapesContext {
-        return new ShapesContext(this._shapes.slice(start, end));
+        return new ShapesContext(this._items.slice(start, end));
     }
 
     /**
@@ -1096,8 +1025,8 @@ export class ShapesContext {
      */
     spread(x: number, y: number): ShapesContext {
         const offset = new Vector2(x, y);
-        for (let i = 0; i < this._shapes.length; i++) {
-            this._shapes[i].translate(offset.multiply(i));
+        for (let i = 0; i < this._items.length; i++) {
+            this._items[i].translate(offset.multiply(i));
         }
         return this;
     }
@@ -1112,11 +1041,11 @@ export class ShapesContext {
      */
     clone(n: number, x: number = 0, y: number = 0): ShapesContext {
         const offset = new Vector2(x, y);
-        const newShapes: Shape[] = [...this._shapes]; // Include originals
+        const newShapes: Shape[] = [...this._items]; // Include originals
 
         // Create n copies of the entire selection
         for (let copyNum = 1; copyNum <= n; copyNum++) {
-            for (const shape of this._shapes) {
+            for (const shape of this._items) {
                 const clone = shape.clone();
                 clone.translate(offset.multiply(copyNum));
                 newShapes.push(clone);
@@ -1128,11 +1057,11 @@ export class ShapesContext {
     /** Get all points from all shapes */
     get points(): PointsContext {
         const allVertices: Vertex[] = [];
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             allVertices.push(...shape.vertices);
         }
         // Use first shape as reference (may be empty)
-        const refShape = this._shapes[0] ?? Shape.fromPoints([
+        const refShape = this._items[0] ?? Shape.fromPoints([
             Vector2.zero(),
             new Vector2(1, 0),
             new Vector2(0, 1),
@@ -1143,10 +1072,10 @@ export class ShapesContext {
     /** Get all lines from all shapes */
     get lines(): LinesContext {
         const allSegments: Segment[] = [];
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             allSegments.push(...shape.segments);
         }
-        const refShape = this._shapes[0] ?? Shape.fromPoints([
+        const refShape = this._items[0] ?? Shape.fromPoints([
             Vector2.zero(),
             new Vector2(1, 0),
             new Vector2(0, 1),
@@ -1156,7 +1085,7 @@ export class ShapesContext {
 
     /** Make all shapes concrete */
     trace(): ShapesContext {
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             shape.ephemeral = false;
         }
         return this;
@@ -1164,7 +1093,7 @@ export class ShapesContext {
 
     /** Scale all shapes uniformly */
     scale(factor: number): this {
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             shape.scale(factor);
         }
         return this;
@@ -1173,7 +1102,7 @@ export class ShapesContext {
     /** Rotate all shapes by angle (degrees) */
     rotate(angleDeg: number): this {
         const angleRad = angleDeg * Math.PI / 180;
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             shape.rotate(angleRad);
         }
         return this;
@@ -1182,7 +1111,7 @@ export class ShapesContext {
     /** Translate all shapes by delta */
     translate(x: number, y: number): this {
         const delta = new Vector2(x, y);
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             shape.translate(delta);
         }
         return this;
@@ -1198,7 +1127,7 @@ export class ShapesContext {
     offset(distance: number, count: number = 0, miterLimit = 4, includeOriginal = false): ShapesContext {
         if (count > 0) {
             const newShapes: Shape[] = [];
-            for (const shape of this._shapes) {
+            for (const shape of this._items) {
                 if (includeOriginal) {
                     newShapes.push(shape); // Original
                 }
@@ -1213,8 +1142,8 @@ export class ShapesContext {
             return new ShapesContext(newShapes);
         }
 
-        for (let i = 0; i < this._shapes.length; i++) {
-            const shape = this._shapes[i];
+        for (let i = 0; i < this._items.length; i++) {
+            const shape = this._items[i];
             const ctx = new ShapeContext(shape);
             const offsetCtx = ctx.offsetShape(distance, miterLimit);
             // Copy offset geometry back to original shape
@@ -1269,7 +1198,7 @@ export class ShapesContext {
     getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             for (const v of shape.vertices) {
                 minX = Math.min(minX, v.x);
                 minY = Math.min(minY, v.y);
@@ -1283,7 +1212,7 @@ export class ShapesContext {
     /** Get all vertices from all shapes (flattened) */
     get vertices(): Vertex[] {
         const all: Vertex[] = [];
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             all.push(...shape.vertices);
         }
         return all;
@@ -1292,7 +1221,7 @@ export class ShapesContext {
     /** Get all segments from all shapes (flattened) */
     get segments(): Segment[] {
         const all: Segment[] = [];
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             all.push(...shape.segments);
         }
         return all;
@@ -1315,7 +1244,7 @@ export class ShapesContext {
             ...style
         };
 
-        for (const shape of this._shapes) {
+        for (const shape of this._items) {
             if (shape.ephemeral) continue;
             const clone = shape.clone();
             if (x !== 0 || y !== 0) {
@@ -1347,7 +1276,7 @@ export class ShapesContext {
         }
 
         const angleRange = endAngle - startAngle;
-        const n = this._shapes.length;
+        const n = this._items.length;
 
         // For full circle, don't put last shape on top of first
         const step = angleRange === 360
@@ -1361,7 +1290,7 @@ export class ShapesContext {
             const x = Math.cos(angleRad) * radius;
             const y = Math.sin(angleRad) * radius;
 
-            this._shapes[i].moveTo(new Vector2(x, y));
+            this._items[i].moveTo(new Vector2(x, y));
         }
 
         return this;
