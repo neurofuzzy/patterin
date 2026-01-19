@@ -1,8 +1,8 @@
-import { renderSystemToSVG } from './SystemUtils';
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
-import type { ISystem } from '../interfaces';
+import { BaseSystem, type RenderGroup } from './BaseSystem';
+import type { SystemBounds } from '../types';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
 
@@ -35,17 +35,11 @@ interface GridCell {
     col: number;
 }
 
-interface Placement {
-    position: Vector2;
-    shape: Shape;
-    style?: PathStyle;
-}
-
 /**
  * GridSystem - creates various grid structures.
  * Supports: square (default), hexagonal, triangular, brick.
  */
-export class GridSystem implements ISystem {
+export class GridSystem extends BaseSystem {
     private _nodes: GridNode[] = [];
     private _cells: GridCell[] = [];
     private _rows: number;
@@ -54,13 +48,12 @@ export class GridSystem implements ISystem {
     private _spacingY: number;
     private _offsetX: number;
     private _offsetY: number;
-    private _placements: Placement[] = [];
     private _type: GridType;
     private _orientation: 'pointy' | 'flat';
     private _brickOffset: number;
-    private _traced = false;
 
     private constructor(options: GridOptions = {}) {
+        super();
         this._type = options.type ?? 'square';
 
         // Support both simple (count/size) and detailed (rows/cols/spacing) APIs
@@ -293,73 +286,91 @@ export class GridSystem implements ISystem {
         return this.cells;
     }
 
-    get shapes(): ShapesContext {
-        const shapes = this._placements.map((p) => p.shape.clone());
-        return new ShapesContext(shapes);
+    // ==================== BaseSystem Implementation ====================
+
+    protected getNodes(): Vertex[] {
+        return this._nodes.map((n) => new Vertex(n.x, n.y));
     }
 
-    /** Number of cells/placements in the system */
-    get length(): number {
-        return this._placements.length > 0 ? this._placements.length : this._cells.length;
+    protected filterByMask(shape: Shape): void {
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(new Vector2(node.x, node.y))
+        );
+
+        // Filter cells to those with centroids inside the mask
+        this._cells = this._cells.filter(cell =>
+            shape.containsPoint(cell.shape.centroid())
+        );
     }
 
-    // ==================== Selection ====================
-
-    /**
-     * Select every nth shape for modification.
-     * Operates on placements if present, otherwise cells.
-     */
-    every(n: number, offset = 0): ShapesContext {
-        const source = this._placements.length > 0
-            ? this._placements.map(p => p.shape)
-            : this._cells.map(c => c.shape);
-
-        const selected: Shape[] = [];
-        for (let i = offset; i < source.length; i += n) {
-            selected.push(source[i]);
-        }
-        return new ShapesContext(selected);
-    }
-
-    /**
-     * Select a range of shapes for modification.
-     * Operates on placements if present, otherwise cells.
-     */
-    slice(start: number, end?: number): ShapesContext {
-        const source = this._placements.length > 0
-            ? this._placements.map(p => p.shape)
-            : this._cells.map(c => c.shape);
-
-        return new ShapesContext(source.slice(start, end));
-    }
-
-    // ==================== Transform ====================
-
-    /**
-     * Scale all shapes uniformly.
-     */
-    scale(factor: number): this {
+    protected scaleGeometry(factor: number): void {
         for (const cell of this._cells) {
             cell.shape.scale(factor);
         }
-        for (const p of this._placements) {
-            p.shape.scale(factor);
-        }
-        return this;
     }
 
-    /**
-     * Rotate all shapes by angle.
-     */
-    rotate(angleDeg: number): this {
-        const angleRad = angleDeg * Math.PI / 180;
+    protected rotateGeometry(angleRad: number): void {
         for (const cell of this._cells) {
             cell.shape.rotate(angleRad);
         }
-        for (const p of this._placements) {
-            p.shape.rotate(angleRad);
+    }
+
+    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
+        const cellStyle = style ?? DEFAULT_STYLES.connection;
+
+        // Add traced cells in their own group
+        if (this._traced) {
+            collector.beginGroup('cells');
+            for (const cell of this._cells) {
+                if (!cell.shape.ephemeral) {
+                    collector.addShape(cell.shape, cellStyle);
+                }
+            }
+            collector.endGroup();
         }
-        return this;
+    }
+
+    protected getGeometryRenderGroups(): RenderGroup[] {
+        const cellItems = this._traced
+            ? this._cells
+                .filter(c => !c.shape.ephemeral)
+                .map(c => ({ shape: c.shape }))
+            : [];
+
+        return [
+            {
+                name: 'cells',
+                items: cellItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            }
+        ];
+    }
+
+    protected getGeometryBounds(): SystemBounds {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for (const node of this._nodes) {
+            minX = Math.min(minX, node.x);
+            minY = Math.min(minY, node.y);
+            maxX = Math.max(maxX, node.x);
+            maxY = Math.max(maxY, node.y);
+        }
+
+        for (const cell of this._cells) {
+            const bbox = cell.shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
+
+    protected getSourceForSelection(): Shape[] {
+        return this._cells.map(c => c.shape);
     }
 
     /** Get row lines */
@@ -437,141 +448,10 @@ export class GridSystem implements ISystem {
         this._placements.push({ position, shape, style });
     }
 
-    /** Place a shape at each node in the system */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const node of this._nodes) {
-            const clone = shapeCtx.shape.clone();
-            clone.ephemeral = false;  // Clones are concrete
-            clone.moveTo(new Vector2(node.x, node.y));
-            this._placements.push({ position: new Vector2(node.x, node.y), shape: clone, style });
-        }
-
-        // Mark source shape as ephemeral AFTER cloning (construction geometry)
-        shapeCtx.shape.ephemeral = true;
-
-        return this;
-    }
-
-    /** Clip system to mask shape boundary */
-    mask(maskShape: ShapeContext): this {
-        // Mark mask as ephemeral (construction geometry)
-        maskShape.shape.ephemeral = true;
-
-        const shape = maskShape.shape;
-
-        // Filter nodes to those inside the mask
-        this._nodes = this._nodes.filter(node =>
-            shape.containsPoint(new Vector2(node.x, node.y))
-        );
-
-        // Filter cells to those with centroids inside the mask
-        this._cells = this._cells.filter(cell =>
-            shape.containsPoint(cell.shape.centroid())
-        );
-
-        // Filter placements to those inside the mask
-        this._placements = this._placements.filter(p =>
-            shape.containsPoint(p.position)
-        );
-
-        return this;
-    }
 
 
 
 
-
-    /** Get computed bounds */
-    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const node of this._nodes) {
-            minX = Math.min(minX, node.x);
-            minY = Math.min(minY, node.y);
-            maxX = Math.max(maxX, node.x);
-            maxY = Math.max(maxY, node.y);
-        }
-
-        for (const cell of this._cells) {
-            const bbox = cell.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        for (const p of this._placements) {
-            const bbox = p.shape.boundingBox();
-            minX = Math.min(minX, p.position.x + bbox.min.x);
-            minY = Math.min(minY, p.position.y + bbox.min.y);
-            maxX = Math.max(maxX, p.position.x + bbox.max.x);
-            maxY = Math.max(maxY, p.position.y + bbox.max.y);
-        }
-
-        return { minX, minY, maxX, maxY };
-    }
-
-    /** Stamp system to collector (for auto-rendering) */
-    stamp(collector: SVGCollector, style?: PathStyle): void {
-        const cellStyle = style ?? DEFAULT_STYLES.connection;
-        const placementStyle = style ?? DEFAULT_STYLES.placement;
-
-        // Add traced cells in their own group
-        if (this._traced) {
-            collector.beginGroup('cells');
-            for (const cell of this._cells) {
-                if (!cell.shape.ephemeral) {
-                    collector.addShape(cell.shape, cellStyle);
-                }
-            }
-            collector.endGroup();
-        }
-
-        // Add placements in their own group
-        if (this._placements.length > 0) {
-            collector.beginGroup('placements');
-            for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? placementStyle);
-            }
-            collector.endGroup();
-        }
-    }
-
-
-    /** Generate SVG output */
-    /** Generate SVG output */
-    toSVG(options: {
-        width: number;
-        height: number;
-        margin?: number;
-    }): string {
-        const { width, height, margin = 10 } = options;
-
-        const cellItems = this._traced
-            ? this._cells
-                .filter(c => !c.shape.ephemeral)
-                .map(c => ({ shape: c.shape }))
-            : [];
-
-        const placementItems = this._placements.map(p => ({
-            shape: p.shape,
-            style: p.style
-        }));
-
-        return renderSystemToSVG(width, height, margin, [
-            {
-                name: 'cells',
-                items: cellItems,
-                defaultStyle: DEFAULT_STYLES.connection
-            },
-            {
-                name: 'placements',
-                items: placementItems,
-                defaultStyle: DEFAULT_STYLES.placement
-            }
-        ]);
-    }
 }
 
 /**

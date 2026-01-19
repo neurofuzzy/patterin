@@ -1,8 +1,8 @@
-import { renderSystemToSVG } from './SystemUtils';
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext';
-import type { ISystem } from '../interfaces';
+import { BaseSystem, type RenderGroup } from './BaseSystem';
+import type { SystemBounds } from '../types';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 
@@ -35,15 +35,14 @@ interface TileInfo {
  * Unlike GridSystem (regular infinite grids), TessellationSystem
  * handles patterns requiring algorithmic generation or randomization.
  */
-export class TessellationSystem implements ISystem {
+export class TessellationSystem extends BaseSystem {
     private _tiles: TileInfo[] = [];
     private _nodes: Vector2[] = [];
-    private _placements: { position: Vector2; shape: Shape; style?: PathStyle }[] = [];
-    private _traced = false;
     private _bounds: { width: number; height: number };
     private _pattern: TessellationPattern;
 
     private constructor(options: TessellationOptions = {}) {
+        super();
         // Support simple size API with defaults
         const pattern = options.pattern ?? 'truchet';
         const bounds = options.bounds ?? { width: 400, height: 400 };
@@ -383,75 +382,65 @@ export class TessellationSystem implements ISystem {
         return new LinesContext(refShape, segments);
     }
 
-    get shapes(): ShapesContext {
-        const shapes = this._tiles.map((t) => t.shape.clone());
-        return new ShapesContext(shapes);
+    // ==================== BaseSystem Implementation ====================
+
+    protected getNodes(): Vertex[] {
+        return this._nodes.map(n => new Vertex(n.x, n.y));
     }
 
-    /** Number of tiles/placements in the system */
-    get length(): number {
-        return this._placements.length > 0 ? this._placements.length : this._tiles.length;
+    protected filterByMask(shape: Shape): void {
+        // Filter tiles to those with centroids inside the mask
+        this._tiles = this._tiles.filter(tile =>
+            shape.containsPoint(tile.shape.centroid())
+        );
+
+        // Filter nodes to those inside the mask
+        this._nodes = this._nodes.filter(node =>
+            shape.containsPoint(node)
+        );
     }
 
-    // ==================== Selection ====================
-
-    /**
-     * Select every nth shape for modification.
-     */
-    every(n: number, offset = 0): ShapesContext {
-        const source = this._placements.length > 0
-            ? this._placements.map(p => p.shape)
-            : this._tiles.map(t => t.shape);
-
-        const selected: Shape[] = [];
-        for (let i = offset; i < source.length; i += n) {
-            selected.push(source[i]);
-        }
-        return new ShapesContext(selected);
-    }
-
-    /**
-     * Select a range of shapes for modification.
-     */
-    slice(start: number, end?: number): ShapesContext {
-        const source = this._placements.length > 0
-            ? this._placements.map(p => p.shape)
-            : this._tiles.map(t => t.shape);
-
-        return new ShapesContext(source.slice(start, end));
-    }
-
-    // ==================== Transform ====================
-
-    /**
-     * Scale all shapes uniformly.
-     */
-    scale(factor: number): this {
+    protected scaleGeometry(factor: number): void {
         for (const tile of this._tiles) {
             tile.shape.scale(factor);
         }
-        for (const p of this._placements) {
-            p.shape.scale(factor);
-        }
-        return this;
     }
 
-    /**
-     * Rotate all shapes by angle.
-     */
-    rotate(angleDeg: number): this {
-        const angleRad = angleDeg * Math.PI / 180;
+    protected rotateGeometry(angleRad: number): void {
         for (const tile of this._tiles) {
             tile.shape.rotate(angleRad);
         }
-        for (const p of this._placements) {
-            p.shape.rotate(angleRad);
-        }
-        return this;
     }
 
-    /** Get bounding box of all geometry */
-    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
+        const tileStyle = style ?? DEFAULT_STYLES.connection;
+
+        // Add tiles in their own group
+        const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
+        if (visibleTiles.length > 0) {
+            collector.beginGroup('tiles');
+            for (const tile of visibleTiles) {
+                collector.addShape(tile.shape, tileStyle);
+            }
+            collector.endGroup();
+        }
+    }
+
+    protected getGeometryRenderGroups(): RenderGroup[] {
+        const tileItems = this._tiles
+            .filter(t => !t.shape.ephemeral)
+            .map(t => ({ shape: t.shape }));
+
+        return [
+            {
+                name: 'tiles',
+                items: tileItems,
+                defaultStyle: DEFAULT_STYLES.connection
+            }
+        ];
+    }
+
+    protected getGeometryBounds(): SystemBounds {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
@@ -463,15 +452,11 @@ export class TessellationSystem implements ISystem {
             maxY = Math.max(maxY, bbox.max.y);
         }
 
-        for (const p of this._placements) {
-            const bbox = p.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
         return { minX, minY, maxX, maxY };
+    }
+
+    protected getSourceForSelection(): Shape[] {
+        return this._tiles.map(t => t.shape);
     }
 
     // Pattern-specific getters
@@ -509,105 +494,5 @@ export class TessellationSystem implements ISystem {
             tile.shape.ephemeral = false;
         }
         return this;
-    }
-
-    /** Place a shape at each node in the system */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const node of this._nodes) {
-            const clone = shapeCtx.shape.clone();
-            clone.ephemeral = false;  // Clones are concrete
-            clone.moveTo(node);
-            this._placements.push({ position: node, shape: clone, style });
-        }
-
-        // Mark source shape as ephemeral AFTER cloning (construction geometry)
-        shapeCtx.shape.ephemeral = true;
-
-        return this;
-    }
-
-    /** Clip system to mask shape boundary */
-    mask(maskShape: ShapeContext): this {
-        // Mark mask as ephemeral (construction geometry)
-        maskShape.shape.ephemeral = true;
-
-        const shape = maskShape.shape;
-
-        // Filter tiles to those with centroids inside the mask
-        this._tiles = this._tiles.filter(tile =>
-            shape.containsPoint(tile.shape.centroid())
-        );
-
-        // Filter nodes to those inside the mask
-        this._nodes = this._nodes.filter(node =>
-            shape.containsPoint(node)
-        );
-
-        // Filter placements to those inside the mask
-        this._placements = this._placements.filter(p =>
-            shape.containsPoint(p.position)
-        );
-
-        return this;
-    }
-
-
-    /** Stamp system to collector (for auto-rendering) */
-    stamp(collector: SVGCollector, style?: PathStyle): void {
-        const tileStyle = style ?? DEFAULT_STYLES.connection;
-        const placementStyle = style ?? DEFAULT_STYLES.placement;
-
-        // Add tiles in their own group
-        const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
-        if (visibleTiles.length > 0) {
-            collector.beginGroup('tiles');
-            for (const tile of visibleTiles) {
-                collector.addShape(tile.shape, tileStyle);
-            }
-            collector.endGroup();
-        }
-
-        // Add placements in their own group
-        if (this._placements.length > 0) {
-            collector.beginGroup('placements');
-            for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? placementStyle);
-            }
-            collector.endGroup();
-        }
-    }
-
-    // ==================== Export ====================
-
-    /** Generate SVG output */
-    /** Generate SVG output */
-    toSVG(options: {
-        width: number;
-        height: number;
-        margin?: number;
-    }): string {
-        const { width, height, margin = 10 } = options;
-
-        const tileItems = this._tiles
-            .filter(t => !t.shape.ephemeral)
-            .map(t => ({ shape: t.shape }));
-
-        const placementItems = this._placements.map(p => ({
-            shape: p.shape,
-            style: p.style
-        }));
-
-        return renderSystemToSVG(width, height, margin, [
-            {
-                name: 'tiles',
-                items: tileItems,
-                defaultStyle: DEFAULT_STYLES.connection
-            },
-            {
-                name: 'placements',
-                items: placementItems,
-                defaultStyle: DEFAULT_STYLES.placement
-            }
-        ]);
     }
 }

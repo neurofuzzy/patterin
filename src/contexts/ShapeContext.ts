@@ -1,7 +1,4 @@
-import { Shape, BoundingBox } from '../primitives/Shape';
-import { Vector2 } from '../primitives/Vector2';
-import { Vertex } from '../primitives/Vertex';
-import { Segment, Winding } from '../primitives/Segment';
+import { BoundingBox, Shape, Segment, Vector2, Vertex, Winding } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';

@@ -3,11 +3,11 @@
  * Supports nesting for grid patterns.
  */
 
-import { ISystem } from '../interfaces';
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { renderSystemToSVG } from './SystemUtils';
 import { ShapesContext } from '../contexts';
+import { BaseSystem, type RenderGroup } from './BaseSystem';
+import type { SystemBounds } from '../types';
 
 // Avoid circular import - use Shape directly
 // ShapeContext is only used for place/mask ISystem methods
@@ -28,21 +28,21 @@ export interface CloneOptions {
  * 
  * When trace() is called, it computes node positions and path segments connecting them.
  */
-export class CloneSystem implements ISystem {
+export class CloneSystem extends BaseSystem {
     private _source: Shape | CloneSystem;
     private _options: CloneOptions;
-    private _traced = false;
-    private _ephemeral = false;  // When true, this system won't render (it's been cloned)
+    private _ephemeral: boolean;
 
     // Computed geometry
     private _shapes: Shape[] = [];
     private _nodes: Vertex[] = [];
     private _segments: Segment[] = [];
-    private _placements: { shape: Shape; style?: PathStyle; position: Vector2 }[] = [];
 
     constructor(source: Shape | CloneSystem, options: CloneOptions) {
+        super();
         this._source = source;
         this._options = options;
+        this._ephemeral = false;  // When true, this system won't render (it's been cloned)
         this._computeGeometry();
     }
 
@@ -223,66 +223,12 @@ export class CloneSystem implements ISystem {
     }
 
     /**
-     * Scale all shapes uniformly.
-     * @param factor - Scale factor
-     * @returns This CloneSystem (modified in place)
-     */
-    scale(factor: number): this {
-        for (const shape of this._shapes) {
-            shape.scale(factor);
-        }
-        // Update nodes to match new centroids
-        for (let i = 0; i < this._shapes.length; i++) {
-            const c = this._shapes[i].centroid();
-            this._nodes[i] = new Vertex(c.x, c.y);
-        }
-        return this;
-    }
-
-    /**
-     * Rotate all shapes by angle.
-     * @param angleDeg - Angle in degrees
-     * @returns This CloneSystem (modified in place)
-     */
-    rotate(angleDeg: number): this {
-        const angleRad = angleDeg * Math.PI / 180;
-        for (const shape of this._shapes) {
-            shape.rotate(angleRad);
-        }
-        return this;
-    }
-
-    /**
      * Select a range of shapes for modification.
      * @returns ShapesContext with selected shapes
      */
     slice(start: number, end?: number): ShapesContext {
         const selected = this._shapes.slice(start, end);
         return new ShapesContext(selected);
-    }
-
-    /** Get bounding box of all geometry */
-    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
-        let minX = Infinity, minY = Infinity;
-        let maxX = -Infinity, maxY = -Infinity;
-
-        for (const shape of this._shapes) {
-            const bbox = shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        for (const p of this._placements) {
-            const bbox = p.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
-        return { minX, minY, maxX, maxY };
     }
 
     /**
@@ -334,55 +280,43 @@ export class CloneSystem implements ISystem {
         return this;
     }
 
-    /**
-     * Place a shape at each node in the system.
-     */
-    place(shapeCtx: ShapeContextLike, style?: PathStyle): this {
-        const sourceShape = shapeCtx.shape;
-        sourceShape.ephemeral = true;
+    // ==================== BaseSystem Implementation ====================
 
-        for (const node of this._nodes) {
-            const clone = sourceShape.clone();
-            clone.ephemeral = false;
-            clone.moveTo(node.position);
-            this._placements.push({
-                shape: clone,
-                style,
-                position: node.position
-            });
-        }
-
-        return this;
+    protected getNodes(): Vertex[] {
+        return this._nodes;
     }
 
-    /**
-     * Clip system to mask shape boundary.
-     */
-    mask(maskShape: ShapeContextLike): this {
-        maskShape.shape.ephemeral = true;
-        const shape = maskShape.shape;
-
+    protected filterByMask(shape: Shape): void {
         // Filter shapes (by centroid)
         this._shapes = this._shapes.filter(s => shape.containsPoint(s.centroid()));
 
         // Filter nodes
         this._nodes = this._nodes.filter(n => shape.containsPoint(n.position));
 
-        // Filter placements
-        this._placements = this._placements.filter(p => shape.containsPoint(p.position));
-
         // Rebuild segments based on remaining nodes
         this._segments = this._segments.filter(seg =>
             shape.containsPoint(seg.midpoint())
         );
-
-        return this;
     }
 
-    /**
-     * Render the system to a collector.
-     */
-    stamp(collector: SVGCollector, style?: PathStyle): void {
+    protected scaleGeometry(factor: number): void {
+        for (const shape of this._shapes) {
+            shape.scale(factor);
+        }
+        // Update nodes to match new centroids
+        for (let i = 0; i < this._shapes.length; i++) {
+            const c = this._shapes[i].centroid();
+            this._nodes[i] = new Vertex(c.x, c.y);
+        }
+    }
+
+    protected rotateGeometry(angleRad: number): void {
+        for (const shape of this._shapes) {
+            shape.rotate(angleRad);
+        }
+    }
+
+    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
         // Skip rendering if this system was cloned (ephemeral)
         if (this._ephemeral) {
             return;
@@ -410,22 +344,12 @@ export class CloneSystem implements ISystem {
             }
             collector.endGroup();
         }
-
-        // Stamp placements
-        if (this._placements.length > 0) {
-            collector.beginGroup('clone-placements');
-            for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? shapeStyle);
-            }
-            collector.endGroup();
-        }
     }
 
-    /**
-     * Generate SVG output.
-     */
-    toSVG(options: { width: number; height: number; margin?: number }): string {
-        const { width, height, margin = 10 } = options;
+    protected getGeometryRenderGroups(): RenderGroup[] {
+        if (this._ephemeral) {
+            return [];
+        }
 
         const shapeItems = this._shapes
             .filter(s => !s.ephemeral)
@@ -439,12 +363,7 @@ export class CloneSystem implements ISystem {
             pathItems.push({ shape: pathShape, style: DEFAULT_STYLES.line });
         }
 
-        const placementItems = this._placements.map(p => ({
-            shape: p.shape,
-            style: p.style
-        }));
-
-        return renderSystemToSVG(width, height, margin, [
+        return [
             {
                 name: 'clone-shapes',
                 items: shapeItems,
@@ -454,12 +373,27 @@ export class CloneSystem implements ISystem {
                 name: 'clone-path',
                 items: pathItems,
                 defaultStyle: DEFAULT_STYLES.line
-            },
-            {
-                name: 'clone-placements',
-                items: placementItems,
-                defaultStyle: DEFAULT_STYLES.placement
             }
-        ]);
+        ];
     }
+
+    protected getGeometryBounds(): SystemBounds {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        for (const shape of this._shapes) {
+            const bbox = shape.boundingBox();
+            minX = Math.min(minX, bbox.min.x);
+            minY = Math.min(minY, bbox.min.y);
+            maxX = Math.max(maxX, bbox.max.x);
+            maxY = Math.max(maxY, bbox.max.y);
+        }
+
+        return { minX, minY, maxX, maxY };
+    }
+
+    protected getSourceForSelection(): Shape[] {
+        return this._shapes;
+    }
+
 }

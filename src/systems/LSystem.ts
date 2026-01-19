@@ -1,8 +1,8 @@
-import { ISystem } from '../interfaces';
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
-import { renderSystemToSVG } from './SystemUtils';
 import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
+import { BaseSystem, type RenderGroup } from './BaseSystem';
+import type { SystemBounds } from '../types';
 
 export interface LSystemOptions {
     axiom: string;
@@ -20,7 +20,7 @@ interface TurtleState {
     dir: number;
 }
 
-export class LSystem implements ISystem {
+export class LSystem extends BaseSystem {
     private _config: LSystemOptions;
 
     // Geometry storage
@@ -34,14 +34,11 @@ export class LSystem implements ISystem {
     public endpoints: PointsContext;
     public path: ShapeContext;
 
-    // Output tracking
-    private _traced = false;
-    private _placements: { shape: Shape; style?: PathStyle; position: Vector2 }[] = [];
-
     // Underlying shape for the whole path
     private _shape: Shape;
 
     private constructor(config: LSystemOptions) {
+        super();
         this._config = {
             origin: [0, 0],
             heading: 0,
@@ -215,19 +212,45 @@ export class LSystem implements ISystem {
     trace(): this {
         this._traced = true;
         this._shape.ephemeral = false;
-        // Make contexts non-ephemeral if needed, but they just reference the shape
-        // and have their own ephemeral flags usually defaulting to true?
-        // ShapeContext.ts: trace() sets _shape.ephemeral = false.
-        // Paths are ephemeral by default in spec.
         return this;
     }
 
-    /**
-     * Render the object to a collector.
-     */
-    stamp(collector: SVGCollector, style?: PathStyle): void {
+    // ==================== BaseSystem Implementation ====================
+
+    protected getNodes(): Vertex[] {
+        return this._nodes;
+    }
+
+    protected filterByMask(shape: Shape): void {
+        // Filter nodes
+        this._nodes = this._nodes.filter(node => shape.containsPoint(node.position));
+
+        // Filter endpoints
+        this._endpoints = this._endpoints.filter(node => shape.containsPoint(node.position));
+
+        // Filter segments (midpoint inside)
+        this._segments = this._segments.filter(seg => shape.containsPoint(seg.midpoint()));
+
+        // Update shape segments
+        this._shape.segments = this._segments;
+
+        // Update contexts (recreate them with filtered data)
+        this.nodes = new PointsContext(this._shape, this._nodes);
+        this.endpoints = new PointsContext(this._shape, this._endpoints);
+        this.segments = new LinesContext(this._shape, this._segments);
+        this.path = new ShapeContext(this._shape);
+    }
+
+    protected scaleGeometry(factor: number): void {
+        this._shape.scale(factor);
+    }
+
+    protected rotateGeometry(angleRad: number): void {
+        this._shape.rotate(angleRad);
+    }
+
+    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
         const shapeStyle = style ?? DEFAULT_STYLES.line;
-        const placementStyle = style ?? DEFAULT_STYLES.placement;
 
         // Stamp the path if traced
         if (this._traced && !this._shape.ephemeral) {
@@ -236,137 +259,24 @@ export class LSystem implements ISystem {
             this.path.stamp(collector, 0, 0, shapeStyle);
             collector.endGroup();
         }
+    }
 
-        // Stamp placements
-        if (this._placements.length > 0) {
-            collector.beginGroup('lsystem-placements');
-            for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? placementStyle);
+    protected getGeometryRenderGroups(): RenderGroup[] {
+        const pathItems: { shape: Shape; style?: PathStyle }[] = [];
+        if (this._traced && !this._shape.ephemeral) {
+            pathItems.push({ shape: this._shape, style: DEFAULT_STYLES.line });
+        }
+
+        return [
+            {
+                name: 'lsystem-path',
+                items: pathItems,
+                defaultStyle: DEFAULT_STYLES.line
             }
-            collector.endGroup();
-        }
+        ];
     }
 
-    /**
-     * Place a shape at each node in the system.
-     */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        // Place at all nodes by default
-        for (const node of this._nodes) {
-            const clone = shapeCtx.shape.clone();
-            clone.ephemeral = false;
-            clone.moveTo(node.position);
-            this._placements.push({
-                shape: clone,
-                style,
-                position: node.position
-            });
-        }
-
-        // Mark source as ephemeral
-        shapeCtx.shape.ephemeral = true;
-
-        return this;
-    }
-
-    /**
-     * Clip system to mask shape boundary.
-     */
-    mask(maskShape: ShapeContext): this {
-        maskShape.shape.ephemeral = true;
-        const shape = maskShape.shape;
-
-        // Filter nodes
-        this._nodes = this._nodes.filter(node => shape.containsPoint(node.position));
-
-        // Filter endpoints
-        this._endpoints = this._endpoints.filter(node => shape.containsPoint(node.position));
-
-        // Filter placements
-        this._placements = this._placements.filter(p => shape.containsPoint(p.position));
-
-        // Filter segments (centroid inside)
-        this._segments = this._segments.filter(seg => shape.containsPoint(seg.midpoint()));
-
-        // Update shape segments
-        this._shape.segments = this._segments;
-
-        // Update contexts
-        // Note: We need to update the internal arrays of the contexts
-        // But the contexts were created with the INITIAL arrays.
-        // We probably need to recreate contexts or Contexts should support updates.
-        // PointsContext constructor takes `protected _vertices: Vertex[]`.
-        // We can just construct new contexts, but the user might hold a reference to the old one.
-        // Ideally contexts are just views.
-        // For this version (Phase 1.8), I'll recreate the public properties.
-        this.nodes = new PointsContext(this._shape, this._nodes);
-        this.endpoints = new PointsContext(this._shape, this._endpoints);
-        this.segments = new LinesContext(this._shape, this._segments);
-        this.path = new ShapeContext(this._shape);
-
-        return this;
-    }
-
-    get shapes(): ShapesContext {
-        const shapes = this._placements.map((p) => p.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
-    /** Number of nodes/placements in the system */
-    get length(): number {
-        return this._placements.length > 0 ? this._placements.length : this._nodes.length;
-    }
-
-    // ==================== Selection ====================
-
-    /**
-     * Select every nth shape for modification.
-     */
-    every(n: number, offset = 0): ShapesContext {
-        const source = this._placements.map(p => p.shape);
-
-        const selected: Shape[] = [];
-        for (let i = offset; i < source.length; i += n) {
-            selected.push(source[i]);
-        }
-        return new ShapesContext(selected);
-    }
-
-    /**
-     * Select a range of shapes for modification.
-     */
-    slice(start: number, end?: number): ShapesContext {
-        const source = this._placements.map(p => p.shape);
-        return new ShapesContext(source.slice(start, end));
-    }
-
-    // ==================== Transform ====================
-
-    /**
-     * Scale all shapes uniformly.
-     */
-    scale(factor: number): this {
-        this._shape.scale(factor);
-        for (const p of this._placements) {
-            p.shape.scale(factor);
-        }
-        return this;
-    }
-
-    /**
-     * Rotate all shapes by angle.
-     */
-    rotate(angleDeg: number): this {
-        const angleRad = angleDeg * Math.PI / 180;
-        this._shape.rotate(angleRad);
-        for (const p of this._placements) {
-            p.shape.rotate(angleRad);
-        }
-        return this;
-    }
-
-    /** Get bounding box of all geometry */
-    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+    protected getGeometryBounds(): SystemBounds {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
@@ -377,44 +287,12 @@ export class LSystem implements ISystem {
             maxY = Math.max(maxY, node.y);
         }
 
-        for (const p of this._placements) {
-            const bbox = p.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
         return { minX, minY, maxX, maxY };
     }
 
-    /**
-     * Generate SVG output.
-     */
-    toSVG(options: { width: number; height: number; margin?: number }): string {
-        const { width, height, margin = 10 } = options;
-
-        const pathItems: { shape: Shape; style?: PathStyle }[] = [];
-        if (this._traced && !this._shape.ephemeral) {
-            pathItems.push({ shape: this._shape, style: DEFAULT_STYLES.line });
-        }
-
-        const placementItems = this._placements.map(p => ({
-            shape: p.shape,
-            style: p.style
-        }));
-
-        return renderSystemToSVG(width, height, margin, [
-            {
-                name: 'lsystem-path',
-                items: pathItems,
-                defaultStyle: DEFAULT_STYLES.line
-            },
-            {
-                name: 'lsystem-placements',
-                items: placementItems,
-                defaultStyle: DEFAULT_STYLES.placement
-            }
-        ]);
+    protected getSourceForSelection(): Shape[] {
+        // For LSystem, when no placements exist, we don't have individual shapes
+        // Return empty array
+        return [];
     }
 }

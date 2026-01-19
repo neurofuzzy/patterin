@@ -6,6 +6,7 @@ import { Shape } from '../primitives/Shape';
 import { LSystem, LSystemOptions } from './LSystem';
 import { CloneSystem, CloneOptions } from './CloneSystem';
 
+export { BaseSystem, type Placement, type RenderGroup } from './BaseSystem';
 export { GridSystem, type GridOptions, type GridType } from './GridSystem';
 export { TessellationSystem, type TessellationOptions, type TessellationPattern } from './TessellationSystem';
 export { ShapeSystem, type ShapeSystemOptions } from './ShapeSystem';
