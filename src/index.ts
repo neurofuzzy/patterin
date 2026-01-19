@@ -42,7 +42,7 @@
  * 
  * ### Systems
  * Parametric scaffolds for structured patterns:
- * - `system.grid()` - Square, hex, triangular, brick grids
+ * - `system.grid()` - Square, hex, triangular grids
  * - `system.tessellation()` - Truchet, Penrose, trihexagonal
  * - `system.lsystem()` - Lindenmayer systems (fractals)
  * - `system.fromShape()` - Use shape geometry as scaffold

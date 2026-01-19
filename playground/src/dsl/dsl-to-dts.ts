@@ -10,13 +10,13 @@ export function generateDSLTypeDefinition(): string {
     // Basic types
     type Winding = 'CW' | 'CCW';
     type PathStyle = { stroke?: string; fill?: string; strokeWidth?: number; };
-    type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
+    type GridType = 'square' | 'hexagonal' | 'triangular';
     type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
     type TruchetVariant = 'quarter-circles' | 'diagonal' | 'triangles';
 
     /** Grid system options */
     interface GridOptions {
-        /** Grid type - square (default), hexagonal, triangular, or brick */
+        /** Grid type - square (default), hexagonal, or triangular */
         type?: GridType;
         /** Simple: Grid count (rows x cols) - number or [rows, cols] */
         count?: number | [number, number];
@@ -32,8 +32,6 @@ export function generateDSLTypeDefinition(): string {
         offset?: [number, number];
         /** Hexagonal orientation - pointy or flat */
         orientation?: 'pointy' | 'flat';
-        /** Brick offset ratio (0-1, default 0.5) */
-        brickOffset?: number;
     }
 
     /** Tessellation system options */

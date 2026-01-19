@@ -91,56 +91,6 @@ describe('Triangular Grid', () => {
     });
 });
 
-describe('Brick Grid', () => {
-    it('should create brick intersection nodes', () => {
-        const grid = GridSystem.create({
-            type: 'brick',
-            rows: 4,
-            cols: 6,
-            spacing: { x: 40, y: 20 },
-        });
-        // Brick grid has vertices at brick corners (shared between adjacent bricks)
-        expect(grid.nodes.vertices.length).toBeGreaterThan(20);
-    });
-
-    it('offset 0.5 should work (running bond)', () => {
-        const grid = GridSystem.create({
-            type: 'brick',
-            rows: 5,
-            cols: 8,
-            spacing: { x: 40, y: 20 },
-            brickOffset: 0.5,
-        });
-        const svg = renderGrid(grid, 400, 200);
-        expect(svg).toContain('<path');
-        writeFileSync('test-output/brick-grid.svg', svg);
-    });
-
-    it('offset 0 should align columns (stack bond)', () => {
-        const grid = GridSystem.create({
-            type: 'brick',
-            rows: 3,
-            cols: 4,
-            spacing: { x: 40, y: 20 },
-            brickOffset: 0,
-        });
-        // All nodes in same column should have same x
-        const nodesByCol = new Map<number, number[]>();
-        for (const v of grid.nodes.vertices) {
-            const col = Math.round(v.x / 40);
-            if (!nodesByCol.has(col)) nodesByCol.set(col, []);
-            nodesByCol.get(col)!.push(v.x);
-        }
-        // Check that each column has consistent x values
-        for (const xValues of nodesByCol.values()) {
-            const first = xValues[0];
-            for (const x of xValues) {
-                expect(Math.abs(x - first)).toBeLessThan(1);
-            }
-        }
-    });
-});
-
 describe('Grid Tracing', () => {
     it('trace() should make grid edges renderable', () => {
         const grid = GridSystem.create({

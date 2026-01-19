@@ -3,7 +3,7 @@ import { PathStyle } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
 
-export type GridType = 'square' | 'hexagonal' | 'triangular' | 'brick';
+export type GridType = 'square' | 'hexagonal' | 'triangular';
 
 export interface GridOptions {
     type?: GridType;
@@ -17,8 +17,6 @@ export interface GridOptions {
     offset?: [number, number];
     // Hexagonal-specific
     orientation?: 'pointy' | 'flat';
-    // Brick-specific
-    brickOffset?: number;  // 0-1, default 0.5
 }
 
 interface GridNode {
@@ -30,7 +28,7 @@ interface GridNode {
 
 /**
  * GridSystem - creates various grid structures.
- * Supports: square (default), hexagonal, triangular, brick.
+ * Supports: square (default), hexagonal, triangular.
  */
 export class GridSystem extends EdgeBasedSystem {
     private _gridNodes: GridNode[] = [];
@@ -42,7 +40,6 @@ export class GridSystem extends EdgeBasedSystem {
     private _offsetY: number;
     private _type: GridType;
     private _orientation: 'pointy' | 'flat';
-    private _brickOffset: number;
 
     private constructor(options: GridOptions = {}) {
         super();
@@ -67,7 +64,6 @@ export class GridSystem extends EdgeBasedSystem {
         }
 
         this._orientation = options.orientation ?? 'pointy';
-        this._brickOffset = options.brickOffset ?? 0.5;
 
         // Support both size and spacing
         const spacing = options.spacing ?? options.size ?? 40;
@@ -101,9 +97,6 @@ export class GridSystem extends EdgeBasedSystem {
                 break;
             case 'triangular':
                 this.buildTriangularGrid();
-                break;
-            case 'brick':
-                this.buildBrickGrid();
                 break;
             default:
                 this.buildSquareGrid();
@@ -235,46 +228,6 @@ export class GridSystem extends EdgeBasedSystem {
         this._nodes = this._gridNodes.map(n => new Vector2(n.x, n.y));
     }
 
-    private buildBrickGrid(): void {
-        const cellWidth = this._spacingX;
-        const cellHeight = this._spacingY;
-
-        // Use Map for de-duplication
-        const nodeMap = new Map<string, GridNode>();
-        const nodeKey = (x: number, y: number): string => {
-            return `${x.toFixed(6)},${y.toFixed(6)}`;
-        };
-
-        let nodeIndex = 0;
-        for (let row = 0; row < this._rows; row++) {
-            const xOffset = (row % 2) * cellWidth * this._brickOffset;
-
-            for (let col = 0; col < this._cols; col++) {
-                const x = this._offsetX + col * cellWidth + xOffset;
-                const y = this._offsetY + row * cellHeight;
-
-                // Generate all 4 brick corner vertices
-                const vertices = [
-                    new Vector2(x, y),
-                    new Vector2(x + cellWidth, y),
-                    new Vector2(x + cellWidth, y + cellHeight),
-                    new Vector2(x, y + cellHeight),
-                ];
-
-                for (const v of vertices) {
-                    const key = nodeKey(v.x, v.y);
-                    if (!nodeMap.has(key)) {
-                        nodeMap.set(key, { x: v.x, y: v.y, row: nodeIndex, col: 0 });
-                        nodeIndex++;
-                    }
-                }
-            }
-        }
-
-        // Convert to arrays
-        this._gridNodes = Array.from(nodeMap.values());
-        this._nodes = this._gridNodes.map(n => new Vector2(n.x, n.y));
-    }
 
     /**
      * Build grid edges by connecting adjacent intersection nodes.
@@ -306,16 +259,9 @@ export class GridSystem extends EdgeBasedSystem {
                 ));
             }
         } else {
-            // For hex/triangular/brick: connect adjacent nodes by proximity
+            // For hex/triangular: connect adjacent nodes by proximity
             // Determine connection distance threshold based on grid type
-            let threshold: number;
-            if (this._type === 'hexagonal') {
-                threshold = this._spacingX * 1.1; // Slightly larger than hex radius
-            } else if (this._type === 'triangular') {
-                threshold = this._spacingX * 1.1; // Slightly larger than side length
-            } else { // brick
-                threshold = Math.max(this._spacingX, this._spacingY) * 1.1;
-            }
+            const threshold = this._spacingX * 1.1; // Slightly larger than spacing
 
             // Use edge-key map for de-duplication
             const edgeMap = new Map<string, Segment>();

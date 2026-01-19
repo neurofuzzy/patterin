@@ -58,7 +58,7 @@ export { CloneSystem, type CloneOptions } from './CloneSystem';
  */
 export const system = {
     /**
-     * Create a grid system (square, hexagonal, triangular, or brick).
+     * Create a grid system (square, hexagonal, or triangular).
      * 
      * @param options - Grid configuration (type, count, size, spacing)
      * @returns A GridSystem with positioned nodes

@@ -277,7 +277,7 @@ shape.clone(5).every(2)         // Operate on shape collection
 ### Systems
 
 ```typescript
-system.grid(options)              // Square, hex, triangular, brick grids
+system.grid(options)              // Square, hex, triangular grids
 system.tessellation(options)      // Truchet, Penrose, trihexagonal
 system.fromShape(shape, options)  // Use shape vertices as nodes
 system.lsystem(options)           // Lindenmayer systems (fractals)
