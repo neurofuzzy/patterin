@@ -80,15 +80,16 @@ export class ShapeContext {
         return this;
     }
 
-    /** Rotate shape by angle in radians */
-    rotate(angle: number): this {
-        this._shape.rotate(angle);
+    /** Rotate shape by angle in degrees */
+    rotate(degrees: number): this {
+        this._shape.rotate((degrees * Math.PI) / 180);
         return this;
     }
 
-    /** Rotate shape by angle in degrees */
-    rotateDeg(degrees: number): this {
-        return this.rotate((degrees * Math.PI) / 180);
+    /** Rotate shape by angle in radians */
+    rotateRad(radians: number): this {
+        this._shape.rotate(radians);
+        return this;
     }
 
     /** Move shape to position */
@@ -103,15 +104,21 @@ export class ShapeContext {
         return this;
     }
 
-    /** Offset shape by delta */
-    offset(x: number, y: number): this {
+    /** Translate shape by delta */
+    translate(x: number, y: number): this {
         this._shape.translate(new Vector2(x, y));
         return this;
     }
 
-    /** Translate shape by delta (alias for offset) */
-    translate(x: number, y: number): this {
-        return this.offset(x, y);
+    /**
+     * Offset (inset/outset) the shape outline.
+     * Positive = outward, negative = inward.
+     * @param distance - Offset distance
+     * @param miterLimit - Miter limit for sharp corners (default 4)
+     * @returns New ShapeContext with offset shape
+     */
+    offset(distance: number, miterLimit = 4): ShapeContext {
+        return this.offsetShape(distance, miterLimit);
     }
 
     /** Set x position (moves centroid to x, keeping y) */
@@ -785,6 +792,107 @@ export class ShapesContext {
             shape.rotate(angleRad);
         }
         return this;
+    }
+
+    /** Translate all shapes by delta */
+    translate(x: number, y: number): this {
+        const delta = new Vector2(x, y);
+        for (const shape of this._shapes) {
+            shape.translate(delta);
+        }
+        return this;
+    }
+
+    /**
+     * Offset (inset/outset) all shape outlines.
+     * Positive = outward, negative = inward.
+     * @param distance - Offset distance
+     * @param miterLimit - Miter limit for sharp corners (default 4)
+     * @returns This ShapesContext (modified in place)
+     */
+    offset(distance: number, miterLimit = 4): this {
+        for (let i = 0; i < this._shapes.length; i++) {
+            const shape = this._shapes[i];
+            const ctx = new ShapeContext(shape);
+            const offsetCtx = ctx.offsetShape(distance, miterLimit);
+            // Copy offset geometry back to original shape
+            shape.segments = offsetCtx.shape.segments;
+            shape.winding = offsetCtx.shape.winding;
+            shape.connectSegments();
+        }
+        return this;
+    }
+
+    /** Move all shapes so their collective center is at position */
+    moveTo(x: number, y: number): this {
+        const bounds = this.getBounds();
+        const currentCenter = new Vector2(
+            (bounds.minX + bounds.maxX) / 2,
+            (bounds.minY + bounds.maxY) / 2
+        );
+        const delta = new Vector2(x, y).subtract(currentCenter);
+        return this.translate(delta.x, delta.y);
+    }
+
+    /** Set x position of collective center */
+    x(xPos: number): this {
+        const bounds = this.getBounds();
+        const currentX = (bounds.minX + bounds.maxX) / 2;
+        return this.translate(xPos - currentX, 0);
+    }
+
+    /** Set y position of collective center */
+    y(yPos: number): this {
+        const bounds = this.getBounds();
+        const currentY = (bounds.minY + bounds.maxY) / 2;
+        return this.translate(0, yPos - currentY);
+    }
+
+    /** Set x and y position of collective center */
+    xy(xPos: number, yPos: number): this {
+        return this.moveTo(xPos, yPos);
+    }
+
+    /** Get bounds of all shapes */
+    getBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+        for (const shape of this._shapes) {
+            for (const v of shape.vertices) {
+                minX = Math.min(minX, v.x);
+                minY = Math.min(minY, v.y);
+                maxX = Math.max(maxX, v.x);
+                maxY = Math.max(maxY, v.y);
+            }
+        }
+        return { minX, minY, maxX, maxY };
+    }
+
+    /** Get all vertices from all shapes (flattened) */
+    get vertices(): Vertex[] {
+        const all: Vertex[] = [];
+        for (const shape of this._shapes) {
+            all.push(...shape.vertices);
+        }
+        return all;
+    }
+
+    /** Get all segments from all shapes (flattened) */
+    get segments(): Segment[] {
+        const all: Segment[] = [];
+        for (const shape of this._shapes) {
+            all.push(...shape.segments);
+        }
+        return all;
+    }
+
+    /** Get center of all shapes */
+    get center(): Vector2 {
+        const bounds = this.getBounds();
+        return new Vector2(
+            (bounds.minX + bounds.maxX) / 2,
+            (bounds.minY + bounds.maxY) / 2
+        );
     }
 
     /** Stamp all shapes to collector */

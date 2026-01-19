@@ -172,6 +172,107 @@ export function generateDSLTypeDefinition(): string {
     declare const points: PointsContext;
     declare const lines: LinesContext;
     declare const shapes: ShapesContext;
+
+    // Core JavaScript globals
+    declare const Math: {
+        readonly PI: number;
+        readonly E: number;
+        readonly LN2: number;
+        readonly LN10: number;
+        readonly LOG2E: number;
+        readonly LOG10E: number;
+        readonly SQRT2: number;
+        readonly SQRT1_2: number;
+        abs(x: number): number;
+        acos(x: number): number;
+        asin(x: number): number;
+        atan(x: number): number;
+        atan2(y: number, x: number): number;
+        ceil(x: number): number;
+        cos(x: number): number;
+        exp(x: number): number;
+        floor(x: number): number;
+        log(x: number): number;
+        max(...values: number[]): number;
+        min(...values: number[]): number;
+        pow(x: number, y: number): number;
+        random(): number;
+        round(x: number): number;
+        sin(x: number): number;
+        sqrt(x: number): number;
+        tan(x: number): number;
+        hypot(...values: number[]): number;
+        sign(x: number): number;
+        trunc(x: number): number;
+    };
+
+    declare const console: {
+        log(...data: any[]): void;
+        warn(...data: any[]): void;
+        error(...data: any[]): void;
+    };
+
+    // Core Array methods are available via lib.es5.d.ts
+    interface Array<T> {
+        length: number;
+        push(...items: T[]): number;
+        pop(): T | undefined;
+        shift(): T | undefined;
+        unshift(...items: T[]): number;
+        slice(start?: number, end?: number): T[];
+        splice(start: number, deleteCount?: number, ...items: T[]): T[];
+        concat(...items: (T | T[])[]): T[];
+        join(separator?: string): string;
+        indexOf(searchElement: T, fromIndex?: number): number;
+        includes(searchElement: T, fromIndex?: number): boolean;
+        find(predicate: (value: T, index: number, obj: T[]) => boolean): T | undefined;
+        findIndex(predicate: (value: T, index: number, obj: T[]) => boolean): number;
+        filter(predicate: (value: T, index: number, array: T[]) => boolean): T[];
+        map<U>(callbackfn: (value: T, index: number, array: T[]) => U): U[];
+        forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
+        reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
+        every(predicate: (value: T, index: number, array: T[]) => boolean): boolean;
+        some(predicate: (value: T, index: number, array: T[]) => boolean): boolean;
+        reverse(): T[];
+        sort(compareFn?: (a: T, b: T) => number): T[];
+        flat<D extends number = 1>(depth?: D): T[];
+        flatMap<U>(callback: (value: T, index: number, array: T[]) => U | U[]): U[];
+        fill(value: T, start?: number, end?: number): T[];
+    }
+
+    interface String {
+        length: number;
+        charAt(pos: number): string;
+        charCodeAt(index: number): number;
+        concat(...strings: string[]): string;
+        indexOf(searchString: string, position?: number): number;
+        lastIndexOf(searchString: string, position?: number): number;
+        includes(searchString: string, position?: number): boolean;
+        startsWith(searchString: string, position?: number): boolean;
+        endsWith(searchString: string, endPosition?: number): boolean;
+        slice(start?: number, end?: number): string;
+        substring(start: number, end?: number): string;
+        toLowerCase(): string;
+        toUpperCase(): string;
+        trim(): string;
+        trimStart(): string;
+        trimEnd(): string;
+        split(separator: string | RegExp, limit?: number): string[];
+        replace(searchValue: string | RegExp, replaceValue: string): string;
+        repeat(count: number): string;
+        padStart(maxLength: number, fillString?: string): string;
+        padEnd(maxLength: number, fillString?: string): string;
+    }
+
+    interface Number {
+        toFixed(fractionDigits?: number): string;
+        toPrecision(precision?: number): string;
+        toString(radix?: number): string;
+    }
+
+    interface Boolean {
+        toString(): string;
+    }
     `;
 
     return dts;

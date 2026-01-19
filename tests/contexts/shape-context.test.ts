@@ -57,7 +57,7 @@ describe('ShapeContext - transforms', () => {
         const sq = shape.square().size(20);
         const originalCenter = sq.center;
 
-        sq.rotate(Math.PI / 4);
+        sq.rotate(45);
 
         expect(sq.center.x).toBeCloseTo(originalCenter.x, 1);
         expect(sq.center.y).toBeCloseTo(originalCenter.y, 1);
@@ -71,9 +71,9 @@ describe('ShapeContext - transforms', () => {
         expect(sq.center.y).toBeCloseTo(100, 1);
     });
 
-    it('offset should translate shape', () => {
+    it('translate should move shape', () => {
         const sq = shape.square().size(20).moveTo(0, 0);
-        sq.offset(50, 30);
+        sq.translate(50, 30);
 
         expect(sq.center.x).toBeCloseTo(50, 1);
         expect(sq.center.y).toBeCloseTo(30, 1);
