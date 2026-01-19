@@ -15,11 +15,6 @@ describe('GridSystem', () => {
         expect(grid.nodes.length).toBe(16);
     });
 
-    it('should create correct number of cells', () => {
-        const grid = GridSystem.create({ rows: 3, cols: 3, spacing: 100 });
-        // 3 rows * 3 cols = 9 cells
-        expect(grid.cells.length).toBe(9);
-    });
 
     it('nodes.every(2) should select half the nodes', () => {
         const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 100 });
@@ -40,19 +35,9 @@ describe('GridSystem', () => {
         writeFileSync('test-output/grid-system.svg', svg);
     });
 
-    it('cells.place should place at cell centers', () => {
+    it('should support node placements with every()', () => {
         const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 100 });
-        grid.cells.place(shape.square().size(30), { stroke: '#000', strokeWidth: 2 });
-
-        const svg = grid.toSVG({ width: 300, height: 300, margin: 20 });
-        const pathCount = (svg.match(/<path/g) || []).length;
-
-        expect(pathCount).toBe(4);
-    });
-
-    it('should support mixed placements', () => {
-        const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 100 });
-        grid.cells.place(shape.square().size(30), { stroke: '#000', strokeWidth: 2 });
+        grid.nodes.place(shape.square().size(30), { stroke: '#000', strokeWidth: 2 });
         grid.nodes.every(2).place(shape.circle().radius(8), { stroke: '#333', fill: '#ff0' });
 
         const svg = grid.toSVG({ width: 300, height: 300, margin: 20 });

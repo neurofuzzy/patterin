@@ -29,19 +29,13 @@ interface GridNode {
     col: number;
 }
 
-interface GridCell {
-    shape: Shape;
-    row: number;
-    col: number;
-}
-
 /**
  * GridSystem - creates various grid structures.
  * Supports: square (default), hexagonal, triangular, brick.
  */
 export class GridSystem extends BaseSystem {
     private _nodes: GridNode[] = [];
-    private _cells: GridCell[] = [];
+    private _edges: Segment[] = [];
     private _rows: number;
     private _cols: number;
     private _spacingX: number;
@@ -95,6 +89,7 @@ export class GridSystem extends BaseSystem {
         this._offsetY = options.offset?.[1] ?? 0;
 
         this.buildGrid();
+        this._buildGridEdges();
     }
 
     static create(options: GridOptions): GridSystem {
@@ -129,24 +124,6 @@ export class GridSystem extends BaseSystem {
                 });
             }
         }
-
-        // Create cells (rectangular regions)
-        for (let row = 0; row < this._rows; row++) {
-            for (let col = 0; col < this._cols; col++) {
-                const x = this._offsetX + col * this._spacingX;
-                const y = this._offsetY + row * this._spacingY;
-
-                const cellShape = Shape.fromPoints([
-                    new Vector2(x, y),
-                    new Vector2(x + this._spacingX, y),
-                    new Vector2(x + this._spacingX, y + this._spacingY),
-                    new Vector2(x, y + this._spacingY),
-                ]);
-                cellShape.ephemeral = true;
-
-                this._cells.push({ shape: cellShape, row, col });
-            }
-        }
     }
 
     private buildHexGrid(): void {
@@ -163,39 +140,59 @@ export class GridSystem extends BaseSystem {
         const vertSpacing = this._orientation === 'pointy' ? hexHeight * 0.75 : hexHeight;
         const horizSpacing = this._orientation === 'pointy' ? hexWidth : hexWidth * 0.75;
 
+        // Use Map for de-duplication
+        const nodeMap = new Map<string, GridNode>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+
+        let nodeIndex = 0;
         for (let row = 0; row < this._rows; row++) {
             for (let col = 0; col < this._cols; col++) {
-                let x: number, y: number;
+                let centerX: number, centerY: number;
 
                 if (this._orientation === 'pointy') {
                     // Offset every other row
                     const xOffset = (row % 2) * hexWidth / 2;
-                    x = this._offsetX + col * horizSpacing + xOffset;
-                    y = this._offsetY + row * vertSpacing;
+                    centerX = this._offsetX + col * horizSpacing + xOffset;
+                    centerY = this._offsetY + row * vertSpacing;
                 } else {
                     // Offset every other column
                     const yOffset = (col % 2) * hexHeight / 2;
-                    x = this._offsetX + col * horizSpacing;
-                    y = this._offsetY + row * vertSpacing + yOffset;
+                    centerX = this._offsetX + col * horizSpacing;
+                    centerY = this._offsetY + row * vertSpacing + yOffset;
                 }
 
-                // Create node at hex center
-                this._nodes.push({ x, y, row, col });
-
-                // Create hexagon cell
+                // Generate all 6 hex vertices
                 const rotation = this._orientation === 'pointy' ? Math.PI / 6 : 0;
-                const hexShape = Shape.regularPolygon(6, spacing, new Vector2(x, y), rotation);
-                hexShape.ephemeral = true;
-
-                this._cells.push({ shape: hexShape, row, col });
+                for (let i = 0; i < 6; i++) {
+                    const angle = rotation + (i * Math.PI / 3);
+                    const vx = centerX + spacing * Math.cos(angle);
+                    const vy = centerY + spacing * Math.sin(angle);
+                    
+                    const key = nodeKey(vx, vy);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, { x: vx, y: vy, row: nodeIndex, col: 0 });
+                        nodeIndex++;
+                    }
+                }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
     }
 
     private buildTriangularGrid(): void {
         const spacing = this._spacingX;
         const height = spacing * Math.sqrt(3) / 2;
 
+        // Use Map for de-duplication
+        const nodeMap = new Map<string, GridNode>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+
+        let nodeIndex = 0;
         for (let row = 0; row < this._rows; row++) {
             for (let col = 0; col < this._cols; col++) {
                 const x = this._offsetX + col * spacing / 2;
@@ -204,37 +201,48 @@ export class GridSystem extends BaseSystem {
                 // Alternate up/down triangles
                 const pointsUp = (row + col) % 2 === 0;
 
-                let triShape: Shape;
+                let vertices: Vector2[];
                 if (pointsUp) {
                     // △ vertices: bottom-left, bottom-right, top
-                    triShape = Shape.fromPoints([
+                    vertices = [
                         new Vector2(x, y + height),
                         new Vector2(x + spacing, y + height),
                         new Vector2(x + spacing / 2, y),
-                    ]);
+                    ];
                 } else {
                     // ▽ vertices: top-left, top-right, bottom
-                    triShape = Shape.fromPoints([
+                    vertices = [
                         new Vector2(x, y),
                         new Vector2(x + spacing, y),
                         new Vector2(x + spacing / 2, y + height),
-                    ]);
+                    ];
                 }
-                triShape.ephemeral = true;
 
-                // Node at triangle center
-                const center = triShape.centroid();
-                this._nodes.push({ x: center.x, y: center.y, row, col });
-
-                this._cells.push({ shape: triShape, row, col });
+                // Add all 3 vertices
+                for (const v of vertices) {
+                    const key = nodeKey(v.x, v.y);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, { x: v.x, y: v.y, row: nodeIndex, col: 0 });
+                        nodeIndex++;
+                    }
+                }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
     }
 
     private buildBrickGrid(): void {
         const cellWidth = this._spacingX;
         const cellHeight = this._spacingY;
 
+        // Use Map for de-duplication
+        const nodeMap = new Map<string, GridNode>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+
+        let nodeIndex = 0;
         for (let row = 0; row < this._rows; row++) {
             const xOffset = (row % 2) * cellWidth * this._brickOffset;
 
@@ -242,48 +250,108 @@ export class GridSystem extends BaseSystem {
                 const x = this._offsetX + col * cellWidth + xOffset;
                 const y = this._offsetY + row * cellHeight;
 
-                const cellShape = Shape.fromPoints([
+                // Generate all 4 brick corner vertices
+                const vertices = [
                     new Vector2(x, y),
                     new Vector2(x + cellWidth, y),
                     new Vector2(x + cellWidth, y + cellHeight),
                     new Vector2(x, y + cellHeight),
-                ]);
-                cellShape.ephemeral = true;
+                ];
 
-                // Node at brick center
-                const cx = x + cellWidth / 2;
-                const cy = y + cellHeight / 2;
-                this._nodes.push({ x: cx, y: cy, row, col });
-
-                this._cells.push({ shape: cellShape, row, col });
+                for (const v of vertices) {
+                    const key = nodeKey(v.x, v.y);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, { x: v.x, y: v.y, row: nodeIndex, col: 0 });
+                        nodeIndex++;
+                    }
+                }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
     }
 
-    /** Make structure concrete (renderable) */
-    trace(): this {
-        this._traced = true;
-        for (const cell of this._cells) {
-            cell.shape.ephemeral = false;
+    /**
+     * Build grid edges by connecting adjacent intersection nodes.
+     * Uses proximity-based neighbor detection with de-duplication.
+     * These edges represent the connections between adjacent grid nodes.
+     */
+    private _buildGridEdges(): void {
+        this._edges = [];
+
+        if (this._type === 'square') {
+            // Square grid: simple horizontal and vertical lines
+            for (let row = 0; row <= this._rows; row++) {
+                const y = this._offsetY + row * this._spacingY;
+                const startX = this._offsetX;
+                const endX = this._offsetX + this._cols * this._spacingX;
+                this._edges.push(new Segment(
+                    new Vertex(startX, y),
+                    new Vertex(endX, y)
+                ));
+            }
+
+            for (let col = 0; col <= this._cols; col++) {
+                const x = this._offsetX + col * this._spacingX;
+                const startY = this._offsetY;
+                const endY = this._offsetY + this._rows * this._spacingY;
+                this._edges.push(new Segment(
+                    new Vertex(x, startY),
+                    new Vertex(x, endY)
+                ));
+            }
+        } else {
+            // For hex/triangular/brick: connect adjacent nodes by proximity
+            // Determine connection distance threshold based on grid type
+            let threshold: number;
+            if (this._type === 'hexagonal') {
+                threshold = this._spacingX * 1.1; // Slightly larger than hex radius
+            } else if (this._type === 'triangular') {
+                threshold = this._spacingX * 1.1; // Slightly larger than side length
+            } else { // brick
+                threshold = Math.max(this._spacingX, this._spacingY) * 1.1;
+            }
+
+            // Use edge-key map for de-duplication
+            const edgeMap = new Map<string, Segment>();
+            const edgeKey = (v1: GridNode, v2: GridNode): string => {
+                const x1 = v1.x.toFixed(6), y1 = v1.y.toFixed(6);
+                const x2 = v2.x.toFixed(6), y2 = v2.y.toFixed(6);
+                // Sort to ensure consistent key regardless of order
+                return x1 < x2 || (x1 === x2 && y1 < y2) 
+                    ? `${x1},${y1}-${x2},${y2}`
+                    : `${x2},${y2}-${x1},${y1}`;
+            };
+
+            // Find neighbors for each node
+            for (let i = 0; i < this._nodes.length; i++) {
+                const n1 = this._nodes[i];
+                for (let j = i + 1; j < this._nodes.length; j++) {
+                    const n2 = this._nodes[j];
+                    const dx = n2.x - n1.x;
+                    const dy = n2.y - n1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < threshold) {
+                        const key = edgeKey(n1, n2);
+                        if (!edgeMap.has(key)) {
+                            edgeMap.set(key, new Segment(
+                                new Vertex(n1.x, n1.y),
+                                new Vertex(n2.x, n2.y)
+                            ));
+                        }
+                    }
+                }
+            }
+
+            this._edges = Array.from(edgeMap.values());
         }
-        return this;
     }
 
     /** Get all grid nodes as PointsContext */
     get nodes(): GridPointsContext {
         const vertices = this._nodes.map((n) => new Vertex(n.x, n.y));
         return new GridPointsContext(this, vertices, this._nodes);
-    }
-
-    /** Get all grid cells as ShapesContext */
-    get cells(): GridShapesContext {
-        const shapes = this._cells.map((c) => c.shape.clone());
-        return new GridShapesContext(this, shapes);
-    }
-
-    /** Alias for cells() - consistent with TessellationSystem.tiles */
-    get tiles(): GridShapesContext {
-        return this.cells;
     }
 
     // ==================== BaseSystem Implementation ====================
@@ -298,50 +366,80 @@ export class GridSystem extends BaseSystem {
             shape.containsPoint(new Vector2(node.x, node.y))
         );
 
-        // Filter cells to those with centroids inside the mask
-        this._cells = this._cells.filter(cell =>
-            shape.containsPoint(cell.shape.centroid())
+        // Filter edges to those with midpoints inside mask
+        this._edges = this._edges.filter(edge =>
+            shape.containsPoint(edge.midpoint())
         );
     }
 
     protected scaleGeometry(factor: number): void {
-        for (const cell of this._cells) {
-            cell.shape.scale(factor);
+        // Scale nodes
+        for (const node of this._nodes) {
+            node.x *= factor;
+            node.y *= factor;
+        }
+        // Scale edges
+        for (const edge of this._edges) {
+            edge.start.x *= factor;
+            edge.start.y *= factor;
+            edge.end.x *= factor;
+            edge.end.y *= factor;
         }
     }
 
     protected rotateGeometry(angleRad: number): void {
-        for (const cell of this._cells) {
-            cell.shape.rotate(angleRad);
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+        
+        // Rotate nodes
+        for (const node of this._nodes) {
+            const x = node.x * cos - node.y * sin;
+            const y = node.x * sin + node.y * cos;
+            node.x = x;
+            node.y = y;
+        }
+        // Rotate edges
+        for (const edge of this._edges) {
+            let x = edge.start.x * cos - edge.start.y * sin;
+            let y = edge.start.x * sin + edge.start.y * cos;
+            edge.start.x = x;
+            edge.start.y = y;
+            
+            x = edge.end.x * cos - edge.end.y * sin;
+            y = edge.end.x * sin + edge.end.y * cos;
+            edge.end.x = x;
+            edge.end.y = y;
         }
     }
 
     protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
-        const cellStyle = style ?? DEFAULT_STYLES.connection;
+        const edgeStyle = style ?? DEFAULT_STYLES.connection;
 
-        // Add traced cells in their own group
-        if (this._traced) {
-            collector.beginGroup('cells');
-            for (const cell of this._cells) {
-                if (!cell.shape.ephemeral) {
-                    collector.addShape(cell.shape, cellStyle);
-                }
+        // Add traced edges in their own group
+        if (this._traced && this._edges.length > 0) {
+            collector.beginGroup('grid-edges');
+            // Stamp each edge segment as a line
+            for (const seg of this._edges) {
+                const pathData = `M ${seg.start.x} ${seg.start.y} L ${seg.end.x} ${seg.end.y}`;
+                collector.addPath(pathData, edgeStyle);
             }
             collector.endGroup();
         }
     }
 
     protected getGeometryRenderGroups(): RenderGroup[] {
-        const cellItems = this._traced
-            ? this._cells
-                .filter(c => !c.shape.ephemeral)
-                .map(c => ({ shape: c.shape }))
-            : [];
+        if (!this._traced || this._edges.length === 0) {
+            return [];
+        }
+
+        // Create a shape from edges for rendering
+        const edgeShape = new Shape(this._edges, 'ccw');
+        edgeShape.open = true;
 
         return [
             {
-                name: 'cells',
-                items: cellItems,
+                name: 'grid-edges',
+                items: [{ shape: edgeShape, style: DEFAULT_STYLES.connection }],
                 defaultStyle: DEFAULT_STYLES.connection
             }
         ];
@@ -358,49 +456,33 @@ export class GridSystem extends BaseSystem {
             maxY = Math.max(maxY, node.y);
         }
 
-        for (const cell of this._cells) {
-            const bbox = cell.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
-        }
-
         return { minX, minY, maxX, maxY };
     }
 
     protected getSourceForSelection(): Shape[] {
-        return this._cells.map(c => c.shape);
+        // No source shapes needed for node-based selection
+        return [];
     }
 
-    /** Get row lines */
+    /** Get row lines (more horizontal edges) */
     get rows(): LinesContext {
         const segments: Segment[] = [];
-        const refShape = this._cells[0]?.shape ?? Shape.regularPolygon(3, 1);
+        const refShape = Shape.regularPolygon(3, 1);
 
-        if (this._type === 'square' || this._type === 'brick') {
+        if (this._type === 'square') {
             for (let row = 0; row <= this._rows; row++) {
                 const y = this._offsetY + row * this._spacingY;
                 const startX = this._offsetX;
                 const endX = this._offsetX + this._cols * this._spacingX;
-
-                const start = new Vertex(startX, y);
-                const end = new Vertex(endX, y);
-                segments.push(new Segment(start, end));
+                segments.push(new Segment(new Vertex(startX, y), new Vertex(endX, y)));
             }
         } else {
-            // For hex/triangular, connect centers horizontally
-            const nodesByRow = new Map<number, GridNode[]>();
-            for (const node of this._nodes) {
-                if (!nodesByRow.has(node.row)) nodesByRow.set(node.row, []);
-                nodesByRow.get(node.row)!.push(node);
-            }
-            for (const nodes of nodesByRow.values()) {
-                nodes.sort((a, b) => a.x - b.x);
-                for (let i = 0; i < nodes.length - 1; i++) {
-                    const start = new Vertex(nodes[i].x, nodes[i].y);
-                    const end = new Vertex(nodes[i + 1].x, nodes[i + 1].y);
-                    segments.push(new Segment(start, end));
+            // For other grid types, filter edges that are more horizontal
+            for (const edge of this._edges) {
+                const dx = Math.abs(edge.end.x - edge.start.x);
+                const dy = Math.abs(edge.end.y - edge.start.y);
+                if (dx >= dy) { // More horizontal than vertical
+                    segments.push(edge);
                 }
             }
         }
@@ -408,34 +490,25 @@ export class GridSystem extends BaseSystem {
         return new LinesContext(refShape, segments);
     }
 
-    /** Get column lines */
+    /** Get column lines (more vertical edges) */
     get columns(): LinesContext {
         const segments: Segment[] = [];
-        const refShape = this._cells[0]?.shape ?? Shape.regularPolygon(3, 1);
+        const refShape = Shape.regularPolygon(3, 1);
 
         if (this._type === 'square') {
             for (let col = 0; col <= this._cols; col++) {
                 const x = this._offsetX + col * this._spacingX;
                 const startY = this._offsetY;
                 const endY = this._offsetY + this._rows * this._spacingY;
-
-                const start = new Vertex(x, startY);
-                const end = new Vertex(x, endY);
-                segments.push(new Segment(start, end));
+                segments.push(new Segment(new Vertex(x, startY), new Vertex(x, endY)));
             }
         } else {
-            // For hex/triangular/brick, connect centers vertically
-            const nodesByCol = new Map<number, GridNode[]>();
-            for (const node of this._nodes) {
-                if (!nodesByCol.has(node.col)) nodesByCol.set(node.col, []);
-                nodesByCol.get(node.col)!.push(node);
-            }
-            for (const nodes of nodesByCol.values()) {
-                nodes.sort((a, b) => a.y - b.y);
-                for (let i = 0; i < nodes.length - 1; i++) {
-                    const start = new Vertex(nodes[i].x, nodes[i].y);
-                    const end = new Vertex(nodes[i + 1].x, nodes[i + 1].y);
-                    segments.push(new Segment(start, end));
+            // For other grid types, filter edges that are more vertical
+            for (const edge of this._edges) {
+                const dx = Math.abs(edge.end.x - edge.start.x);
+                const dy = Math.abs(edge.end.y - edge.start.y);
+                if (dy > dx) { // More vertical than horizontal
+                    segments.push(edge);
                 }
             }
         }
@@ -501,25 +574,3 @@ class GridPointsContext extends PointsContext {
     }
 }
 
-/**
- * Grid-specific ShapesContext with place() support.
- */
-class GridShapesContext extends ShapesContext {
-    constructor(
-        private _grid: GridSystem,
-        shapes: Shape[]
-    ) {
-        super(shapes);
-    }
-
-    /** Place a shape at each cell center */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        for (const cellShape of this._items) {
-            const center = cellShape.centroid();
-            const clone = shapeCtx.shape.clone();
-            clone.moveTo(center);
-            this._grid.addPlacement(center, clone, style);
-        }
-        return this;
-    }
-}

@@ -96,14 +96,14 @@ describe('SVGCollector flatten mode', () => {
 });
 
 describe('System SVG group output', () => {
-    it('GridSystem.toSVG should output groups for cells and placements', () => {
+    it('GridSystem.toSVG should output groups for grid-edges and placements', () => {
         const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 50 });
-        grid.trace();  // Make cells visible
+        grid.trace();  // Make grid edges visible
         grid.nodes.place(shape.circle().radius(5), { stroke: '#000' });
 
         const svg = grid.toSVG({ width: 200, height: 200 });
 
-        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="grid-edges">');
         expect(svg).toContain('<g id="placements">');
     });
 
@@ -117,7 +117,7 @@ describe('System SVG group output', () => {
 
         const svg = collector.toString({ width: 200, height: 200 });
 
-        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="grid-edges">');
         expect(svg).toContain('<g id="placements">');
     });
 });

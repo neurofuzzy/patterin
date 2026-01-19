@@ -8,13 +8,13 @@ beforeAll(() => {
     }
 });
 
-/** Helper: Render grid with cyan traces and magenta nodes */
+/** Helper: Render grid with cyan edges and magenta nodes */
 function renderGrid(grid: ReturnType<typeof GridSystem.create>, width: number, height: number): string {
     const collector = new SVGCollector();
 
-    // Trace cells in cyan
+    // Trace edges in cyan
     grid.trace();
-    grid.cells.stamp(collector, 0, 0, { stroke: '#00ffff', strokeWidth: 1, fill: 'none' });
+    grid.stamp(collector, { stroke: '#00ffff', strokeWidth: 1, fill: 'none' });
 
     // Nodes as magenta circles
     for (const v of grid.nodes.vertices) {
@@ -26,25 +26,15 @@ function renderGrid(grid: ReturnType<typeof GridSystem.create>, width: number, h
 }
 
 describe('Hexagonal Grid', () => {
-    it('should create hex cells', () => {
+    it('should create hex intersection nodes', () => {
         const grid = GridSystem.create({
             type: 'hexagonal',
             rows: 3,
             cols: 3,
             spacing: 20,
         });
-        expect(grid.cells.length).toBe(9);
-    });
-
-    it('should have 6 vertices per hex cell', () => {
-        const grid = GridSystem.create({
-            type: 'hexagonal',
-            rows: 2,
-            cols: 2,
-            spacing: 20,
-        });
-        const cell = grid.cells.shapes[0];
-        expect(cell.vertices.length).toBe(6);
+        // 3x3 hex grid has many shared vertices at intersections
+        expect(grid.nodes.vertices.length).toBeGreaterThan(9);
     });
 
     it('pointy orientation should work', () => {
@@ -77,25 +67,15 @@ describe('Hexagonal Grid', () => {
 });
 
 describe('Triangular Grid', () => {
-    it('should create triangle cells', () => {
+    it('should create triangle intersection nodes', () => {
         const grid = GridSystem.create({
             type: 'triangular',
             rows: 4,
             cols: 6,
             spacing: 30,
         });
-        expect(grid.cells.length).toBe(24);
-    });
-
-    it('should have 3 vertices per triangle', () => {
-        const grid = GridSystem.create({
-            type: 'triangular',
-            rows: 2,
-            cols: 2,
-            spacing: 30,
-        });
-        const cell = grid.cells.shapes[0];
-        expect(cell.vertices.length).toBe(3);
+        // Triangular grid has vertices at triangle corners (shared between adjacent triangles)
+        expect(grid.nodes.vertices.length).toBeGreaterThan(10);
     });
 
     it('should generate visual SVG', () => {
@@ -112,25 +92,15 @@ describe('Triangular Grid', () => {
 });
 
 describe('Brick Grid', () => {
-    it('should create brick cells', () => {
+    it('should create brick intersection nodes', () => {
         const grid = GridSystem.create({
             type: 'brick',
             rows: 4,
             cols: 6,
             spacing: { x: 40, y: 20 },
         });
-        expect(grid.cells.length).toBe(24);
-    });
-
-    it('should have 4 vertices per brick', () => {
-        const grid = GridSystem.create({
-            type: 'brick',
-            rows: 2,
-            cols: 2,
-            spacing: 30,
-        });
-        const cell = grid.cells.shapes[0];
-        expect(cell.vertices.length).toBe(4);
+        // Brick grid has vertices at brick corners (shared between adjacent bricks)
+        expect(grid.nodes.vertices.length).toBeGreaterThan(20);
     });
 
     it('offset 0.5 should work (running bond)', () => {
@@ -172,7 +142,7 @@ describe('Brick Grid', () => {
 });
 
 describe('Grid Tracing', () => {
-    it('trace() should make cells renderable', () => {
+    it('trace() should make grid edges renderable', () => {
         const grid = GridSystem.create({
             type: 'square',
             rows: 3,
@@ -180,21 +150,21 @@ describe('Grid Tracing', () => {
             spacing: 20,
         });
         const svg1 = grid.toSVG({ width: 200, height: 200 });
-        expect(svg1).not.toContain('<path'); // No placements, no traced cells
+        expect(svg1).not.toContain('<path'); // No placements, no traced edges
 
         grid.trace();
         const svg2 = grid.toSVG({ width: 200, height: 200 });
-        expect(svg2).toContain('<path'); // Traced cells render
+        expect(svg2).toContain('<path'); // Traced edges render as line network
     });
 
-    it('cells should be ephemeral by default', () => {
+    it('should create nodes at grid intersections', () => {
         const grid = GridSystem.create({
-            type: 'hexagonal',
-            rows: 2,
-            cols: 2,
+            type: 'square',
+            rows: 3,
+            cols: 3,
             spacing: 20,
         });
-        const cell = grid.cells.shapes[0];
-        expect(cell.ephemeral).toBe(true);
+        // Square grid 3x3 has (3+1) * (3+1) = 16 intersection nodes
+        expect(grid.nodes.vertices.length).toBe(16);
     });
 });

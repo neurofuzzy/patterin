@@ -62,21 +62,21 @@ export abstract class BaseSystem implements ISystem {
     protected abstract filterByMask(shape: Shape): void;
 
     /**
-     * Scale system-specific geometry (not placements).
+     * Scale system-specific geometry (shapes + connections, not placements).
      * Called by scale() after scaling placements.
      * @param factor - Scale factor
      */
     protected abstract scaleGeometry(factor: number): void;
 
     /**
-     * Rotate system-specific geometry (not placements).
+     * Rotate system-specific geometry (shapes + connections, not placements).
      * Called by rotate() after rotating placements.
      * @param angleRad - Rotation angle in radians
      */
     protected abstract rotateGeometry(angleRad: number): void;
 
     /**
-     * Stamp system-specific geometry to collector.
+     * Stamp system-specific geometry (shapes + connections) to collector.
      * Called by stamp() after stamping placements.
      * @param collector - SVGCollector to receive shapes
      * @param style - Optional style override
@@ -85,13 +85,13 @@ export abstract class BaseSystem implements ISystem {
 
     /**
      * Get render groups for toSVG method.
-     * Should return geometry-specific groups (cells, tiles, etc.).
+     * Should return geometry-specific groups (shapes + connections).
      * @returns Array of render groups
      */
     protected abstract getGeometryRenderGroups(): RenderGroup[];
 
     /**
-     * Get bounding box of system-specific geometry (not placements).
+     * Get bounding box of system-specific geometry (shapes + connections, not placements).
      * Called by getBounds() to combine with placement bounds.
      * @returns Bounding box
      */
@@ -236,13 +236,13 @@ export abstract class BaseSystem implements ISystem {
     // ==================== Info ====================
 
     /**
-     * Get bounding box of all geometry.
+     * Get bounding box of all geometry (shapes + connections + placements).
      */
     getBounds(): SystemBounds {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
-        // Include system-specific geometry bounds
+        // Include system-specific geometry bounds (shapes + connections)
         const geomBounds = this.getGeometryBounds();
         minX = Math.min(minX, geomBounds.minX);
         minY = Math.min(minY, geomBounds.minY);

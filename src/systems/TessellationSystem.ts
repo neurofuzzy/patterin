@@ -25,19 +25,14 @@ export interface TessellationOptions {
     arrangement?: 'square' | 'hexagonal' | 'triangular';
 }
 
-interface TileInfo {
-    shape: Shape;
-    type: string;  // 'kite', 'dart', 'triangle', 'hexagon', etc.
-}
-
 /**
  * TessellationSystem - creates algorithmic tiling patterns.
  * Unlike GridSystem (regular infinite grids), TessellationSystem
  * handles patterns requiring algorithmic generation or randomization.
  */
 export class TessellationSystem extends BaseSystem {
-    private _tiles: TileInfo[] = [];
     private _nodes: Vector2[] = [];
+    private _edges: Segment[] = [];
     private _bounds: { width: number; height: number };
     private _pattern: TessellationPattern;
 
@@ -65,6 +60,12 @@ export class TessellationSystem extends BaseSystem {
                 this.buildCustom({ ...options, pattern, bounds });
                 break;
         }
+
+        // Extract unique edges after nodes are built (if not already extracted)
+        // Penrose extracts edges during build, others use proximity detection
+        if (this._edges.length === 0) {
+            this._extractUniqueEdges();
+        }
     }
 
     static create(options: TessellationOptions): TessellationSystem {
@@ -85,24 +86,29 @@ export class TessellationSystem extends BaseSystem {
 
     private buildTruchet(options: TessellationOptions): void {
         const tileSize = options.tileSize ?? 20;
-        const variant = options.variant ?? 'quarter-circles';
-        const random = this.seededRandom(options.seed ?? 12345);
-
         const cols = Math.ceil(this._bounds.width / tileSize);
         const rows = Math.ceil(this._bounds.height / tileSize);
 
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
+        // Use Map for de-duplication of vertices
+        const nodeMap = new Map<string, Vector2>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+
+        // Generate vertices at tile corners (square grid of vertices)
+        for (let row = 0; row <= rows; row++) {
+            for (let col = 0; col <= cols; col++) {
                 const x = col * tileSize;
                 const y = row * tileSize;
-                const rotation = Math.floor(random() * 4) * 90;
-
-                const tile = this.createTruchetTile(variant, tileSize, x, y, rotation);
-                tile.ephemeral = true;
-                this._tiles.push({ shape: tile, type: variant });
-                this._nodes.push(new Vector2(x + tileSize / 2, y + tileSize / 2));
+                
+                const key = nodeKey(x, y);
+                if (!nodeMap.has(key)) {
+                    nodeMap.set(key, new Vector2(x, y));
+                }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
     }
 
     private createTruchetTile(
@@ -189,6 +195,12 @@ export class TessellationSystem extends BaseSystem {
         const cols = Math.ceil(this._bounds.width / horizSpacing) + 1;
         const rows = Math.ceil(this._bounds.height / vertSpacing) + 1;
 
+        // Use Map for de-duplication of vertices
+        const nodeMap = new Map<string, Vector2>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const xOffset = (row % 2) * horizSpacing / 2;
@@ -199,15 +211,18 @@ export class TessellationSystem extends BaseSystem {
                 if (cx < -spacing || cx > this._bounds.width + spacing) continue;
                 if (cy < -spacing || cy > this._bounds.height + spacing) continue;
 
-                // Create hexagon at center
+                // Generate hexagon vertices
                 const hex = Shape.regularPolygon(6, hexRadius, new Vector2(cx, cy), Math.PI / 6);
-                hex.ephemeral = true;
-                this._tiles.push({ shape: hex, type: 'hexagon' });
-                this._nodes.push(new Vector2(cx, cy));
-
-                // Create triangles in the gaps
-                // 6 triangles around each hexagon
                 const hexVertices = hex.vertices;
+                
+                for (const v of hexVertices) {
+                    const key = nodeKey(v.position.x, v.position.y);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, new Vector2(v.position.x, v.position.y));
+                    }
+                }
+
+                // Generate triangle vertices (peaks)
                 for (let i = 0; i < 6; i++) {
                     const v1 = hexVertices[i].position;
                     const v2 = hexVertices[(i + 1) % 6].position;
@@ -216,12 +231,15 @@ export class TessellationSystem extends BaseSystem {
                     const outDir = v1.add(v2).divide(2).subtract(new Vector2(cx, cy)).normalize();
                     const triPeak = v1.add(v2).divide(2).add(outDir.multiply(triSide * 0.866));
 
-                    const tri = Shape.fromPoints([v1, v2, triPeak]);
-                    tri.ephemeral = true;
-                    this._tiles.push({ shape: tri, type: 'triangle' });
+                    const key = nodeKey(triPeak.x, triPeak.y);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, new Vector2(triPeak.x, triPeak.y));
+                    }
                 }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
     }
 
     // ==================== Penrose Pattern ====================
@@ -289,21 +307,57 @@ export class TessellationSystem extends BaseSystem {
             triangles = newTriangles;
         }
 
-        // Convert triangles to tiles
+        // Extract vertices and edges from triangles
+        const nodeMap = new Map<string, Vector2>();
+        const edgeMap = new Map<string, Segment>();
+        
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
+        
+        const edgeKey = (v1: Vector2, v2: Vector2): string => {
+            const x1 = v1.x.toFixed(6), y1 = v1.y.toFixed(6);
+            const x2 = v2.x.toFixed(6), y2 = v2.y.toFixed(6);
+            // Sort to ensure consistent key regardless of order
+            return x1 < x2 || (x1 === x2 && y1 < y2) 
+                ? `${x1},${y1}-${x2},${y2}`
+                : `${x2},${y2}-${x1},${y1}`;
+        };
+
         for (const tri of triangles) {
             // Clip to bounds
             const center = tri.a.add(tri.b).add(tri.c).divide(3);
             if (center.x < 0 || center.x > this._bounds.width) continue;
             if (center.y < 0 || center.y > this._bounds.height) continue;
 
-            const shape = Shape.fromPoints([tri.a, tri.b, tri.c]);
-            shape.ephemeral = true;
-
-            // Red triangles form kites, blue triangles form darts
-            const tileType = tri.color === 0 ? 'kite' : 'dart';
-            this._tiles.push({ shape, type: tileType });
-            this._nodes.push(center);
+            // Add all 3 vertices
+            for (const v of [tri.a, tri.b, tri.c]) {
+                const key = nodeKey(v.x, v.y);
+                if (!nodeMap.has(key)) {
+                    nodeMap.set(key, new Vector2(v.x, v.y));
+                }
+            }
+            
+            // Add all 3 edges of the triangle
+            const edges: [Vector2, Vector2][] = [
+                [tri.a, tri.b],
+                [tri.b, tri.c],
+                [tri.c, tri.a]
+            ];
+            
+            for (const [v1, v2] of edges) {
+                const key = edgeKey(v1, v2);
+                if (!edgeMap.has(key)) {
+                    edgeMap.set(key, new Segment(
+                        new Vertex(v1.x, v1.y),
+                        new Vertex(v2.x, v2.y)
+                    ));
+                }
+            }
         }
+
+        this._nodes = Array.from(nodeMap.values());
+        this._edges = Array.from(edgeMap.values());
     }
 
     // ==================== Custom Pattern ====================
@@ -316,6 +370,12 @@ export class TessellationSystem extends BaseSystem {
         const spacing = options.spacing ?? 40;
         const arrangement = options.arrangement ?? 'square';
         const unit = options.unit.shape;
+
+        // Use Map for de-duplication of vertices
+        const nodeMap = new Map<string, Vector2>();
+        const nodeKey = (x: number, y: number): string => {
+            return `${x.toFixed(6)},${y.toFixed(6)}`;
+        };
 
         // Use grid arrangement
         const cols = Math.ceil(this._bounds.width / spacing) + 1;
@@ -341,45 +401,125 @@ export class TessellationSystem extends BaseSystem {
 
                 if (x > this._bounds.width + spacing || y > this._bounds.height + spacing) continue;
 
+                // Extract vertices from unit shape at this position
                 const clone = unit.clone();
                 clone.moveTo(new Vector2(x, y));
-                clone.ephemeral = true;
-                this._tiles.push({ shape: clone, type: 'custom' });
-                this._nodes.push(new Vector2(x, y));
+                
+                for (const v of clone.vertices) {
+                    const key = nodeKey(v.position.x, v.position.y);
+                    if (!nodeMap.has(key)) {
+                        nodeMap.set(key, new Vector2(v.position.x, v.position.y));
+                    }
+                }
             }
         }
+
+        this._nodes = Array.from(nodeMap.values());
+    }
+
+    /**
+     * Extract unique edges by connecting adjacent intersection nodes.
+     * Uses proximity-based neighbor detection with adaptive threshold.
+     * These edges represent the connections in the tessellation geometry.
+     */
+    private _extractUniqueEdges(): void {
+        if (this._nodes.length === 0) {
+            this._edges = [];
+            return;
+        }
+
+        // Estimate typical edge length by sampling nearby nodes
+        let totalDist = 0;
+        let sampleCount = 0;
+        const maxSamples = Math.min(10, this._nodes.length);
+        
+        for (let i = 0; i < maxSamples && i < this._nodes.length; i++) {
+            const n1 = this._nodes[i];
+            let minDist = Infinity;
+            
+            for (let j = 0; j < this._nodes.length; j++) {
+                if (i === j) continue;
+                const n2 = this._nodes[j];
+                const dx = n2.x - n1.x;
+                const dy = n2.y - n1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) {
+                    minDist = dist;
+                }
+            }
+            
+            if (minDist !== Infinity) {
+                totalDist += minDist;
+                sampleCount++;
+            }
+        }
+        
+        const avgDist = sampleCount > 0 ? totalDist / sampleCount : 50;
+        const threshold = avgDist * 1.5; // Allow some tolerance
+
+        // Use edge-key map for de-duplication
+        const edgeMap = new Map<string, Segment>();
+
+        // Connect adjacent nodes
+        for (let i = 0; i < this._nodes.length; i++) {
+            const n1 = this._nodes[i];
+            for (let j = i + 1; j < this._nodes.length; j++) {
+                const n2 = this._nodes[j];
+                const dx = n2.x - n1.x;
+                const dy = n2.y - n1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < threshold) {
+                    const seg = new Segment(
+                        new Vertex(n1.x, n1.y),
+                        new Vertex(n2.x, n2.y)
+                    );
+                    const key = this._edgeKey(seg);
+                    if (!edgeMap.has(key)) {
+                        edgeMap.set(key, seg);
+                    }
+                }
+            }
+        }
+
+        this._edges = Array.from(edgeMap.values());
+    }
+
+    /**
+     * Create a normalized key for an edge segment.
+     * Uses fixed precision and orders coordinates consistently for de-duplication.
+     */
+    private _edgeKey(seg: Segment): string {
+        // Get both endpoints
+        const p1x = seg.start.x;
+        const p1y = seg.start.y;
+        const p2x = seg.end.x;
+        const p2y = seg.end.y;
+
+        // Normalize: always put point with smaller x first (or smaller y if x is equal)
+        let x1, y1, x2, y2;
+        if (p1x < p2x || (p1x === p2x && p1y < p2y)) {
+            x1 = p1x; y1 = p1y; x2 = p2x; y2 = p2y;
+        } else {
+            x1 = p2x; y1 = p2y; x2 = p1x; y2 = p1y;
+        }
+
+        return `${x1.toFixed(6)},${y1.toFixed(6)}-${x2.toFixed(6)},${y2.toFixed(6)}`;
     }
 
     // ==================== Getters ====================
 
-    /** Get all tiles as ShapesContext */
-    get tiles(): ShapesContext {
-        const shapes = this._tiles.map(t => t.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
     /** Get all nodes as PointsContext */
     get nodes(): PointsContext {
         const vertices = this._nodes.map(n => new Vertex(n.x, n.y));
-        const refShape = this._tiles[0]?.shape ?? Shape.regularPolygon(3, 1);
+        const refShape = Shape.regularPolygon(3, 1);
         return new PointsContext(refShape, vertices);
     }
 
     /** Get all edges as LinesContext */
     get edges(): LinesContext {
-        const segments: Segment[] = [];
-        const refShape = this._tiles[0]?.shape ?? Shape.regularPolygon(3, 1);
-
-        for (const tile of this._tiles) {
-            for (const seg of tile.shape.segments) {
-                segments.push(new Segment(
-                    new Vertex(seg.start.x, seg.start.y),
-                    new Vertex(seg.end.x, seg.end.y)
-                ));
-            }
-        }
-
-        return new LinesContext(refShape, segments);
+        const refShape = Shape.regularPolygon(3, 1);
+        return new LinesContext(refShape, this._edges);
     }
 
     // ==================== BaseSystem Implementation ====================
@@ -389,52 +529,85 @@ export class TessellationSystem extends BaseSystem {
     }
 
     protected filterByMask(shape: Shape): void {
-        // Filter tiles to those with centroids inside the mask
-        this._tiles = this._tiles.filter(tile =>
-            shape.containsPoint(tile.shape.centroid())
-        );
-
         // Filter nodes to those inside the mask
         this._nodes = this._nodes.filter(node =>
             shape.containsPoint(node)
         );
+
+        // Filter edges to those with midpoints inside mask
+        this._edges = this._edges.filter(edge =>
+            shape.containsPoint(edge.midpoint())
+        );
     }
 
     protected scaleGeometry(factor: number): void {
-        for (const tile of this._tiles) {
-            tile.shape.scale(factor);
+        // Scale nodes
+        for (const node of this._nodes) {
+            node.x *= factor;
+            node.y *= factor;
+        }
+        // Scale edges
+        for (const edge of this._edges) {
+            edge.start.x *= factor;
+            edge.start.y *= factor;
+            edge.end.x *= factor;
+            edge.end.y *= factor;
         }
     }
 
     protected rotateGeometry(angleRad: number): void {
-        for (const tile of this._tiles) {
-            tile.shape.rotate(angleRad);
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+        
+        // Rotate nodes
+        for (const node of this._nodes) {
+            const x = node.x * cos - node.y * sin;
+            const y = node.x * sin + node.y * cos;
+            node.x = x;
+            node.y = y;
+        }
+        // Rotate edges
+        for (const edge of this._edges) {
+            let x = edge.start.x * cos - edge.start.y * sin;
+            let y = edge.start.x * sin + edge.start.y * cos;
+            edge.start.x = x;
+            edge.start.y = y;
+            
+            x = edge.end.x * cos - edge.end.y * sin;
+            y = edge.end.x * sin + edge.end.y * cos;
+            edge.end.x = x;
+            edge.end.y = y;
         }
     }
 
     protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
-        const tileStyle = style ?? DEFAULT_STYLES.connection;
+        const edgeStyle = style ?? DEFAULT_STYLES.connection;
 
-        // Add tiles in their own group
-        const visibleTiles = this._tiles.filter(t => !t.shape.ephemeral);
-        if (visibleTiles.length > 0) {
-            collector.beginGroup('tiles');
-            for (const tile of visibleTiles) {
-                collector.addShape(tile.shape, tileStyle);
+        // Add traced edges in their own group
+        if (this._traced && this._edges.length > 0) {
+            collector.beginGroup('tessellation-edges');
+            // Stamp each edge segment as a line
+            for (const seg of this._edges) {
+                const pathData = `M ${seg.start.x} ${seg.start.y} L ${seg.end.x} ${seg.end.y}`;
+                collector.addPath(pathData, edgeStyle);
             }
             collector.endGroup();
         }
     }
 
     protected getGeometryRenderGroups(): RenderGroup[] {
-        const tileItems = this._tiles
-            .filter(t => !t.shape.ephemeral)
-            .map(t => ({ shape: t.shape }));
+        if (!this._traced || this._edges.length === 0) {
+            return [];
+        }
+
+        // Create a shape from edges for rendering
+        const edgeShape = new Shape(this._edges, 'ccw');
+        edgeShape.open = true;
 
         return [
             {
-                name: 'tiles',
-                items: tileItems,
+                name: 'tessellation-edges',
+                items: [{ shape: edgeShape, style: DEFAULT_STYLES.connection }],
                 defaultStyle: DEFAULT_STYLES.connection
             }
         ];
@@ -444,55 +617,18 @@ export class TessellationSystem extends BaseSystem {
         let minX = Infinity, minY = Infinity;
         let maxX = -Infinity, maxY = -Infinity;
 
-        for (const tile of this._tiles) {
-            const bbox = tile.shape.boundingBox();
-            minX = Math.min(minX, bbox.min.x);
-            minY = Math.min(minY, bbox.min.y);
-            maxX = Math.max(maxX, bbox.max.x);
-            maxY = Math.max(maxY, bbox.max.y);
+        for (const node of this._nodes) {
+            minX = Math.min(minX, node.x);
+            minY = Math.min(minY, node.y);
+            maxX = Math.max(maxX, node.x);
+            maxY = Math.max(maxY, node.y);
         }
 
         return { minX, minY, maxX, maxY };
     }
 
     protected getSourceForSelection(): Shape[] {
-        return this._tiles.map(t => t.shape);
-    }
-
-    // Pattern-specific getters
-    get kites(): ShapesContext {
-        const shapes = this._tiles.filter(t => t.type === 'kite').map(t => t.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
-    get darts(): ShapesContext {
-        const shapes = this._tiles.filter(t => t.type === 'dart').map(t => t.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
-    get triangles(): ShapesContext {
-        const shapes = this._tiles.filter(t => t.type === 'triangle').map(t => t.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
-    get hexagons(): ShapesContext {
-        const shapes = this._tiles.filter(t => t.type === 'hexagon').map(t => t.shape.clone());
-        return new ShapesContext(shapes);
-    }
-
-    /** Alias for tiles() - consistent with GridSystem.cells */
-    get cells(): ShapesContext {
-        return this.tiles;
-    }
-
-    // ==================== Tracing ====================
-
-    /** Make tiles concrete (renderable) */
-    trace(): this {
-        this._traced = true;
-        for (const tile of this._tiles) {
-            tile.shape.ephemeral = false;
-        }
-        return this;
+        // No source shapes needed for node-based selection
+        return [];
     }
 }
