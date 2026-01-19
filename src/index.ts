@@ -143,3 +143,39 @@ export { CloneSystem, type CloneOptions } from './systems/index';
  * ```
  */
 export { system } from './systems/index';
+
+// ==================== Pattern Factory ====================
+/**
+ * Main entry point for creating patterns.
+ * 
+ * @example
+ * ```typescript
+ * import { pattern } from 'patterin';
+ * 
+ * const checker = pattern.checker({ size: 20, bounds: { width: 400, height: 400 } });
+ * const chevron = pattern.chevron({ stripeWidth: 30, bounds: { width: 400, height: 400 } });
+ * const houndstooth = pattern.houndstooth({ size: 40, bounds: { width: 400, height: 400 } });
+ * ```
+ */
+export { pattern } from './patterns/index';
+export type { 
+    PatternType, 
+    CheckerOptions, 
+    ChevronOptions, 
+    GinghamOptions, 
+    HoundstoothOptions, 
+    HerringboneOptions,
+    BrickOptions,
+    BrickBondType,
+    PinwheelOptions,
+    LogCabinOptions,
+    BowTieOptions,
+    BrokenDishesOptions,
+    FriendshipStarOptions,
+    ShooFlyOptions,
+    SnowballOptions,
+    FlyingGeeseOptions,
+    DutchmansPuzzleOptions,
+    SawtoothStarOptions,
+    EightPointedStarOptions
+} from './patterns/index';
