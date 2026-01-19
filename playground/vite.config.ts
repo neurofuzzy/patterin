@@ -13,7 +13,7 @@ export default defineConfig({
         open: true,
     },
     build: {
-        outDir: '../docs/playground',
+        outDir: 'dist',
         emptyOutDir: true,
     },
     optimizeDeps: {

@@ -137,8 +137,7 @@ out
 # Patterin test output
 test-output/
 
-# GitHub Pages build output (docs/playground/)
-# Keep the docs directory structure but ignore built files
-docs/playground/
+# Playground build output
+playground/dist/
 
 .DS_Store
