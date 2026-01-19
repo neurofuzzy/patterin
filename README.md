@@ -2,34 +2,33 @@
 
 **Declarative procedural 2D vector graphics for the modern web.**
 
-Generate intricate SVG patterns with a fluent, context-aware API. Perfect for generative art, data visualization, plotters, laser cutters, and creative coding.
+Patterin helps you create intricate geometric patterns with code. Whether you're designing for a plotter, generating art for a gallery wall, or exploring algorithmic beauty—Patterin gives you the tools to think in systems, not just shapes.
 
 ```typescript
-import { shape, system } from 'patterin';
+import { shape } from 'patterin';
 
-// Create a Hilbert curve fractal with one line
-const hilbert = system.lsystem({
-  axiom: 'L',
-  rules: { L: '+RF-LFL-FR+', R: '-LF+RFR+FL-' },
-  iterations: 5,
-  angle: 90,
-  length: 3
-});
+// Start with a circle, turn it into a gear
+const gear = shape.circle()
+  .radius(50)
+  .numSegments(16);
 
-console.log(hilbert.toSVG({ width: 800, height: 800 }));
+// Extrude every other edge outward
+gear.lines.every(2).extrude(15);
 ```
 
-[**Try it live in the Playground →**](https://neurofuzzy.github.io/patterin/playground)
+Simple, right? But Patterin goes deeper. Create grids, tessellations, fractals. Operate on points, lines, or entire collections of shapes. Transform patterns with a few method calls. Export clean SVG for fabrication or the web.
+
+**[Try it live in the Playground →](https://neurofuzzy.github.io/patterin/playground)** | **[Read the API Docs →](API.md)**
 
 ## Why Patterin?
 
-- 🎯 **System-based approach** - Parametric scaffolds (grids, tessellations, L-systems) not just primitives
-- 🔄 **Context switching** - Operate on points, lines, or shapes with a unified fluent API
-- 🎨 **Generative-first** - Built for procedural patterns, fractals, and algorithmic art
-- 📐 **SVG-native** - Perfect for plotters, laser cutters, and web rendering
-- 💻 **Live playground** - Interactive Monaco editor with auto-complete and instant preview
-- 🔗 **Composable** - Chain operations, combine systems, nest transformations
-- 📦 **Zero dependencies** - Lightweight and tree-shakeable
+- 🎯 **System-based approach** - Work with grids, tessellations, and parametric scaffolds, not just primitives
+- 🔄 **Context switching** - Seamlessly operate on points, lines, or entire shape collections
+- 🎨 **Generative-first** - Built for procedural patterns, algorithmic art, and creative exploration
+- 📐 **SVG-native** - Perfect for plotters, laser cutters, CNC machines, and web rendering
+- 💻 **Live playground** - Interactive Monaco editor with full auto-complete and instant visual feedback
+- 🔗 **Composable** - Chain operations, combine systems, nest transformations naturally
+- 📦 **Zero dependencies** - Lightweight, tree-shakeable, and ready for any modern JavaScript environment
 
 ## Installation
 
@@ -183,6 +182,21 @@ const mandala = shape.circle()
 mandala.points.expandToCircles(20, { segments: 8 });
 ```
 
+### Clone Grid with Transformations
+
+```typescript
+const grid = shape.rect()
+  .clone(10, 40, 0)
+  .clone(10, 0, 40);
+
+// Transform subset
+grid.every(2).scale(3).rotate(45);
+
+// Add offset copies to subset
+const subset = grid.every(2);
+const rings = subset.offset(5, 2); // 2 concentric rings
+```
+
 ### Truchet Tiles
 
 ```typescript
@@ -212,26 +226,10 @@ const tree = system.lsystem({
 console.log(tree.toSVG({ width: 600, height: 800 }));
 ```
 
-### Clone Grid with Transformations
+## Documentation
 
-```typescript
-const grid = shape.rect()
-  .clone(10, 40, 0)
-  .clone(10, 0, 40);
-
-// Transform subset
-grid.every(2).scale(3).rotate(45);
-
-// Add offset copies to subset
-const subset = grid.every(2);
-const rings = subset.offset(5, 2); // 2 concentric rings
-
-// Manual stamping (auto-render OFF)
-const svg = new SVGCollector();
-grid.stamp(svg);   // All 121 shapes
-rings.stamp(svg);  // Just the offset copies
-console.log(svg.toString());
-```
+- **[Complete API Reference](API.md)** - Detailed documentation for every method and option
+- **[Playground](https://neurofuzzy.github.io/patterin/playground)** - Interactive live coding environment
 
 ## API Overview
 
@@ -299,6 +297,8 @@ svg.toString({
   autoScale?: boolean
 });
 ```
+
+For complete details, parameter descriptions, and more examples, see the **[API Reference](API.md)**.
 
 ## Playground
 
