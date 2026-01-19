@@ -2,7 +2,7 @@ import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { PointsContext, LinesContext, ShapeContext } from '../contexts/ShapeContext';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
 
-export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
+export type TessellationPattern = 'trihexagonal' | 'penrose' | 'custom';
 
 export interface TessellationOptions {
     // Simple API
@@ -11,9 +11,6 @@ export interface TessellationOptions {
     pattern?: TessellationPattern;
     bounds?: { width: number; height: number };
     seed?: number;
-    // Truchet-specific
-    tileSize?: number;
-    variant?: 'quarter-circles' | 'diagonal' | 'triangles';
     // Trihexagonal-specific
     spacing?: number;
     // Penrose-specific
@@ -35,17 +32,13 @@ export class TessellationSystem extends EdgeBasedSystem {
     private constructor(options: TessellationOptions = {}) {
         super();
         // Support simple size API with defaults
-        const pattern = options.pattern ?? 'truchet';
+        const pattern = options.pattern ?? 'penrose';
         const bounds = options.bounds ?? { width: 400, height: 400 };
-        const tileSize = options.tileSize ?? options.size ?? 40;
 
         this._bounds = bounds;
         this._pattern = pattern;
 
         switch (pattern) {
-            case 'truchet':
-                this.buildTruchet({ ...options, pattern, bounds, tileSize });
-                break;
             case 'trihexagonal':
                 this.buildTrihexagonal({ ...options, pattern, bounds });
                 break;
@@ -68,114 +61,6 @@ export class TessellationSystem extends EdgeBasedSystem {
         return new TessellationSystem(options);
     }
 
-    // ==================== Seeded Random ====================
-
-    private seededRandom(seed: number): () => number {
-        let state = seed;
-        return () => {
-            state = (state * 1103515245 + 12345) & 0x7fffffff;
-            return state / 0x7fffffff;
-        };
-    }
-
-    // ==================== Truchet Pattern ====================
-
-    private buildTruchet(options: TessellationOptions): void {
-        const tileSize = options.tileSize ?? 20;
-        const cols = Math.ceil(this._bounds.width / tileSize);
-        const rows = Math.ceil(this._bounds.height / tileSize);
-
-        // Use Map for de-duplication of vertices
-        const nodeMap = new Map<string, Vector2>();
-        const nodeKey = (x: number, y: number): string => {
-            return `${x.toFixed(6)},${y.toFixed(6)}`;
-        };
-
-        // Generate vertices at tile corners (square grid of vertices)
-        for (let row = 0; row <= rows; row++) {
-            for (let col = 0; col <= cols; col++) {
-                const x = col * tileSize;
-                const y = row * tileSize;
-                
-                const key = nodeKey(x, y);
-                if (!nodeMap.has(key)) {
-                    nodeMap.set(key, new Vector2(x, y));
-                }
-            }
-        }
-
-        this._nodes = Array.from(nodeMap.values());
-    }
-
-    private createTruchetTile(
-        variant: string,
-        size: number,
-        x: number,
-        y: number,
-        rotation: number
-    ): Shape {
-        const center = new Vector2(x + size / 2, y + size / 2);
-        let shape: Shape;
-
-        switch (variant) {
-            case 'diagonal': {
-                // Thin diagonal strip across tile
-                const thickness = size * 0.1;
-                const dx = thickness / Math.sqrt(2);
-                shape = Shape.fromPoints([
-                    new Vector2(x - dx, y + dx),
-                    new Vector2(x + dx, y - dx),
-                    new Vector2(x + size + dx, y + size - dx),
-                    new Vector2(x + size - dx, y + size + dx),
-                ]);
-                break;
-            }
-
-            case 'triangles':
-                // Half-square triangle
-                shape = Shape.fromPoints([
-                    new Vector2(x, y),
-                    new Vector2(x + size, y),
-                    new Vector2(x, y + size),
-                ]);
-                break;
-
-            case 'quarter-circles':
-            default: {
-                // Approximate quarter circles with arcs
-                const segments = 8;
-                const points: Vector2[] = [];
-                const r = size / 2;
-
-                // Arc from top-left corner
-                for (let i = 0; i <= segments; i++) {
-                    const angle = (i / segments) * (Math.PI / 2);
-                    points.push(new Vector2(
-                        x + Math.cos(angle) * r,
-                        y + Math.sin(angle) * r
-                    ));
-                }
-                // Arc from bottom-right corner
-                for (let i = 0; i <= segments; i++) {
-                    const angle = Math.PI + (i / segments) * (Math.PI / 2);
-                    points.push(new Vector2(
-                        x + size + Math.cos(angle) * r,
-                        y + size + Math.sin(angle) * r
-                    ));
-                }
-
-                shape = Shape.fromPoints(points);
-                break;
-            }
-        }
-
-        // Apply rotation around center
-        if (rotation !== 0) {
-            shape.rotate(rotation * Math.PI / 180, center);
-        }
-
-        return shape;
-    }
 
     // ==================== Trihexagonal Pattern ====================
 

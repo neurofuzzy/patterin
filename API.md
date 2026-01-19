@@ -588,21 +588,17 @@ Creates a tessellation (tiling pattern) system.
 **Options:**
 ```typescript
 {
-  pattern: 'truchet' | 'penrose' | 'trihexagonal',
-  variant?: string,              // Pattern-specific variant
+  pattern: 'penrose' | 'trihexagonal' | 'custom',
   size: number,                  // Tile size
   bounds: {                      // Bounding area
     width: number,
     height: number
   },
-  seed?: number                  // Random seed for patterns like truchet
+  seed?: number,                 // Random seed for patterns
+  iterations?: number,           // Penrose iterations
+  spacing?: number               // Trihexagonal spacing
 }
 ```
-
-**Truchet Variants:**
-- `'quarter-circles'` (default)
-- `'diagonal-lines'`
-- `'curves'`
 
 **Returns:** `TessellationSystem`
 
@@ -612,21 +608,20 @@ Creates a tessellation (tiling pattern) system.
 
 **Example:**
 ```typescript
-// Truchet tiles with quarter circles
-const truchet = system.tessellation({
-  pattern: 'truchet',
-  variant: 'quarter-circles',
-  size: 40,
-  bounds: { width: 400, height: 400 },
-  seed: 12345
-});
-
-console.log(truchet.toSVG({ width: 800, height: 800 }));
-
 // Penrose tiling
 const penrose = system.tessellation({
   pattern: 'penrose',
   size: 30,
+  bounds: { width: 400, height: 400 },
+  iterations: 4
+});
+
+console.log(penrose.toSVG({ width: 500, height: 500 }));
+
+// Trihexagonal tiling
+const trihex = system.tessellation({
+  pattern: 'trihexagonal',
+  spacing: 40,
   bounds: { width: 400, height: 400 }
 });
 ```

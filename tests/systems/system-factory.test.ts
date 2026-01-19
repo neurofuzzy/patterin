@@ -47,9 +47,9 @@ describe('System Factory', () => {
 
         it('should have nodes at intersections', () => {
             const tess = system.tessellation({
-                pattern: 'truchet',
+                pattern: 'penrose',
                 bounds: { width: 100, height: 100 },
-                tileSize: 20
+                iterations: 3
             });
             expect(tess.nodes.vertices.length).toBeGreaterThan(0);
         });

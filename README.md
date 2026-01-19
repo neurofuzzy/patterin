@@ -32,9 +32,25 @@ Simple, right? But Patterin goes deeper. Create grids, tessellations, fractals. 
 
 ## Installation
 
+### npm (recommended)
+
 ```bash
 npm install patterin
 ```
+
+This gives you the compiled library ready to use in any JavaScript or TypeScript project.
+
+### GitHub
+
+```bash
+npm install github:neurofuzzy/patterin
+```
+
+Install directly from GitHub to get the latest version between releases.
+
+### Or Just Use the Playground
+
+**Don't want to install anything?** Try the **[live playground](https://neurofuzzy.github.io/patterin/playground/)** with full TypeScript autocomplete, built-in examples, and instant SVG preview. Perfect for learning, prototyping, or creating one-off designs.
 
 ## Quick Start
 
@@ -120,10 +136,10 @@ const grid = system.grid({
 
 // Tessellation system
 const tiles = system.tessellation({
-  pattern: 'truchet',
-  variant: 'quarter-circles',
+  pattern: 'penrose',
   size: 40,
-  bounds: { width: 400, height: 400 }
+  bounds: { width: 400, height: 400 },
+  iterations: 4
 });
 
 // L-System (fractals)
@@ -197,18 +213,6 @@ const subset = grid.every(2);
 const rings = subset.offset(5, 2); // 2 concentric rings
 ```
 
-### Truchet Tiles
-
-```typescript
-const tiles = system.tessellation({
-  pattern: 'truchet',
-  variant: 'quarter-circles',
-  size: 40,
-  bounds: { width: 400, height: 400 }
-});
-
-console.log(tiles.toSVG({ width: 800, height: 800 }));
-```
 
 ### Fractal Tree (L-System)
 
@@ -277,7 +281,7 @@ shape.clone(5).every(2)         // Operate on shape collection
 
 ```typescript
 system.grid(options)              // Square, hex, triangular grids
-system.tessellation(options)      // Truchet, Penrose, trihexagonal
+system.tessellation(options)      // Penrose, trihexagonal
 system.fromShape(shape, options)  // Use shape vertices as nodes
 system.lsystem(options)           // Lindenmayer systems (fractals)
 ```
@@ -383,7 +387,7 @@ The **[examples/ directory](examples/)** contains 25+ runnable examples organize
 - **Transformations**: Cloning, scaling, rotating, offsetting
 - **Contexts**: Point expansion, line extrusion, polar spreads
 - **Grids**: Square, hexagonal, triangular grids
-- **Tessellations**: Truchet tiles, Penrose, trihexagonal
+- **Tessellations**: Penrose, trihexagonal
 - **Fractals**: Koch curves, dragon, Hilbert, Sierpiński, plants
 - **Advanced**: Complex mandalas, geometric patterns, plotter art
 

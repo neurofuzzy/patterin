@@ -64,7 +64,6 @@ Grid systems for structured layouts.
 ### 05. Tessellations
 Tiling patterns and tessellations.
 
-- `truchet-tiles.ts` - Random Truchet patterns
 - `penrose.ts` - Aperiodic Penrose tiling
 - `trihexagonal.ts` - Trihexagonal tessellation
 

@@ -151,21 +151,6 @@ const tess = system.tessellation({
 
 tess.trace()`,
   },
-  {
-    name: 'Truchet Tiles',
-    category: 'Systems',
-    description: 'Random Truchet pattern',
-    code: `// Truchet tiling with quarter-circles
-const tess = TessellationSystem.create({
-  pattern: 'truchet',
-  bounds: { width: 200, height: 200 },
-  tileSize: 25,
-  variant: 'quarter-circles',
-  seed: 42,
-})
-
-tess.trace()`,
-  },
   // ═══════════════════════════════════════════════════════════════════════════
   // L-SYSTEMS
   // ═══════════════════════════════════════════════════════════════════════════

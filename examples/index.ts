@@ -180,15 +180,6 @@ export const EXAMPLES: ExampleMetadata[] = [
   // 05. TESSELLATIONS
   // ============================================================================
   {
-    id: 'truchet-tiles',
-    category: 'Tessellations',
-    name: 'Truchet Tiles',
-    description: 'Generate random Truchet tile patterns',
-    file: '05-tessellations/truchet-tiles.ts',
-    complexity: 'intermediate',
-    concepts: ['truchet', 'randomness', 'emergent patterns'],
-  },
-  {
     id: 'penrose',
     category: 'Tessellations',
     name: 'Penrose Tiling',
