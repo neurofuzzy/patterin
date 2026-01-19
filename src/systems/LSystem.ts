@@ -2,7 +2,7 @@ import { ISystem } from '../interfaces';
 import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { renderSystemToSVG } from './SystemUtils';
-import { PathContext, ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
+import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts';
 
 export interface LSystemOptions {
     axiom: string;
@@ -32,7 +32,7 @@ export class LSystem implements ISystem {
     public segments: LinesContext;
     public nodes: PointsContext;
     public endpoints: PointsContext;
-    public path: PathContext;
+    public path: ShapeContext;
 
     // Output tracking
     private _traced = false;
@@ -84,7 +84,7 @@ export class LSystem implements ISystem {
         this.endpoints = new PointsContext(this._shape, this._endpoints);
 
         // Path context
-        this.path = new PathContext(this._shape);
+        this.path = new ShapeContext(this._shape);
         this.path.ephemeral();
     }
 
@@ -302,7 +302,7 @@ export class LSystem implements ISystem {
         this.nodes = new PointsContext(this._shape, this._nodes);
         this.endpoints = new PointsContext(this._shape, this._endpoints);
         this.segments = new LinesContext(this._shape, this._segments);
-        this.path = new PathContext(this._shape);
+        this.path = new ShapeContext(this._shape);
 
         return this;
     }

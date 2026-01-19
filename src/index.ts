@@ -73,6 +73,8 @@ export type { IDrawable, ISystem } from './interfaces';
 /**
  * Context classes for shape operations.
  * These provide the fluent API for transformations and operations.
+ * 
+ * Note: PathContext is internal-only (used by LSystem) and not exported.
  */
 export {
     ShapeContext,
@@ -84,7 +86,6 @@ export {
     SquareContext,
     HexagonContext,
     TriangleContext,
-    PathContext,
 } from './contexts/index';
 
 // ==================== Shape Factory ====================

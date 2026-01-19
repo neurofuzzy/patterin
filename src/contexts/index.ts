@@ -8,7 +8,6 @@ export {
     SquareContext,
     HexagonContext,
     TriangleContext,
-    PathContext,
 } from './ShapeContext';
 
 export { PointContext } from './PointContext';
