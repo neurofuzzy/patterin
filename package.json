@@ -11,13 +11,31 @@
     "cnc",
     "laser-cutter",
     "vector-graphics",
-    "pattern-generation"
+    "pattern-generation",
+    "creative-coding",
+    "generative-art",
+    "fractals",
+    "tessellation",
+    "lsystem"
   ],
   "author": "Geoff Gaudreault",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neurofuzzy/patterin.git"
+  },
+  "homepage": "https://neurofuzzy.github.io/patterin/playground",
+  "bugs": {
+    "url": "https://github.com/neurofuzzy/patterin/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -29,7 +47,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "prepublishOnly": "npm test && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

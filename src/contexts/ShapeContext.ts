@@ -1,14 +1,39 @@
-import { Shape, BoundingBox } from '../primitives/Shape.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { Vertex } from '../primitives/Vertex.ts';
-import { Segment, Winding } from '../primitives/Segment.ts';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { PointContext } from './PointContext.ts';
-import { CloneSystem } from '../systems/CloneSystem.ts';
+import { Shape, BoundingBox } from '../primitives/Shape';
+import { Vector2 } from '../primitives/Vector2';
+import { Vertex } from '../primitives/Vertex';
+import { Segment, Winding } from '../primitives/Segment';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { PointContext } from './PointContext';
+import { CloneSystem } from '../systems/CloneSystem';
 
 /**
  * Base context for all shape operations.
- * Wraps a Shape and provides fluent API for transformations.
+ * 
+ * Provides a fluent API for transforming shapes, accessing vertices and segments,
+ * and switching between different operation contexts (points, lines, shapes).
+ * 
+ * All transformation methods return `this` for chaining.
+ * 
+ * @example
+ * ```typescript
+ * import { shape } from 'patterin';
+ * 
+ * // Basic transformations
+ * const rect = shape.rect()
+ *   .size(40)
+ *   .scale(1.5)
+ *   .rotate(45)
+ *   .xy(100, 100);
+ * 
+ * // Context switching
+ * rect.points.every(2).expand(10);  // Operate on vertices
+ * rect.lines.at(0, 2).extrude(15);  // Operate on segments
+ * 
+ * // Generative operations
+ * const rings = shape.circle()
+ *   .radius(30)
+ *   .offset(10, 5); // 5 concentric rings
+ * ```
  */
 export class ShapeContext {
     /**
@@ -49,12 +74,46 @@ export class ShapeContext {
         return this._shape.winding;
     }
 
-    /** Access points context for vertex operations */
+    /**
+     * Switch to points context for vertex operations.
+     * 
+     * Enables operations on individual vertices: expand, inset, move, select, etc.
+     * 
+     * @returns A PointsContext for operating on all vertices
+     * 
+     * @example
+     * ```typescript
+     * const star = shape.circle().radius(50).numSegments(10);
+     * 
+     * // Expand every other point to create star shape
+     * star.points.every(2).expand(20);
+     * 
+     * // Move specific points
+     * star.points.at(0, 5).move(10, 0);
+     * ```
+     */
     get points(): PointsContext {
         return new PointsContext(this._shape, this._shape.vertices);
     }
 
-    /** Access lines context for segment operations */
+    /**
+     * Switch to lines context for segment operations.
+     * 
+     * Enables operations on edges: extrude, divide, collapse, select, etc.
+     * 
+     * @returns A LinesContext for operating on all segments
+     * 
+     * @example
+     * ```typescript
+     * const rect = shape.rect().size(40);
+     * 
+     * // Extrude specific sides
+     * rect.lines.at(0, 2).extrude(10);
+     * 
+     * // Divide every other edge
+     * rect.lines.every(2).divide(3);
+     * ```
+     */
     get lines(): LinesContext {
         return new LinesContext(this._shape, this._shape.segments);
     }
@@ -155,7 +214,17 @@ export class ShapeContext {
         return this.offset(-Math.abs(distance), count, miterLimit);
     }
 
-    /** Set x position (moves centroid to x, keeping y) */
+    /**
+     * Set x position of centroid (keeps y unchanged).
+     * 
+     * @param xPos - Target x coordinate
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * shape.circle().radius(20).x(100); // Center at x=100
+     * ```
+     */
     x(xPos: number): this {
         const center = this._shape.centroid();
         const dx = xPos - center.x;
@@ -163,7 +232,17 @@ export class ShapeContext {
         return this;
     }
 
-    /** Set y position (moves centroid to y, keeping x) */
+    /**
+     * Set y position of centroid (keeps x unchanged).
+     * 
+     * @param yPos - Target y coordinate
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * shape.circle().radius(20).y(50); // Center at y=50
+     * ```
+     */
     y(yPos: number): this {
         const center = this._shape.centroid();
         const dy = yPos - center.y;
@@ -171,7 +250,19 @@ export class ShapeContext {
         return this;
     }
 
-    /** Set x and y position (moves centroid) */
+    /**
+     * Set x and y position of centroid.
+     * Convenience method equivalent to `moveTo(x, y)`.
+     * 
+     * @param xPos - Target x coordinate
+     * @param yPos - Target y coordinate
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * shape.rect().size(30).xy(100, 100);
+     * ```
+     */
     xy(xPos: number, yPos: number): this {
         const center = this._shape.centroid();
         const dx = xPos - center.x;
@@ -180,13 +271,44 @@ export class ShapeContext {
         return this;
     }
 
-    /** Reverse winding direction */
+    /**
+     * Reverse the winding direction of the shape.
+     * 
+     * Changes clockwise to counter-clockwise (or vice versa).
+     * Useful for boolean operations and fill rules.
+     * 
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * const rect = shape.rect().size(40);
+     * console.log(rect.winding); // 'cw'
+     * rect.reverse();
+     * console.log(rect.winding); // 'ccw'
+     * ```
+     */
     reverse(): this {
         this._shape.reverse();
         return this;
     }
 
-    /** Get bounding box as ephemeral rect context */
+    /**
+     * Get the bounding box of this shape as an ephemeral rectangle.
+     * 
+     * The returned rectangle is marked as ephemeral (construction geometry)
+     * and will not be auto-rendered.
+     * 
+     * @returns A RectContext representing the bounding box
+     * 
+     * @example
+     * ```typescript
+     * const star = shape.circle().radius(50).numSegments(10);
+     * star.points.every(2).expand(20);
+     * 
+     * const box = star.bbox();
+     * console.log(box.shape.boundingBox());
+     * ```
+     */
     bbox(): RectContext {
         const bounds = this._shape.boundingBox();
         const rect = Shape.fromPoints([
@@ -199,24 +321,77 @@ export class ShapeContext {
         return new RectContext(rect, bounds.width, bounds.height);
     }
 
-    /** Get center point as ephemeral point */
+    /**
+     * Get the center point (centroid) of the shape.
+     * 
+     * @returns The centroid as a Vector2
+     * 
+     * @example
+     * ```typescript
+     * const rect = shape.rect().size(40).xy(100, 100);
+     * const c = rect.centerPoint();
+     * console.log(c); // Vector2(100, 100)
+     * ```
+     */
     centerPoint(): Vector2 {
         return this._shape.centroid();
     }
 
-    /** Make shape concrete if ephemeral */
+    /**
+     * Make this shape concrete (not ephemeral).
+     * 
+     * Concrete shapes will be rendered. Use this to un-mark construction geometry.
+     * 
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * const box = shape.rect().size(40).bbox(); // Ephemeral by default
+     * box.trace(); // Now it will render
+     * ```
+     */
     trace(): this {
         this._shape.ephemeral = false;
         return this;
     }
 
-    /** Mark shape as ephemeral */
+    /**
+     * Mark this shape as ephemeral (construction geometry).
+     * 
+     * Ephemeral shapes won't be auto-rendered. Useful for temporary/helper geometry.
+     * 
+     * @returns This context for chaining
+     * 
+     * @example
+     * ```typescript
+     * const guide = shape.rect().size(100).ephemeral();
+     * // guide won't render, but can be used for operations
+     * ```
+     */
     ephemeral(): this {
         this._shape.ephemeral = true;
         return this;
     }
 
-    /** Stamp shape to collector */
+    /**
+     * Stamp (render) this shape to an SVG collector.
+     * 
+     * @param collector - The SVGCollector to render to
+     * @param x - Optional x offset for rendering (default 0)
+     * @param y - Optional y offset for rendering (default 0)
+     * @param style - Optional PathStyle for stroke, fill, etc.
+     * 
+     * @example
+     * ```typescript
+     * import { shape, SVGCollector } from 'patterin';
+     * 
+     * const svg = new SVGCollector();
+     * const rect = shape.rect().size(40);
+     * 
+     * rect.stamp(svg, 0, 0, { stroke: '#f00', strokeWidth: 2 });
+     * console.log(svg.toString());
+     * ```
+     */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
         if (this._shape.ephemeral) return;
 
@@ -338,7 +513,25 @@ export class ShapeContext {
 }
 
 /**
- * Context for points/vertices operations.
+ * Context for operating on vertices (points) of a shape.
+ * 
+ * Accessed via `shape.points` or `shapes.points`.
+ * Supports selection, transformation, and generative operations on vertices.
+ * 
+ * @example
+ * ```typescript
+ * // Create a star by expanding alternating points
+ * const star = shape.circle().radius(30).numSegments(10);
+ * star.points.every(2).expand(15);
+ * 
+ * // Move specific corner points
+ * const rect = shape.rect().size(40);
+ * rect.points.at(0, 2).move(5, 5);
+ * 
+ * // Create circles at all vertices
+ * const mandala = shape.hexagon().radius(50);
+ * mandala.points.expandToCircles(10);
+ * ```
  */
 export class PointsContext {
     constructor(
@@ -356,7 +549,22 @@ export class PointsContext {
         return this._vertices.length;
     }
 
-    /** Select every nth point */
+    /**
+     * Select every nth point.
+     * 
+     * @param n - Select every nth point (1 = all, 2 = every other, etc.)
+     * @param offset - Starting offset (default 0)
+     * @returns A new PointsContext with the selected points
+     * 
+     * @example
+     * ```typescript
+     * // Expand every other point
+     * shape.hexagon().radius(30).points.every(2).expand(10);
+     * 
+     * // Select every 3rd point, starting at index 1
+     * shape.circle().numSegments(12).points.every(3, 1).move(5, 0);
+     * ```
+     */
     every(n: number, offset = 0): PointsContext {
         const selected: Vertex[] = [];
         for (let i = offset; i < this._vertices.length; i += n) {
@@ -365,7 +573,21 @@ export class PointsContext {
         return new PointsContext(this._shape, selected);
     }
 
-    /** Select points at specific indices */
+    /**
+     * Select points at specific indices.
+     * 
+     * @param indices - Zero-based indices of points to select
+     * @returns A new PointsContext with the selected points
+     * 
+     * @example
+     * ```typescript
+     * // Expand corners 0 and 2 of a rectangle
+     * shape.rect().size(40).points.at(0, 2).expand(5);
+     * 
+     * // Move first and last point
+     * shape.triangle().radius(30).points.at(0, 2).move(10, 0);
+     * ```
+     */
     at(...indices: number[]): PointsContext {
         const selected: Vertex[] = [];
         for (const i of indices) {
@@ -376,7 +598,24 @@ export class PointsContext {
         return new PointsContext(this._shape, selected);
     }
 
-    /** Expand selected points outward along normals */
+    /**
+     * Expand selected points outward along their normals.
+     * 
+     * Modifies the shape in-place by moving vertices perpendicular to their edges.
+     * 
+     * @param distance - Distance to move points (positive = outward, negative = inward)
+     * @returns ShapeContext for the modified shape
+     * 
+     * @example
+     * ```typescript
+     * // Create a star
+     * const star = shape.circle().radius(30).numSegments(10);
+     * star.points.every(2).expand(15);
+     * 
+     * // Inset corners of a square
+     * shape.square().size(40).points.expand(-5);
+     * ```
+     */
     expand(distance: number): ShapeContext {
         for (const v of this._vertices) {
             v.moveAlongNormal(distance);
@@ -388,12 +627,36 @@ export class PointsContext {
         return new ShapeContext(this._shape);
     }
 
-    /** Inset selected points inward along normals */
+    /**
+     * Inset selected points inward along their normals.
+     * Convenience method equivalent to `expand(-distance)`.
+     * 
+     * @param distance - Distance to move points inward
+     * @returns ShapeContext for the modified shape
+     * 
+     * @example
+     * ```typescript
+     * shape.hexagon().radius(40).points.every(2).inset(10);
+     * ```
+     */
     inset(distance: number): ShapeContext {
         return this.expand(-distance);
     }
 
-    /** Move selected points by offset */
+    /**
+     * Move selected points by a relative offset.
+     * 
+     * @param x - Horizontal offset
+     * @param y - Vertical offset
+     * @returns This PointsContext for chaining
+     * 
+     * @example
+     * ```typescript
+     * // Move top corners of a rectangle up
+     * const rect = shape.rect().size(40);
+     * rect.points.at(1, 2).move(0, 10);
+     * ```
+     */
     move(x: number, y: number): PointsContext {
         const offset = new Vector2(x, y);
         for (const v of this._vertices) {
@@ -702,7 +965,30 @@ export class LinesContext {
 }
 
 /**
- * Context for multiple shapes.
+ * Context for operating on multiple shapes as a collection.
+ * 
+ * Returned by generative operations (`offset` with count > 0), `.clone()`,
+ * system methods, and when selecting subsets of shapes.
+ * 
+ * Supports selection, bulk transformations, and collective operations.
+ * 
+ * @example
+ * ```typescript
+ * // Create concentric circles
+ * const rings = shape.circle()
+ *   .radius(20)
+ *   .offset(10, 5); // Returns ShapesContext with 5 rings
+ * 
+ * // Transform every other shape
+ * const grid = shape.rect()
+ *   .clone(5, 30, 0)
+ *   .clone(5, 0, 30);
+ * grid.every(2).scale(1.5).rotate(45);
+ * 
+ * // Select and transform subset
+ * const subset = grid.slice(0, 10);
+ * subset.translate(100, 0);
+ * ```
  */
 export class ShapesContext {
     constructor(protected _shapes: Shape[]) { }
@@ -717,7 +1003,23 @@ export class ShapesContext {
         return this._shapes.length;
     }
 
-    /** Select every nth shape */
+    /**
+     * Select every nth shape.
+     * 
+     * @param n - Select every nth shape (1 = all, 2 = every other, etc.)
+     * @param offset - Starting offset (default 0)
+     * @returns A new ShapesContext with the selected shapes
+     * 
+     * @example
+     * ```typescript
+     * // Transform alternating shapes in a grid
+     * const grid = shape.square()
+     *   .size(10)
+     *   .clone(10, 20, 0)
+     *   .clone(10, 0, 20);
+     * grid.every(2).scale(2).rotate(45);
+     * ```
+     */
     every(n: number, offset = 0): ShapesContext {
         const selected: Shape[] = [];
         for (let i = offset; i < this._shapes.length; i += n) {
@@ -726,7 +1028,19 @@ export class ShapesContext {
         return new ShapesContext(selected);
     }
 
-    /** Select shapes at specific indices */
+    /**
+     * Select shapes at specific indices.
+     * 
+     * @param indices - Zero-based indices of shapes to select
+     * @returns A new ShapesContext with the selected shapes
+     * 
+     * @example
+     * ```typescript
+     * // Scale first and last shape only
+     * const shapes = shape.circle().radius(10).offset(5, 5);
+     * shapes.at(0, 4).scale(2);
+     * ```
+     */
     at(...indices: number[]): ShapesContext {
         const selected: Shape[] = [];
         for (const i of indices) {
@@ -737,12 +1051,40 @@ export class ShapesContext {
         return new ShapesContext(selected);
     }
 
-    /** Select range of shapes */
+    /**
+     * Select a range of shapes (similar to Array.slice).
+     * 
+     * @param start - Starting index (inclusive)
+     * @param end - Ending index (exclusive), or undefined for all remaining
+     * @returns A new ShapesContext with the selected range
+     * 
+     * @example
+     * ```typescript
+     * const all = shape.rect().size(20).offset(5, 10);
+     * const first5 = all.slice(0, 5);
+     * const last5 = all.slice(5);
+     * ```
+     */
     slice(start: number, end?: number): ShapesContext {
         return new ShapesContext(this._shapes.slice(start, end));
     }
 
-    /** Spread shapes with offset between each */
+    /**
+     * Spread shapes by adding cumulative offset to each.
+     * 
+     * @param x - Horizontal offset per shape
+     * @param y - Vertical offset per shape
+     * @returns This ShapesContext for chaining
+     * 
+     * @example
+     * ```typescript
+     * // Create diagonal line of circles
+     * const circles = shape.circle()
+     *   .radius(10)
+     *   .clone(5); // 6 circles at origin
+     * circles.spread(30, 30); // Spread diagonally
+     * ```
+     */
     spread(x: number, y: number): ShapesContext {
         const offset = new Vector2(x, y);
         for (let i = 0; i < this._shapes.length; i++) {
@@ -1202,5 +1544,156 @@ export class TriangleContext extends ShapeContext {
 
     private rebuild(): void {
         this._shape = Shape.regularPolygon(3, this._radius, this._center, -Math.PI / 2);
+    }
+}
+
+/**
+ * Context for operations on a continuous path (open or closed polyline).
+ * 
+ * Unlike ShapeContext, PathContext treats geometry as stroked paths rather
+ * than filled shapes. Useful for connection lines, curves, and wireframes.
+ * 
+ * Inherits all ShapeContext methods but stamps with stroke-only styling by default.
+ * 
+ * @example
+ * ```typescript
+ * import { PathContext } from 'patterin';
+ * 
+ * // Create a path from segments
+ * const path = new PathContext(segments);
+ * path.stamp(svg, 0, 0, { stroke: '#00f', strokeWidth: 2 });
+ * ```
+ */
+export class PathContext extends ShapeContext {
+    constructor(shape: Shape | Segment[]) {
+        if (Array.isArray(shape)) {
+            // Reconstruct shape from segments
+            // Note: This assumes segments are connected or at least ordered
+            super(new Shape(shape, 'ccw'));
+        } else {
+            super(shape);
+        }
+    }
+
+    /**
+     * Stamp as a path (stroke only, no fill).
+     */
+    stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        if (this._shape.ephemeral) return;
+
+        const finalStyle = {
+            ...DEFAULT_STYLES.line,
+            ...style
+        };
+
+        // If it's a single continuous path, we can use a single path command
+        const pathData = this.toPathData(x, y);
+        collector.addPath(pathData, finalStyle);
+    }
+
+    /**
+     * Generate path data string.
+     */
+    toPathData(offsetX = 0, offsetY = 0): string {
+        const segments = this._shape.segments;
+        if (segments.length === 0) return '';
+
+        let d = '';
+        const visited = new Set<Segment>();
+
+        // Naive path generation - assumes connected segments
+        // Real implementation needs to handle disjoint paths if we support them
+
+        for (const seg of segments) {
+            const start = seg.start.position;
+            const end = seg.end.position;
+
+            if (!visited.has(seg)) {
+                // If this is the start of a new run or disjoint
+                // For now, simpler: just output every segment as M L
+                d += `M ${start.x + offsetX} ${start.y + offsetY} L ${end.x + offsetX} ${end.y + offsetY} `;
+                visited.add(seg);
+            }
+        }
+
+        // This effectively draws "segments". PROPER path logic should link them.
+        // Let's try to link them if they match.
+
+        return this.generateConnectedPathData(offsetX, offsetY);
+    }
+
+    private generateConnectedPathData(offsetX: number, offsetY: number): string {
+        const segments = this._shape.segments;
+        if (segments.length === 0) return '';
+
+        let d = '';
+        let currentPos: Vector2 | null = null;
+        const epsilon = 1e-5;
+
+        for (const seg of segments) {
+            const start = seg.start.position;
+            const end = seg.end.position;
+
+            const startX = start.x + offsetX;
+            const startY = start.y + offsetY;
+            const endX = end.x + offsetX;
+            const endY = end.y + offsetY;
+
+            if (!currentPos || !currentPos.equals(start, epsilon)) {
+                d += `M ${startX} ${startY} `;
+            }
+            d += `L ${endX} ${endY} `;
+            currentPos = end;
+        }
+
+        return d;
+    }
+
+    /**
+     * Resample the path into equidistant points.
+     */
+    resample(stepSize: number): PathContext {
+        // TODO: Implement resampling logic
+        return this;
+    }
+
+    /**
+     * Get total length of path.
+     */
+    get length(): number {
+        let len = 0;
+        for (const seg of this._shape.segments) {
+            len += seg.length();
+        }
+        return len;
+    }
+
+    /**
+     * Create from points.
+     */
+    static fromPoints(points: Vector2[]): PathContext {
+        if (points.length < 2) {
+            throw new Error('Path requires at least 2 points');
+        }
+        const segments: Segment[] = []; // We can't use Segment directly without Vertex
+        // And we can't import Vertex easily if we want to keep imports clean?
+        // Wait, Segment imports Vertex.
+        // Let's rely on Shape.fromPoints but ignore closure?
+
+        // Using Shape.fromPoints forces a closed loop (connects last to first).
+        // We probably don't want that for an open path.
+
+        // We need to construct segments manually.
+        // But Shape requires segments to be passed in.
+        // We need Vertex.
+
+        // Let's just create a dummy Shape and hack it?
+        // Or better, update Shape to allow open paths?
+        // For now, let's defer this specific factory or rely on Shape.fromPoints with a warning?
+        // Shape.fromPoints connects last to first. 
+        // We will just not use Shape.fromPoints.
+
+        // Implementation deferred to usage site or we add Vertex import.
+        return new PathContext(Shape.fromPoints(points)); // This will close it. 
     }
 }

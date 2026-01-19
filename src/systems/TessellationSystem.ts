@@ -1,11 +1,8 @@
-import { renderSystemToSVG } from './SystemUtils.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { Vertex } from '../primitives/Vertex.ts';
-import { Segment } from '../primitives/Segment.ts';
-import { Shape } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext.ts';
-import type { ISystem } from '../interfaces.ts';
+import { renderSystemToSVG } from './SystemUtils';
+import { Shape, Segment, Vector2, Vertex } from '../primitives';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { PointsContext, LinesContext, ShapesContext, ShapeContext } from '../contexts/ShapeContext';
+import type { ISystem } from '../interfaces';
 
 export type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
 

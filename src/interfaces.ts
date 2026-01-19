@@ -1,6 +1,6 @@
-import type { SVGCollector, PathStyle } from './collectors/SVGCollector.ts';
-import type { ShapeContext, ShapesContext } from './contexts/ShapeContext.ts';
-import type { SystemBounds, SVGOptions } from './types.ts';
+import type { SVGCollector, PathStyle } from './collectors/SVGCollector';
+import type { ShapeContext, ShapesContext } from './contexts/ShapeContext';
+import type { SystemBounds, SVGOptions } from './types';
 
 /**
  * Shared interface for all drawable objects (shapes, systems).

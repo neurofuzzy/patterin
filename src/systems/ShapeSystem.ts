@@ -1,12 +1,9 @@
-import { renderSystemToSVG } from './SystemUtils.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { Vertex } from '../primitives/Vertex.ts';
-import { Segment } from '../primitives/Segment.ts';
-import { Shape, BoundingBox } from '../primitives/Shape.ts';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext.ts';
-import { PointContext } from '../contexts/PointContext.ts';
-import type { ISystem } from '../interfaces.ts';
+import { renderSystemToSVG } from './SystemUtils';
+import { BoundingBox, Shape, Segment, Vector2, Vertex } from '../primitives';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { ShapeContext, PointsContext, LinesContext, ShapesContext } from '../contexts/ShapeContext';
+import { PointContext } from '../contexts/PointContext';
+import type { ISystem } from '../interfaces';
 
 export interface ShapeSystemOptions {
     /** Include center point as a node */

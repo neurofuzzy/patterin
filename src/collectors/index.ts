@@ -1,1 +1,1 @@
-export { SVGCollector, type PathStyle } from './SVGCollector.ts';
+export { SVGCollector, type PathStyle } from './SVGCollector';

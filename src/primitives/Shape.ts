@@ -1,6 +1,6 @@
-import { Vector2 } from './Vector2.ts';
-import { Vertex } from './Vertex.ts';
-import { Segment, Winding } from './Segment.ts';
+import { Vector2 } from './Vector2';
+import { Vertex } from './Vertex';
+import { Segment, Winding } from './Segment';
 
 export interface BoundingBox {
     min: Vector2;

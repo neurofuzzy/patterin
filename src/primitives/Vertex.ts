@@ -1,5 +1,5 @@
-import { Vector2 } from './Vector2.ts';
-import type { Segment } from './Segment.ts';
+import { Vector2 } from './Vector2';
+import type { Segment } from './Segment';
 
 /**
  * A point in 2D space with a computed normal direction.

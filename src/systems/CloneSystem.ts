@@ -3,14 +3,11 @@
  * Supports nesting for grid patterns.
  */
 
-import { ISystem } from '../interfaces.ts';
-import { Shape } from '../primitives/Shape.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { Vertex } from '../primitives/Vertex.ts';
-import { Segment } from '../primitives/Segment.ts';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { renderSystemToSVG } from './SystemUtils.ts';
-import { ShapesContext } from '../contexts/ShapeContext.ts';
+import { ISystem } from '../interfaces';
+import { Shape, Segment, Vector2, Vertex } from '../primitives';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { renderSystemToSVG } from './SystemUtils';
+import { ShapesContext } from '../contexts';
 
 // Avoid circular import - use Shape directly
 // ShapeContext is only used for place/mask ISystem methods
