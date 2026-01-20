@@ -47,7 +47,7 @@
   "scripts": {
     "build": "tsc",
     "build:playground": "cd playground && npm install && npm run build",
-    "deploy": "npm run build && npm run build:playground",
+    "deploy": "npm run build && npm run build:playground && gh-pages -d playground/dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -59,6 +59,7 @@
     "@eslint/js": "^9.39.2",
     "@types/node": "^20.0.0",
     "eslint": "^9.39.2",
+    "gh-pages": "^6.3.0",
     "ts-morph": "^27.0.2",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0",
