@@ -1,9 +1,24 @@
-import { Shape } from '../primitives/Shape.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
+import { Shape } from '../primitives/Shape';
+import { Vector2 } from '../primitives/Vector2';
 
 /**
- * Context for a single point.
- * Used as return type from collapse() and for orphan point operations.
+ * Context for a single point in 2D space.
+ * 
+ * Returned by `.collapse()` operations or created for standalone point operations.
+ * Can be expanded into shapes or used for raycasting.
+ * 
+ * @example
+ * ```typescript
+ * // Collapse a shape to its centroid
+ * const center = shape.rect().size(40).collapse();
+ * console.log(center.x, center.y);
+ * 
+ * // Expand point into a circle
+ * const circle = center.expand(20, 32);
+ * 
+ * // Raycast from a point
+ * const endpoint = center.raycast(50, 45); // 45° angle, 50 units
+ * ```
  */
 export class PointContext {
     constructor(

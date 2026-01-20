@@ -1,6 +1,5 @@
-import { Shape } from '../primitives/Shape.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { SVGCollector, PathStyle } from '../collectors/SVGCollector.ts';
+import { Shape, Vector2 } from '../primitives';
+import { SVGCollector, PathStyle } from '../collectors/SVGCollector';
 
 export interface RenderGroup {
     name: string;

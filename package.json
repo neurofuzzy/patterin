@@ -1,6 +1,6 @@
 {
   "name": "patterin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Declarative procedural 2D vector graphics with system scaffolds",
   "keywords": [
     "svg",
@@ -11,13 +11,33 @@
     "cnc",
     "laser-cutter",
     "vector-graphics",
-    "pattern-generation"
+    "pattern-generation",
+    "creative-coding",
+    "generative-art",
+    "fractals",
+    "tessellation",
+    "lsystem"
   ],
   "author": "Geoff Gaudreault",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neurofuzzy/patterin.git"
+  },
+  "homepage": "https://neurofuzzy.github.io/patterin/playground",
+  "bugs": {
+    "url": "https://github.com/neurofuzzy/patterin/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "API.md",
+    "examples",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -26,15 +46,21 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:playground": "cd playground && npm install && npm run build",
+    "deploy": "npm run build && npm run build:playground",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "prepublishOnly": "npm test && npm run build",
+    "example": "tsx"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/node": "^20.0.0",
     "eslint": "^9.39.2",
+    "ts-morph": "^27.0.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.53.0",
     "vitest": "^1.0.0"

@@ -94,7 +94,7 @@ shape.circle().radius(15)
     category: 'Grids',
     description: 'Basic square grid',
     code: `// Grid system with node placement
-const grid = GridSystem.create({
+const grid = system.grid({
   rows: 5,
   cols: 5,
   spacing: 30,
@@ -103,13 +103,13 @@ const grid = GridSystem.create({
 })
 
 grid.trace()
-grid.nodes().place(shape.circle().radius(5))`,
+grid.place(shape.circle().radius(5))`,
   },
   {
     name: 'Hex Grid',
     category: 'Grids',
     description: 'Hexagonal grid pattern',
-    code: `const grid = GridSystem.create({
+    code: `const grid = system.grid({
   type: 'hexagonal',
   rows: 4,
   cols: 5,
@@ -120,7 +120,7 @@ grid.nodes().place(shape.circle().radius(5))`,
 })
 
 grid.trace()
-grid.nodes().place(shape.circle().radius(6))`,
+grid.place(shape.circle().radius(6))`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -143,30 +143,13 @@ for (let ring = 1; ring <= 4; ring++) {
     category: 'Systems',
     description: 'Aperiodic Penrose pattern',
     code: `// Note: TessellationSystem uses explicit render
-const tess = TessellationSystem.create({
+const tess = system.tessellation({
   pattern: 'penrose',
   bounds: { width: 200, height: 200 },
   iterations: 5,
 })
 
-tess.trace()
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
-  },
-  {
-    name: 'Truchet Tiles',
-    category: 'Systems',
-    description: 'Random Truchet pattern',
-    code: `// Truchet tiling with quarter-circles
-const tess = TessellationSystem.create({
-  pattern: 'truchet',
-  bounds: { width: 200, height: 200 },
-  tileSize: 25,
-  variant: 'quarter-circles',
-  seed: 42,
-})
-
-tess.trace()
-render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
+tess.trace()`,
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // L-SYSTEMS
@@ -184,8 +167,7 @@ render(tess.toSVG({ width: 400, height: 400, margin: 20 }))`,
   origin: [-150, 0]
 })
 
-koch.trace()
-render(koch.toSVG({ width: 400, height: 400 }))`,
+koch.trace()`,
   },
   {
     name: 'Koch Snowflake',
@@ -200,8 +182,7 @@ render(koch.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -50]
 })
 
-snowflake.trace()
-render(snowflake.toSVG({ width: 400, height: 400 }))`,
+snowflake.trace()`,
   },
   {
     name: 'Dragon Curve',
@@ -219,8 +200,7 @@ render(snowflake.toSVG({ width: 400, height: 400 }))`,
   origin: [-50, 0]
 })
 
-dragon.trace()
-render(dragon.toSVG({ width: 400, height: 400 }))`,
+dragon.trace()`,
   },
   {
     name: 'Hilbert Curve',
@@ -238,8 +218,7 @@ render(dragon.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -100]
 })
 
-hilbert.trace()
-render(hilbert.toSVG({ width: 400, height: 400 }))`,
+hilbert.trace()`,
   },
   {
     name: 'Sierpinski Triangle',
@@ -257,8 +236,7 @@ render(hilbert.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, 80]
 })
 
-sierpinski.trace()
-render(sierpinski.toSVG({ width: 400, height: 400 }))`,
+sierpinski.trace()`,
   },
   {
     name: 'Gosper Curve',
@@ -276,7 +254,6 @@ render(sierpinski.toSVG({ width: 400, height: 400 }))`,
   origin: [-100, -80]
 })
 
-gosper.trace()
-render(gosper.toSVG({ width: 400, height: 400 }))`,
+gosper.trace()`,
   },
 ];

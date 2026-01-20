@@ -48,6 +48,39 @@ body {
   overflow: hidden;
 }
 
+/* Editor Header */
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  min-height: 44px;
+}
+
+.auto-render-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+
+.auto-render-toggle:hover {
+  color: var(--text-primary);
+}
+
+.auto-render-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .editor-container {
   flex: 1;
   overflow: hidden;
@@ -101,14 +134,45 @@ body {
   overflow: visible;
 }
 
+/* Loading State */
+.preview-canvas.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 17, 23, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-canvas.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Grid Overlay */
 .grid-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0.3;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
+  background-image: linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 20px 20px;
 }
@@ -235,11 +299,8 @@ body {
   display: none;
 }
 
-/* Hamburger Menu (placeholder) */
+/* Hamburger Menu */
 .menu-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -247,11 +308,11 @@ body {
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  z-index: 100;
+  transition: all 0.15s;
 }
 
 .menu-btn:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   color: var(--text-primary);
 }
 

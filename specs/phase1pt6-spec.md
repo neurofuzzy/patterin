@@ -102,41 +102,6 @@ GridSystem.create({
 △ ▽ △ ▽
 ```
 
-### Brick Grid
-
-Offset grid pattern like brickwork.
-
-```javascript
-GridSystem.create({
-  type: 'brick',
-  rows: 5,
-  cols: 5,
-  spacing: 20,      // or { x: 40, y: 20 } for brick proportions
-  offset: 0.5       // 0-1, how much to offset alternating rows
-})
-```
-
-**Offset values:**
-- `0` - stack bond (aligned columns)
-- `0.5` - running bond (classic brick, half offset)
-- `0.33` - third bond
-- `0.25` - quarter bond
-
-**Queryable elements:**
-- `.nodes` → PointsContext (brick centers)
-- `.cells` → ShapesContext (rectangles, offset pattern)
-- `.rows` → LinesContext (horizontal lines through centers)
-- `.columns` → LinesContext (zigzag vertical connections)
-
-**Layout pattern (offset: 0.5):**
-```
-┌──┬──┬──┬──┐
-├──┼──┼──┼──┤
- ┌──┬──┬──┬──┐
- ├──┼──┼──┼──┤
-┌──┬──┬──┬──┐
-```
-
 ## System Tracing
 
 All systems (GridSystem and ShapeSystem) can be traced to concrete geometry.
@@ -298,39 +263,19 @@ for (let row = 0; row < rows; row++) {
 }
 ```
 
-### Brick Grid Math
-
-```javascript
-const cellWidth = typeof spacing === 'number' ? spacing : spacing.x;
-const cellHeight = typeof spacing === 'number' ? spacing : spacing.y;
-
-for (let row = 0; row < rows; row++) {
-  const xOffset = (row % 2) * cellWidth * offset;
-  
-  for (let col = 0; col < cols; col++) {
-    const x = col * cellWidth + xOffset;
-    const y = row * cellHeight;
-    // create cell at (x, y)
-  }
-}
-```
-
 ## API Updates
 
 ### GridSystem.create() Parameters
 
 ```typescript
 {
-  type?: 'square' | 'hexagonal' | 'triangular' | 'brick',
+  type?: 'square' | 'hexagonal' | 'triangular',
   rows: number,
   cols: number,
   spacing: number | { x: number, y: number },
   
   // Hexagonal-specific
-  orientation?: 'pointy' | 'flat',
-  
-  // Brick-specific
-  offset?: number  // 0-1
+  orientation?: 'pointy' | 'flat'
 }
 ```
 
@@ -382,23 +327,6 @@ const tri = GridSystem.create({
 tri.trace();  // trace entire structure
 tri.cells.every(2).stamp(svg, 0, 0, { fill: '#eee' });
 tri.cells.every(2, 1).stamp(svg, 0, 0, { fill: '#ddd' });
-```
-
-### Brick Wall Pattern
-
-```javascript
-const wall = GridSystem.create({
-  type: 'brick',
-  rows: 10,
-  cols: 10,
-  spacing: { x: 40, y: 20 },
-  offset: 0.5
-});
-
-wall.cells.trace().stamp(svg, 0, 0, { 
-  stroke: '#8b4513',
-  fill: '#cd853f'
-});
 ```
 
 ### Hexagonal with Radial Centers
@@ -467,7 +395,6 @@ grid.toSVG({ width: 500, height: 500 });
 - [ ] Hexagonal cells are regular hexagons
 - [ ] Triangular grid alternates up/down triangles
 - [ ] Triangular cells are equilateral
-- [ ] Brick grid offset values work (0, 0.25, 0.5, 0.75)
 - [ ] System.trace() makes all elements concrete
 - [ ] Selective tracing (cells only, rows only, etc.)
 - [ ] Nodes always stay ephemeral
@@ -477,7 +404,7 @@ grid.toSVG({ width: 500, height: 500 });
 
 ## Phase 1.6 Definition of Done
 
-- ✅ GridSystem supports 4 types: square, hexagonal, triangular, brick
+- ✅ GridSystem supports 3 types: square, hexagonal, triangular
 - ✅ Hexagonal grid supports pointy/flat orientations
 - ✅ All grid types generate correct geometry
 - ✅ Systems support .trace() method

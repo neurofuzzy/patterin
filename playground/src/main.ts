@@ -10,6 +10,7 @@ import { initTheme } from './modals/ThemeModal.ts';
 import { createExportModal } from './modals/ExportModal.ts';
 import { getSettings } from './modals/SettingsModal.ts';
 import { initKeyboardShortcuts } from './keyboard.ts';
+import type { WorkerMessage, WorkerResponse } from './worker.ts';
 
 // Initialize theme
 initTheme();
@@ -22,8 +23,41 @@ const editorContainer = document.querySelector('.editor-container') as HTMLDivEl
 const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
 const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
+const autoRenderCheckbox = document.getElementById('auto-render-checkbox') as HTMLInputElement | null;
 
 let lastCollector: patterin.SVGCollector | null = null;
+
+// Auto-render setting
+const AUTO_RENDER_KEY = 'patterin-auto-render';
+let autoRenderEnabled = true;
+
+function loadAutoRenderSetting(): boolean {
+    try {
+        const stored = localStorage.getItem(AUTO_RENDER_KEY);
+        return stored === null ? true : stored === 'true';
+    } catch {
+        return true;
+    }
+}
+
+function saveAutoRenderSetting(enabled: boolean): void {
+    try {
+        localStorage.setItem(AUTO_RENDER_KEY, String(enabled));
+    } catch (e) {
+        console.warn('Failed to save auto-render setting:', e);
+    }
+}
+
+// Initialize auto-render from localStorage
+autoRenderEnabled = loadAutoRenderSetting();
+if (autoRenderCheckbox) {
+    autoRenderCheckbox.checked = autoRenderEnabled;
+}
+
+// Worker management
+const WORKER_TIMEOUT_MS = 5000;
+let worker: Worker | null = null;
+let workerTimeoutId: number | null = null;
 
 // Forward declare export handler
 const handleExport = () => {
@@ -44,223 +78,120 @@ preview.setGridVisible(settings.showGrid);
 preview.setCenterMarkVisible(settings.showCenterMark ?? true);
 
 /**
- * Create auto-collecting shape factory.
- * Every shape created through this factory is tracked and auto-rendered.
+ * Terminate current worker and clear timeout
  */
-function createAutoCollectContext() {
-    const createdShapes: patterin.ShapeContext[] = [];
-    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem)[] = [];
-
-    // Wrap shape factory to track created shapes
-    const autoShape = {
-        circle: () => {
-            const ctx = new patterin.CircleContext();
-            createdShapes.push(ctx);
-            return ctx;
-        },
-        rect: () => {
-            const ctx = new patterin.RectContext();
-            createdShapes.push(ctx);
-            return ctx;
-        },
-        square: () => {
-            const ctx = new patterin.SquareContext();
-            createdShapes.push(ctx);
-            return ctx;
-        },
-        hexagon: () => {
-            const ctx = new patterin.HexagonContext();
-            createdShapes.push(ctx);
-            return ctx;
-        },
-        triangle: () => {
-            const ctx = new patterin.TriangleContext();
-            createdShapes.push(ctx);
-            return ctx;
-        },
-    };
-
-    // Wrap system factory to track created systems
-    const autoSystem = {
-        grid: (options: patterin.GridOptions) => {
-            const sys = patterin.GridSystem.create(options);
-            createdSystems.push(sys);
-            return sys;
-        },
-        tessellation: (options: patterin.TessellationOptions) => {
-            const sys = patterin.TessellationSystem.create(options);
-            createdSystems.push(sys);
-            return sys;
-        },
-        fromShape: (source: patterin.ShapeContext | patterin.Shape, options?: patterin.ShapeSystemOptions) => {
-            const sys = new patterin.ShapeSystem(source, options);
-            createdSystems.push(sys);
-            return sys;
-        },
-        lsystem: (options: patterin.LSystemOptions) => {
-            const sys = patterin.LSystem.create(options);
-            createdSystems.push(sys);
-            return sys;
-        },
-    };
-
-    return { autoShape, autoSystem, createdShapes, createdSystems };
-}
-
-
-function runCode(code: string): boolean {
-    try {
-        // Create fresh auto-collect context for this run
-        const { autoShape, autoSystem, createdShapes, createdSystems } = createAutoCollectContext();
-
-        // Create collector for this run
-        const collector = new patterin.SVGCollector();
-
-        // Track if render() was called explicitly
-        let renderCalled = false;
-
-        // Build sandbox context
-        const sandboxContext = {
-            ...patterin,
-            shape: autoShape,    // Override shape with auto-collecting version
-            system: autoSystem,  // Override system with auto-collecting version
-            svg: collector,      // Provide collector as 'svg' for explicit use
-            // Render function for explicit control
-            render: (explicitCollector?: patterin.SVGCollector) => {
-                renderCalled = true;
-                const c = explicitCollector || collector;
-                lastCollector = c;
-                const svgString = (c as any).toString({
-                    width: 400,
-                    height: 400,
-                    margin: 20,
-                    autoScale: false
-                });
-                preview.setSVG(svgString);
-            },
-        };
-
-        const paramNames = Object.keys(sandboxContext);
-        const paramValues = Object.values(sandboxContext);
-
-        const sandbox = new Function(...paramNames, code);
-        sandbox(...paramValues);
-
-        // Auto-render: if shapes or systems were created and render() wasn't called explicitly
-        if ((createdShapes.length > 0 || createdSystems.length > 0) && !renderCalled) {
-            // Stamp all created shapes to the collector
-            for (const shapeCtx of createdShapes) {
-                if (typeof shapeCtx.stamp === 'function') {
-                    shapeCtx.stamp(collector);
-                }
-            }
-
-            // Stamp all created systems to the collector
-            for (const sys of createdSystems) {
-                if (typeof sys.stamp === 'function') {
-                    sys.stamp(collector);
-                }
-            }
-
-            // Render the collector
-            lastCollector = collector;
-            const svgString = (collector as any).toString({
-                width: 400,
-                height: 400,
-                margin: 20,
-                autoScale: false
-            });
-            preview.setSVG(svgString);
-
-            // Update stats
-            const stats = (collector as any).stats;
-            if (stats) {
-                preview.setStats(stats.shapes, stats.segments);
-            }
-        }
-
-        hideError();
-        editor.clearDiagnostics();
-
-        // Auto-save on successful compile
-        editor.saveCode(code);
-
-        return true;
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        showError(message);
-        console.error('Code error:', err);
-
-        // Try to extract line/column from error
-        const diagnostic = parseError(err);
-        editor.setDiagnostics([diagnostic]);
-
-        return false;
+function terminateWorker() {
+    if (workerTimeoutId !== null) {
+        clearTimeout(workerTimeoutId);
+        workerTimeoutId = null;
+    }
+    if (worker) {
+        worker.terminate();
+        worker = null;
     }
 }
 
 /**
- * Parse an error to extract line/column information
+ * Create worker and configure message handling
  */
-function parseError(err: unknown): { message: string; line?: number; column?: number } {
-    const message = err instanceof Error ? err.message : String(err);
+function createWorker(): Worker {
+    const w = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+    return w;
+}
 
-    if (err instanceof Error && err.stack) {
-        // Log for debugging
-        console.debug('Error stack:', err.stack);
+/**
+ * Run code via worker with timeout
+ */
+function runCode(code: string, options?: { resetView?: boolean }): void {
+    // Terminate any existing worker
+    terminateWorker();
 
-        // Different browsers format stacks differently:
-        // Chrome: "    at eval (eval at runCode..., <anonymous>:2:5)"
-        // Firefox: "@debugger eval code:2:5"
-        // Safari: "eval code@[native code]" or similar
+    // Show loading state
+    preview.setLoading(true);
 
-        // Pattern 1: <anonymous>:LINE:COL (Chrome)
-        const anonMatch = err.stack.match(/<anonymous>:(\d+):(\d+)/);
-        if (anonMatch) {
-            return {
-                message,
-                line: parseInt(anonMatch[1], 10),
-                column: parseInt(anonMatch[2], 10),
-            };
+    // Create new worker
+    worker = createWorker();
+
+    // Set timeout
+    workerTimeoutId = window.setTimeout(() => {
+        terminateWorker();
+        preview.setLoading(false);
+        showError(`Execution timeout (${WORKER_TIMEOUT_MS / 1000}s) - pattern too complex`);
+        editor.setDiagnostics([{ message: 'Execution timeout - reduce complexity', line: 1 }]);
+    }, WORKER_TIMEOUT_MS);
+
+    // Handle worker messages
+    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+        // Clear timeout since we got a response
+        if (workerTimeoutId !== null) {
+            clearTimeout(workerTimeoutId);
+            workerTimeoutId = null;
         }
+        preview.setLoading(false);
 
-        // Pattern 2: eval code:LINE:COL (Firefox)
-        const evalCodeMatch = err.stack.match(/eval code:(\d+):(\d+)/);
-        if (evalCodeMatch) {
-            return {
-                message,
-                line: parseInt(evalCodeMatch[1], 10),
-                column: parseInt(evalCodeMatch[2], 10),
-            };
-        }
+        const response = e.data;
 
-        // Pattern 3: Function:LINE:COL
-        const fnMatch = err.stack.match(/Function:(\d+):(\d+)/);
-        if (fnMatch) {
-            return {
-                message,
-                line: parseInt(fnMatch[1], 10),
-                column: parseInt(fnMatch[2], 10),
-            };
-        }
+        if (response.type === 'success') {
+            // Always update SVG (even if empty, to clear previous output)
+            preview.setSVG(response.svg);
+            
+            if (response.svg && response.collectorData) {
+                // Reconstruct collector from worker data
+                lastCollector = new patterin.SVGCollector();
+                
+                // Restore internal state
+                (lastCollector as any).paths = response.collectorData.paths;
+                (lastCollector as any).minX = response.collectorData.bounds.minX;
+                (lastCollector as any).minY = response.collectorData.bounds.minY;
+                (lastCollector as any).maxX = response.collectorData.bounds.maxX;
+                (lastCollector as any).maxY = response.collectorData.bounds.maxY;
 
-        // Pattern 4: Just :LINE:COL anywhere (generic fallback)
-        const genericMatch = err.stack.match(/:(\d+):(\d+)/);
-        if (genericMatch) {
-            const lineNum = parseInt(genericMatch[1], 10);
-            // Sanity check - line numbers in user code should be reasonable
-            if (lineNum > 0 && lineNum < 1000) {
-                return {
-                    message,
-                    line: lineNum,
-                    column: parseInt(genericMatch[2], 10),
-                };
+                // Reset view if requested (e.g. on example load)
+                if (options?.resetView) {
+                    preview.resetView();
+                }
+            } else {
+                // No content, clear lastCollector
+                lastCollector = null;
             }
+            
+            // Always update stats (will clear if null)
+            if (response.stats) {
+                preview.setStats(response.stats.shapes, response.stats.segments);
+            } else {
+                preview.setStats(0, 0);
+            }
+            
+            hideError();
+            editor.clearDiagnostics();
+            editor.saveCode(code);
+        } else {
+            showError(response.error);
+            editor.setDiagnostics([{
+                message: response.error,
+                line: response.line,
+                column: response.column
+            }]);
         }
-    }
+    };
 
-    // Fallback: just the message, line 1
-    return { message, line: 1 };
+    // Handle worker errors
+    worker.onerror = (error) => {
+        if (workerTimeoutId !== null) {
+            clearTimeout(workerTimeoutId);
+            workerTimeoutId = null;
+        }
+        preview.setLoading(false);
+        showError(`Worker error: ${error.message}`);
+        console.error('Worker error:', error);
+    };
+
+    // Send code to worker
+    worker.postMessage({
+        type: 'execute',
+        code,
+        autoRender: autoRenderEnabled
+    } as WorkerMessage);
 }
 
 // Expose patterin globally for debugging
@@ -279,6 +210,8 @@ function hideError(): void {
 
 function debouncedRun(code: string): void {
     clearTimeout(debounceTimer);
+    // Terminate any running worker when user starts typing again
+    terminateWorker();
     debounceTimer = window.setTimeout(() => runCode(code), 250);
 }
 
@@ -293,10 +226,19 @@ new Menu({
     button: menuBtn,
     onExampleLoad: (code: string) => {
         editor.setCode(code);
-        runCode(code);
-        preview.resetView(); // Auto-fit when loading example
+        runCode(code, { resetView: true });
     },
 });
+
+// Handle auto-render checkbox changes
+if (autoRenderCheckbox) {
+    autoRenderCheckbox.addEventListener('change', () => {
+        autoRenderEnabled = autoRenderCheckbox.checked;
+        saveAutoRenderSetting(autoRenderEnabled);
+        // Re-run code with new setting
+        runCode(editor.getCode());
+    });
+}
 
 // Initialize Keyboard Shortcuts
 initKeyboardShortcuts({
@@ -322,4 +264,5 @@ runCode(editor.getCode());
 console.log('Patterin Playground loaded');
 console.log('Available:', Object.keys(patterin));
 console.log('Shortcuts: ⌘E Export, ⌘G Grid, ⌘0 Reset');
-console.log('Auto-render: Just type shape.circle() and it appears!');
+console.log('Auto-render enabled: Just type shape.circle() and it appears!');
+console.log('Manual mode: Uncheck auto-render and use svg.stamp() + render()');

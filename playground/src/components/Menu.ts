@@ -99,7 +99,7 @@ export class Menu {
         // Position below button
         const rect = this.button.getBoundingClientRect();
         this.dropdown.style.top = `${rect.bottom + 4}px`;
-        this.dropdown.style.right = `${window.innerWidth - rect.right}px`;
+        this.dropdown.style.left = `${rect.left}px`;
 
         document.body.appendChild(this.dropdown);
         this.isOpen = true;

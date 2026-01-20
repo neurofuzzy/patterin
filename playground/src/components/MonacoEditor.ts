@@ -11,7 +11,7 @@ const STORAGE_KEY = 'patterin-code';
 
 // Inject DSL Types once
 const dslTypes = generateDSLTypeDefinition();
-monaco.languages.typescript.javascriptDefaults.addExtraLib(dslTypes, 'patterin-dsl.d.ts');
+(monaco.languages.typescript as any).javascriptDefaults.addExtraLib(dslTypes, 'patterin-dsl.d.ts');
 
 export interface EditorOptions {
     container: HTMLElement;

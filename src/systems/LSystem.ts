@@ -1,12 +1,8 @@
-import { ISystem } from '../interfaces.ts';
-import { Shape } from '../primitives/Shape.ts';
-import { Vector2 } from '../primitives/Vector2.ts';
-import { Vertex } from '../primitives/Vertex.ts';
-import { Segment } from '../primitives/Segment.ts';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector.ts';
-import { renderSystemToSVG } from './SystemUtils.ts';
-import { ShapeContext, PointsContext, LinesContext } from '../contexts/ShapeContext.ts';
-import { PathContext } from '../contexts/PathContext.ts';
+import { Shape, Segment, Vertex } from '../primitives';
+import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { ShapeContext, PointsContext, LinesContext } from '../contexts';
+import { BaseSystem, type RenderGroup } from './BaseSystem';
+import type { SystemBounds } from '../types';
 
 export interface LSystemOptions {
     axiom: string;
@@ -24,7 +20,7 @@ interface TurtleState {
     dir: number;
 }
 
-export class LSystem implements ISystem {
+export class LSystem extends BaseSystem {
     private _config: LSystemOptions;
 
     // Geometry storage
@@ -36,16 +32,13 @@ export class LSystem implements ISystem {
     public segments: LinesContext;
     public nodes: PointsContext;
     public endpoints: PointsContext;
-    public path: PathContext;
-
-    // Output tracking
-    private _traced = false;
-    private _placements: { shape: Shape; style?: PathStyle; position: Vector2 }[] = [];
+    public path: ShapeContext;
 
     // Underlying shape for the whole path
     private _shape: Shape;
 
     private constructor(config: LSystemOptions) {
+        super();
         this._config = {
             origin: [0, 0],
             heading: 0,
@@ -88,7 +81,7 @@ export class LSystem implements ISystem {
         this.endpoints = new PointsContext(this._shape, this._endpoints);
 
         // Path context
-        this.path = new PathContext(this._shape);
+        this.path = new ShapeContext(this._shape);
         this.path.ephemeral();
     }
 
@@ -192,6 +185,21 @@ export class LSystem implements ISystem {
             }
         }
 
+        // Add final connecting segment if path returns to start (within tolerance)
+        // This fixes visual gaps in closed L-systems like Koch Snowflake
+        const epsilon = len * 0.01; // 1% of step length tolerance
+        const distToStart = Math.sqrt(
+            Math.pow(x - origin[0], 2) + Math.pow(y - origin[1], 2)
+        );
+
+        if (distToStart < epsilon && distToStart > 0 && segments.length > 0) {
+            // Add segment from final position back to start
+            const finalV = new Vertex(x, y);
+            const startV = new Vertex(origin[0], origin[1]);
+            segments.push(new Segment(finalV, startV));
+            nodes.push(startV);
+        }
+
         // Final position is also an endpoint
         endpoints.push(new Vertex(x, y));
 
@@ -204,19 +212,45 @@ export class LSystem implements ISystem {
     trace(): this {
         this._traced = true;
         this._shape.ephemeral = false;
-        // Make contexts non-ephemeral if needed, but they just reference the shape
-        // and have their own ephemeral flags usually defaulting to true?
-        // ShapeContext.ts: trace() sets _shape.ephemeral = false.
-        // Paths are ephemeral by default in spec.
         return this;
     }
 
-    /**
-     * Render the object to a collector.
-     */
-    stamp(collector: SVGCollector, style?: PathStyle): void {
+    // ==================== BaseSystem Implementation ====================
+
+    protected getNodes(): Vertex[] {
+        return this._nodes;
+    }
+
+    protected filterByMask(shape: Shape): void {
+        // Filter nodes
+        this._nodes = this._nodes.filter(node => shape.containsPoint(node.position));
+
+        // Filter endpoints
+        this._endpoints = this._endpoints.filter(node => shape.containsPoint(node.position));
+
+        // Filter segments using base class helper
+        this._segments = this.filterEdgesByMask(this._segments, shape);
+
+        // Update shape segments
+        this._shape.segments = this._segments;
+
+        // Update contexts (recreate them with filtered data)
+        this.nodes = new PointsContext(this._shape, this._nodes);
+        this.endpoints = new PointsContext(this._shape, this._endpoints);
+        this.segments = new LinesContext(this._shape, this._segments);
+        this.path = new ShapeContext(this._shape);
+    }
+
+    protected scaleGeometry(factor: number): void {
+        this._shape.scale(factor);
+    }
+
+    protected rotateGeometry(angleRad: number): void {
+        this._shape.rotate(angleRad);
+    }
+
+    protected stampGeometry(collector: SVGCollector, style?: PathStyle): void {
         const shapeStyle = style ?? DEFAULT_STYLES.line;
-        const placementStyle = style ?? DEFAULT_STYLES.placement;
 
         // Stamp the path if traced
         if (this._traced && !this._shape.ephemeral) {
@@ -225,104 +259,30 @@ export class LSystem implements ISystem {
             this.path.stamp(collector, 0, 0, shapeStyle);
             collector.endGroup();
         }
-
-        // Stamp placements
-        if (this._placements.length > 0) {
-            collector.beginGroup('lsystem-placements');
-            for (const p of this._placements) {
-                collector.addShape(p.shape, p.style ?? placementStyle);
-            }
-            collector.endGroup();
-        }
     }
 
-    /**
-     * Place a shape at each node in the system.
-     */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        // Place at all nodes by default
-        for (const node of this._nodes) {
-            const clone = shapeCtx.shape.clone();
-            clone.ephemeral = false;
-            clone.moveTo(node.position);
-            this._placements.push({
-                shape: clone,
-                style,
-                position: node.position
-            });
-        }
-
-        // Mark source as ephemeral
-        shapeCtx.shape.ephemeral = true;
-
-        return this;
-    }
-
-    /**
-     * Clip system to mask shape boundary.
-     */
-    mask(maskShape: ShapeContext): this {
-        maskShape.shape.ephemeral = true;
-        const shape = maskShape.shape;
-
-        // Filter nodes
-        this._nodes = this._nodes.filter(node => shape.containsPoint(node.position));
-
-        // Filter endpoints
-        this._endpoints = this._endpoints.filter(node => shape.containsPoint(node.position));
-
-        // Filter placements
-        this._placements = this._placements.filter(p => shape.containsPoint(p.position));
-
-        // Filter segments (centroid inside)
-        this._segments = this._segments.filter(seg => shape.containsPoint(seg.midpoint()));
-
-        // Update shape segments
-        this._shape.segments = this._segments;
-
-        // Update contexts
-        // Note: We need to update the internal arrays of the contexts
-        // But the contexts were created with the INITIAL arrays.
-        // We probably need to recreate contexts or Contexts should support updates.
-        // PointsContext constructor takes `protected _vertices: Vertex[]`.
-        // We can just construct new contexts, but the user might hold a reference to the old one.
-        // Ideally contexts are just views.
-        // For this version (Phase 1.8), I'll recreate the public properties.
-        this.nodes = new PointsContext(this._shape, this._nodes);
-        this.endpoints = new PointsContext(this._shape, this._endpoints);
-        this.segments = new LinesContext(this._shape, this._segments);
-        this.path = new PathContext(this._shape);
-
-        return this;
-    }
-
-    /**
-     * Generate SVG output.
-     */
-    toSVG(options: { width: number; height: number; margin?: number }): string {
-        const { width, height, margin = 10 } = options;
-
+    protected getGeometryRenderGroups(): RenderGroup[] {
         const pathItems: { shape: Shape; style?: PathStyle }[] = [];
         if (this._traced && !this._shape.ephemeral) {
             pathItems.push({ shape: this._shape, style: DEFAULT_STYLES.line });
         }
 
-        const placementItems = this._placements.map(p => ({
-            shape: p.shape,
-            style: p.style
-        }));
-
-        return renderSystemToSVG(width, height, margin, [
+        return [
             {
                 name: 'lsystem-path',
                 items: pathItems,
                 defaultStyle: DEFAULT_STYLES.line
-            },
-            {
-                name: 'lsystem-placements',
-                items: placementItems,
-                defaultStyle: DEFAULT_STYLES.placement
             }
-        ]);
+        ];
+    }
+
+    protected getGeometryBounds(): SystemBounds {
+        return this.boundsFromPositions(this._nodes);
+    }
+
+    protected getSourceForSelection(): Shape[] {
+        // For LSystem, when no placements exist, we don't have individual shapes
+        // Return empty array
+        return [];
     }
 }

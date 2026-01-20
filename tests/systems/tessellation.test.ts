@@ -8,13 +8,13 @@ beforeAll(() => {
     }
 });
 
-/** Helper: Render tessellation with cyan traces and magenta nodes */
+/** Helper: Render tessellation with cyan edges and magenta nodes */
 function renderTess(tess: ReturnType<typeof TessellationSystem.create>, width: number, height: number): string {
     const collector = new SVGCollector();
 
-    // Trace tiles in cyan
+    // Trace edges in cyan
     tess.trace();
-    tess.tiles.stamp(collector, 0, 0, { stroke: '#00ffff', strokeWidth: 1, fill: 'none' });
+    tess.stamp(collector, { stroke: '#00ffff', strokeWidth: 1, fill: 'none' });
 
     // Nodes as magenta circles
     for (const v of tess.nodes.vertices) {
@@ -25,87 +25,15 @@ function renderTess(tess: ReturnType<typeof TessellationSystem.create>, width: n
     return collector.toString({ width, height });
 }
 
-describe('Truchet Tessellation', () => {
-    it('should create tiles based on bounds and tileSize', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 100, height: 100 },
-            tileSize: 20,
-        });
-        // 5 cols * 5 rows = 25 tiles
-        expect(tess.tiles.length).toBe(25);
-    });
-
-    it('should be deterministic with same seed', () => {
-        const tess1 = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 100, height: 100 },
-            tileSize: 20,
-            seed: 42,
-        });
-        const tess2 = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 100, height: 100 },
-            tileSize: 20,
-            seed: 42,
-        });
-
-        tess1.trace();
-        tess2.trace();
-
-        const svg1 = tess1.toSVG({ width: 200, height: 200 });
-        const svg2 = tess2.toSVG({ width: 200, height: 200 });
-        expect(svg1).toBe(svg2);
-    });
-
-    it('quarter-circles variant should generate SVG', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 200, height: 200 },
-            tileSize: 25,
-            variant: 'quarter-circles',
-            seed: 12345,
-        });
-        const svg = renderTess(tess, 400, 400);
-        expect(svg).toContain('<path');
-        expect(svg).toContain('#00ffff'); // cyan traces
-        expect(svg).toContain('#ff00ff'); // magenta nodes
-        writeFileSync('test-output/truchet-circles.svg', svg);
-    });
-
-    it('diagonal variant should generate SVG', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 200, height: 200 },
-            tileSize: 20,
-            variant: 'diagonal',
-            seed: 67890,
-        });
-        const svg = renderTess(tess, 400, 400);
-        expect(svg).toContain('<path');
-        writeFileSync('test-output/truchet-diagonal.svg', svg);
-    });
-});
-
 describe('Trihexagonal Tessellation', () => {
-    it('should create hexagons and triangles', () => {
+    it('should create nodes at hexagon and triangle intersections', () => {
         const tess = TessellationSystem.create({
             pattern: 'trihexagonal',
             bounds: { width: 150, height: 150 },
             spacing: 30,
         });
-        expect(tess.hexagons.length).toBeGreaterThan(0);
-        expect(tess.triangles.length).toBeGreaterThan(0);
-    });
-
-    it('hexagons should have 6 vertices', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'trihexagonal',
-            bounds: { width: 100, height: 100 },
-            spacing: 30,
-        });
-        const hex = tess.hexagons.shapes[0];
-        expect(hex.vertices.length).toBe(6);
+        // Trihexagonal has vertices from hexagons and triangles
+        expect(tess.nodes.vertices.length).toBeGreaterThan(10);
     });
 
     it('should generate visual SVG', () => {
@@ -121,24 +49,14 @@ describe('Trihexagonal Tessellation', () => {
 });
 
 describe('Penrose Tessellation', () => {
-    it('should create kites and darts', () => {
+    it('should create nodes from triangle vertices', () => {
         const tess = TessellationSystem.create({
             pattern: 'penrose',
             bounds: { width: 200, height: 200 },
             iterations: 3,
         });
-        expect(tess.kites.length).toBeGreaterThan(0);
-        expect(tess.darts.length).toBeGreaterThan(0);
-    });
-
-    it('should have triangular tiles', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'penrose',
-            bounds: { width: 100, height: 100 },
-            iterations: 3,
-        });
-        const tile = tess.tiles.shapes[0];
-        expect(tile.vertices.length).toBe(3);
+        // Penrose creates many triangle vertices
+        expect(tess.nodes.vertices.length).toBeGreaterThan(10);
     });
 
     it('should be deterministic with same seed', () => {
@@ -155,7 +73,7 @@ describe('Penrose Tessellation', () => {
             seed: 999,
         });
 
-        expect(tess1.tiles.length).toBe(tess2.tiles.length);
+        expect(tess1.nodes.vertices.length).toBe(tess2.nodes.vertices.length);
     });
 
     it('should generate visual SVG', () => {
@@ -172,7 +90,7 @@ describe('Penrose Tessellation', () => {
 });
 
 describe('Custom Tessellation', () => {
-    it('should repeat custom unit shape', () => {
+    it('should extract vertices from custom unit shape', () => {
         const unit = shape.circle().radius(10).numSegments(8);
         const tess = TessellationSystem.create({
             pattern: 'custom',
@@ -180,7 +98,8 @@ describe('Custom Tessellation', () => {
             unit,
             spacing: 30,
         });
-        expect(tess.tiles.length).toBeGreaterThan(0);
+        // Custom tessellation extracts vertices from repeated unit shapes
+        expect(tess.nodes.vertices.length).toBeGreaterThan(0);
     });
 
     it('should support hexagonal arrangement', () => {
@@ -199,27 +118,27 @@ describe('Custom Tessellation', () => {
 });
 
 describe('TessellationSystem Tracing', () => {
-    it('tiles should be ephemeral by default', () => {
+    it('trace() should make tessellation edges renderable', () => {
         const tess = TessellationSystem.create({
-            pattern: 'truchet',
+            pattern: 'penrose',
             bounds: { width: 100, height: 100 },
-            tileSize: 20,
-        });
-        const tile = tess.tiles.shapes[0];
-        expect(tile.ephemeral).toBe(true);
-    });
-
-    it('trace() should make tiles renderable', () => {
-        const tess = TessellationSystem.create({
-            pattern: 'truchet',
-            bounds: { width: 100, height: 100 },
-            tileSize: 20,
+            iterations: 3,
         });
         const svg1 = tess.toSVG({ width: 200, height: 200 });
         expect(svg1).not.toContain('<path');
 
         tess.trace();
         const svg2 = tess.toSVG({ width: 200, height: 200 });
-        expect(svg2).toContain('<path');
+        expect(svg2).toContain('<path'); // Traced edges render as line network
+    });
+
+    it('should create nodes at intersection points', () => {
+        const tess = TessellationSystem.create({
+            pattern: 'penrose',
+            bounds: { width: 100, height: 100 },
+            iterations: 3,
+        });
+        // Penrose creates triangle vertices
+        expect(tess.nodes.vertices.length).toBeGreaterThan(10);
     });
 });

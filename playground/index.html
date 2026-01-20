@@ -16,24 +16,30 @@
 <body>
     <div id="app">
         <div class="editor-pane">
+            <div class="editor-header">
+                <button class="menu-btn" id="menu-btn">≡</button>
+                <label class="auto-render-toggle">
+                    <input type="checkbox" id="auto-render-checkbox" checked>
+                    <span>Auto-render</span>
+                </label>
+            </div>
             <div class="editor-container">
                 <textarea id="editor" spellcheck="false">// Patterin Playground
-
-const svg = new SVGCollector();
+// Auto-render ON: Just create shapes!
+// Auto-render OFF: Use svg.stamp() + render()
 
 // Create a gear pattern
 const circle = shape.circle().radius(50).numSegments(16);
 circle.lines.every(2).extrude(15);
-circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
 
-// Render to preview
-render(svg);
+// Manual rendering (when auto-render is OFF):
+// circle.stamp(svg, 0, 0, { stroke: '#58a6ff', strokeWidth: 1.5 });
+// render(svg);
 </textarea>
             </div>
             <div class="error-display hidden" id="error-display"></div>
         </div>
         <div class="preview-pane" id="preview-pane">
-            <button class="menu-btn" id="menu-btn">≡</button>
         </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

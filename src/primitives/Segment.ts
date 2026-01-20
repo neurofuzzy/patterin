@@ -1,5 +1,5 @@
-import { Vector2 } from './Vector2.ts';
-import { Vertex } from './Vertex.ts';
+import { Vector2 } from './Vector2';
+import { Vertex } from './Vertex';
 
 export type Winding = 'cw' | 'ccw';
 

@@ -20,10 +20,10 @@ describe('System Factory', () => {
             expect(grid).toBeInstanceOf(GridSystem);
         });
 
-        it('should have nodes and cells', () => {
+        it('should have nodes at intersections', () => {
             const grid = system.grid({ rows: 2, cols: 2, spacing: 10 });
-            expect(grid.nodes.length).toBeGreaterThan(0);
-            expect(grid.cells.length).toBe(4);
+            // 2x2 square grid has (2+1) * (2+1) = 9 intersection nodes
+            expect(grid.nodes.length).toBe(9);
         });
 
         it('should support direct place() on system', () => {
@@ -45,13 +45,13 @@ describe('System Factory', () => {
             expect(tess).toBeInstanceOf(TessellationSystem);
         });
 
-        it('should have tiles', () => {
+        it('should have nodes at intersections', () => {
             const tess = system.tessellation({
-                pattern: 'truchet',
+                pattern: 'penrose',
                 bounds: { width: 100, height: 100 },
-                tileSize: 20
+                iterations: 3
             });
-            expect(tess.tiles.length).toBeGreaterThan(0);
+            expect(tess.nodes.vertices.length).toBeGreaterThan(0);
         });
     });
 

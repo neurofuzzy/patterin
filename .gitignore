@@ -89,7 +89,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
@@ -137,5 +136,8 @@ dist
 
 # Patterin test output
 test-output/
+
+# Playground build output
+playground/dist/
 
 .DS_Store

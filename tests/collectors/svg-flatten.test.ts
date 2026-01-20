@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { SVGCollector, GridSystem, shape } from '../../src/index.ts';
+import { SVGCollector, GridSystem, shape, Vector2 } from '../../src/index.ts';
 
 describe('SVGCollector flatten mode', () => {
     it('flatten mode should produce SVG without viewBox', () => {
         const collector = new SVGCollector();
         const rect = shape.square().size(100).shape;
-        rect.translate({ x: 50, y: 50, subtract: () => ({ x: 0, y: 0 }), add: () => ({ x: 0, y: 0 }) } as any);
+        rect.translate(new Vector2(50, 50));
         collector.addShape(rect, { stroke: '#000', strokeWidth: 2 });
 
         const svg = collector.toString({
@@ -96,14 +96,14 @@ describe('SVGCollector flatten mode', () => {
 });
 
 describe('System SVG group output', () => {
-    it('GridSystem.toSVG should output groups for cells and placements', () => {
+    it('GridSystem.toSVG should output groups for grid-edges and placements', () => {
         const grid = GridSystem.create({ rows: 2, cols: 2, spacing: 50 });
-        grid.trace();  // Make cells visible
+        grid.trace();  // Make grid edges visible
         grid.nodes.place(shape.circle().radius(5), { stroke: '#000' });
 
         const svg = grid.toSVG({ width: 200, height: 200 });
 
-        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="grid-edges">');
         expect(svg).toContain('<g id="placements">');
     });
 
@@ -117,7 +117,7 @@ describe('System SVG group output', () => {
 
         const svg = collector.toString({ width: 200, height: 200 });
 
-        expect(svg).toContain('<g id="cells">');
+        expect(svg).toContain('<g id="grid-edges">');
         expect(svg).toContain('<g id="placements">');
     });
 });
