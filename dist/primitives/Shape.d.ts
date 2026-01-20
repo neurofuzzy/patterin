@@ -16,6 +16,8 @@ export declare class Shape {
     winding: Winding;
     /** Flag for construction geometry that won't render */
     ephemeral: boolean;
+    /** Optional group/role identifier for color layering */
+    group?: string;
     constructor(segments: Segment[], winding?: Winding);
     /** Get unique vertices in winding order */
     get vertices(): Vertex[];

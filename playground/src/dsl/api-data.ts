@@ -47,12 +47,13 @@ export const API_DATA: Record<string, TypeInfo> = {
 
     'system': {
         type: 'object',
-        doc: 'System factory - entry point for creating grid and tessellation systems',
+        doc: 'System factory - entry point for creating grid, tessellation, and quilt systems',
         methods: {
             'grid': { params: ['options: GridOptions'], returns: 'GridSystem', doc: 'Create a grid system' },
             'tessellation': { params: ['options: TessellationOptions'], returns: 'TessellationSystem', doc: 'Create a tessellation system' },
             'fromShape': { params: ['source: ShapeContext | Shape', 'options?: ShapeSystemOptions'], returns: 'ShapeSystem', doc: 'Create system from shape (vertices → nodes, segments → edges)' },
             'lsystem': { params: ['options: LSystemOptions'], returns: 'LSystem', doc: 'Create an L-System' },
+            'quilt': { params: ['options: QuiltOptions'], returns: 'QuiltSystem', doc: 'Create a quilt block system with every() selection' },
         },
     },
 
@@ -359,6 +360,38 @@ export const API_DATA: Record<string, TypeInfo> = {
             'endpoints': { returns: 'PointsContext', doc: 'Get terminal points' },
             'path': { returns: 'PathContext', doc: 'Get the full continuous path' },
             'length': { returns: 'number', doc: 'Total number of segments' },
+        },
+    },
+
+    'QuiltSystem': {
+        type: 'class',
+        doc: 'Quilt block system with selection support. Use .pattern to access block placement methods.',
+        methods: {
+            'trace': { returns: 'this', doc: 'Make quilt concrete' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
+            'mask': { params: ['maskShape: ShapeContext'], returns: 'this', doc: 'Clip system to mask shape boundary' },
+            'scale': { params: ['factor: number'], returns: 'this', doc: 'Scale all shapes' },
+            'rotate': { params: ['angleDeg: number'], returns: 'this', doc: 'Rotate all shapes' },
+            'getBounds': { returns: '{ minX, minY, maxX, maxY }', doc: 'Get quilt bounds' },
+            'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+            'place': { params: ['shapeCtx: ShapeContext', 'style?: PathStyle'], returns: 'this', doc: 'Place custom shape at nodes (inherited from BaseSystem)' },
+        },
+        getters: {
+            'pattern': { returns: 'QuiltPatternContext', doc: 'Access pattern selection and block placement' },
+            'shapes': { returns: 'ShapesContext', doc: 'Get all generated shapes' },
+            'length': { returns: 'number', doc: 'Number of placements' },
+        },
+    },
+
+    'QuiltPatternContext': {
+        type: 'class',
+        doc: 'Context for selecting placements and assigning quilt blocks',
+        methods: {
+            'every': { params: ['n: number', 'offset?: number'], returns: 'this', doc: 'Select every nth placement' },
+            'slice': { params: ['start: number', 'end?: number'], returns: 'this', doc: 'Select range of placements' },
+            'at': { params: ['...indices: number[]'], returns: 'this', doc: 'Select placements at indices' },
+            'all': { returns: 'this', doc: 'Clear selection (select all)' },
+            'placeBlock': { params: ['blockName: string'], returns: 'QuiltSystem', doc: 'Assign block template to selected positions. Supports shortcuts: PW, BD, FS, SF, BT, DP, SS' },
         },
     },
 

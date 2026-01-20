@@ -17,6 +17,9 @@ export class Shape {
     /** Flag for construction geometry that won't render */
     ephemeral = false;
 
+    /** Optional group/role identifier for color layering */
+    group?: string;
+
     constructor(
         public segments: Segment[],
         public winding: Winding = 'ccw'

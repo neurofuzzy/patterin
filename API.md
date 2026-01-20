@@ -694,6 +694,81 @@ const hilbert = system.lsystem({
 });
 ```
 
+### `system.quilt(options)`
+
+Creates a quilt block system with grid-based placement and block selection.
+
+**Options:**
+```typescript
+{
+  gridSize: [number, number],    // [columns, rows]
+  blockSize: number,             // Size of each block in units
+  defaultBlock?: string          // Default block template (default: 'pinwheel')
+}
+```
+
+**Block Templates:**
+
+Available blocks with two-character shortcuts:
+- `pinwheel` or `PW` - Four HSTs in spinning pattern
+- `brokenDishes` or `BD` - Four HSTs with dark at corners
+- `friendshipStar` or `FS` - Nine-patch star with HST points
+- `shooFly` or `SF` - Nine-patch with corner HSTs
+- `bowTie` or `BT` - Four-patch with opposing HSTs
+- `dutchmansPuzzle` or `DP` - Flying geese pinwheel
+- `sawtoothStar` or `SS` - Nine-patch star with flying geese
+
+**Returns:** `QuiltSystem`
+
+**Methods:**
+- `.pattern` - Get QuiltPatternContext for block selection and placement
+- `.trace()` - Make quilt concrete for rendering
+- `.stamp(collector, style?)` - Render to SVG collector
+- `.toSVG(options?)` - Render to SVG
+
+**QuiltPatternContext Methods:**
+- `.every(n, offset?)` - Select every nth placement
+- `.slice(start, end?)` - Select range of placements
+- `.at(...indices)` - Select specific placements
+- `.all()` - Clear selection (select all)
+- `.placeBlock(blockName)` - Assign block template to selected placements
+
+**Example:**
+```typescript
+// Create a 4x4 quilt with alternating blocks
+const quilt = system.quilt({
+  gridSize: [4, 4],
+  blockSize: 100
+});
+
+// Alternate between two patterns using .pattern context
+quilt.pattern.every(2).placeBlock('BD');        // Broken Dishes on even positions
+quilt.pattern.every(2, 1).placeBlock('FS');     // Friendship Star on odd positions
+
+// Access generated shapes by group
+const shapes = quilt.shapes;
+shapes.shapes.forEach(shape => {
+  const color = shape.group === 'dark' ? '#333' : '#999';
+  svg.addShape(shape, { fill: color, stroke: '#000' });
+});
+
+// Simple 3x3 pinwheel quilt
+const simple = system.quilt({
+  gridSize: [3, 3],
+  blockSize: 80
+});
+simple.pattern.placeBlock('PW');  // All pinwheels
+
+// Mix multiple blocks
+const sampler = system.quilt({
+  gridSize: [3, 3],
+  blockSize: 80
+});
+sampler.pattern.at(0, 2, 6, 8).placeBlock('FS');      // Corners
+sampler.pattern.at(1, 3, 5, 7).placeBlock('BD');      // Sides
+sampler.pattern.at(4).placeBlock('SS');               // Center
+```
+
 ### `system.fromShape(shape: ShapeContext, options?)`
 
 Creates a system using shape vertices as placement points.
@@ -915,8 +990,57 @@ import type {
   SVGOptions,
   GridOptions,
   TessellationOptions,
-  LSystemOptions
+  LSystemOptions,
+  QuiltOptions,
+  QuiltBlockTemplate
 } from 'patterin';
+```
+
+## Quilt Block Details
+
+### Block Structure
+
+Each quilt block is composed of:
+- **Grid size**: 2×2 (four-patch) or 3×3 (nine-patch)
+- **Cell types**: 
+  - Square (solid light or dark)
+  - HST (Half-Square Triangle) - rotatable in 90° increments
+  - Flying Geese - rotatable in 90° increments
+
+### Four-Patch Blocks (2×2)
+
+**Pinwheel (`PW`)** - Four HSTs with dark triangles meeting at center
+
+**Broken Dishes (`BD`)** - Four HSTs with dark at outer corners
+
+**Bow Tie (`BT`)** - Opposing corner HSTs creating bow tie shape
+
+**Dutchman's Puzzle (`DP`)** - Flying geese units in pinwheel formation
+
+### Nine-Patch Blocks (3×3)
+
+**Friendship Star (`FS`)** - Center square with HST points forming star
+
+**Shoo Fly (`SF`)** - Corner HSTs with center square and edge squares
+
+**Sawtooth Star (`SS`)** - Center square with flying geese star points
+
+### Shape Groups
+
+All quilt shapes are tagged with a `group` property:
+- `'light'` - Light fabric pieces
+- `'dark'` - Dark fabric pieces
+
+Use these groups to apply colors:
+
+```typescript
+const quilt = system.quilt({ gridSize: [3, 3], blockSize: 80 });
+quilt.placeBlock('FS');
+
+quilt.shapes.shapes.forEach(shape => {
+  const color = shape.group === 'dark' ? '#333' : '#999';
+  svg.addShape(shape, { fill: color, stroke: '#000' });
+});
 ```
 
 For more examples and interactive exploration, check out the [Playground](https://neurofuzzy.github.io/patterin/playground).

@@ -230,6 +230,27 @@ const tree = system.lsystem({
 console.log(tree.toSVG({ width: 600, height: 800 }));
 ```
 
+### Quilt Patterns
+
+```typescript
+// Create a 4x4 quilt with alternating blocks
+const quilt = system.quilt({
+  gridSize: [4, 4],
+  blockSize: 100
+});
+
+// Alternate between Broken Dishes and Friendship Star using .pattern
+quilt.pattern.every(2).placeBlock('BD');
+quilt.pattern.every(2, 1).placeBlock('FS');
+
+// Access shapes by fabric group (light/dark)
+const shapes = quilt.shapes;
+shapes.shapes.forEach(shape => {
+  const color = shape.group === 'dark' ? '#333' : '#999';
+  svg.addShape(shape, { fill: color, stroke: '#000' });
+});
+```
+
 ## Documentation
 
 - **[Complete API Reference](API.md)** - Detailed documentation for every method and option
@@ -284,6 +305,7 @@ system.grid(options)              // Square, hex, triangular grids
 system.tessellation(options)      // Penrose, trihexagonal
 system.fromShape(shape, options)  // Use shape vertices as nodes
 system.lsystem(options)           // Lindenmayer systems (fractals)
+system.quilt(options)             // Traditional quilt block patterns
 ```
 
 ### SVG Output
@@ -382,13 +404,14 @@ Patterin works in all modern browsers and Node.js environments:
 
 ## Examples Gallery
 
-The **[examples/ directory](examples/)** contains 25+ runnable examples organized by concept:
+The **[examples/ directory](examples/)** contains 30+ runnable examples organized by concept:
 - **Basics**: Circles, stars, gears, multiple shapes
 - **Transformations**: Cloning, scaling, rotating, offsetting
 - **Contexts**: Point expansion, line extrusion, polar spreads
 - **Grids**: Square, hexagonal, triangular grids
 - **Tessellations**: Penrose, trihexagonal
 - **Fractals**: Koch curves, dragon, Hilbert, Sierpiński, plants
+- **Quilting**: Traditional quilt block patterns with selection
 - **Advanced**: Complex mandalas, geometric patterns, plotter art
 
 Run any example:

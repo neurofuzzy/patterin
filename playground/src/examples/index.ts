@@ -256,4 +256,112 @@ sierpinski.trace()`,
 
 gosper.trace()`,
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // QUILTING
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Simple Quilt',
+    category: 'Quilting',
+    description: 'Basic pinwheel quilt pattern',
+    code: `// Create a 3x3 quilt of pinwheel blocks
+const quilt = system.quilt({
+  gridSize: [3, 3],
+  blockSize: 60,
+})
+
+// Fill all with pinwheel blocks
+quilt.pattern.placeBlock('PW')
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
+  },
+  {
+    name: 'Alternating Blocks',
+    category: 'Quilting',
+    description: 'Two patterns alternating with every()',
+    code: `// Create a 4x4 quilt
+const quilt = system.quilt({
+  gridSize: [4, 4],
+  blockSize: 50,
+})
+
+// Alternate between Broken Dishes and Friendship Star
+quilt.pattern.every(2).placeBlock('BD')
+quilt.pattern.every(2, 1).placeBlock('FS')
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
+  },
+  {
+    name: 'Sawtooth Star',
+    category: 'Quilting',
+    description: 'Star pattern with flying geese',
+    code: `// Create a 2x2 quilt of sawtooth stars
+const quilt = system.quilt({
+  gridSize: [2, 2],
+  blockSize: 80,
+})
+
+quilt.pattern.placeBlock('SS')  // Sawtooth Star
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
+  },
+  {
+    name: 'Quilt Sampler',
+    category: 'Quilting',
+    description: 'All block types with colors',
+    code: `// Create 3x3 sampler showing different blocks
+const blocks = ['PW', 'BD', 'FS', 'SF', 'BT', 'DP', 'SS', 'PW', 'BD']
+
+blocks.forEach((blockName, i) => {
+  const row = Math.floor(i / 3)
+  const col = i % 3
+  
+  const quilt = system.quilt({
+    gridSize: [1, 1],
+    blockSize: 60,
+  })
+  quilt.pattern.placeBlock(blockName)
+  
+  // Offset each block in the grid
+  const shapes = quilt.shapes.shapes
+  shapes.forEach(shape => {
+    shape.translate({ x: col * 70, y: row * 70 })
+    const color = shape.group === 'dark' ? '#333' : '#999'
+    svg.addShape(shape, { fill: color, stroke: '#000', strokeWidth: 1 })
+  })
+})`,
+  },
+  {
+    name: 'Custom Quilt Layout',
+    category: 'Quilting',
+    description: 'Mix blocks using at() selection',
+    code: `// Create custom layout with specific blocks
+const quilt = system.quilt({
+  gridSize: [3, 3],
+  blockSize: 60,
+})
+
+// Place different blocks at specific positions
+quilt.pattern.at(0, 2, 6, 8).placeBlock('FS')  // Corners: Friendship Star
+quilt.pattern.at(1, 3, 5, 7).placeBlock('BD')  // Sides: Broken Dishes
+quilt.pattern.at(4).placeBlock('SS')           // Center: Sawtooth Star
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
+  },
 ];

@@ -128,6 +128,7 @@ export { TessellationSystem, type TessellationOptions, type TessellationPattern 
 export { ShapeSystem, type ShapeSystemOptions } from './systems/index';
 export { LSystem, type LSystemOptions } from './systems/index';
 export { CloneSystem, type CloneOptions } from './systems/index';
+export { QuiltSystem, type QuiltOptions } from './systems/index';
 
 // ==================== System Factory ====================
 /**
@@ -143,3 +144,29 @@ export { CloneSystem, type CloneOptions } from './systems/index';
  * ```
  */
 export { system } from './systems/index';
+
+// ==================== Quilt Templates ====================
+/**
+ * Quilt block templates for use with system.quilt().
+ * 
+ * @example
+ * ```typescript
+ * import { system } from 'patterin';
+ * 
+ * // Create a 4x4 quilt
+ * const quilt = system.quilt({ gridSize: [4, 4], blockSize: 100 });
+ * 
+ * // Apply different blocks to different positions
+ * quilt.every(2).placeBlock('BD');      // BrokenDishes on even
+ * quilt.every(2, 1).placeBlock('FS');   // FriendshipStar on odd
+ * 
+ * quilt.stamp(svg);
+ * ```
+ */
+export type {
+    QuiltBlockTemplate,
+    BlockRotation,
+    CellDefinition,
+} from './patterns/index';
+export { quiltBlockTemplates } from './patterns/index';
+

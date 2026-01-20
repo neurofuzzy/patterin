@@ -107,6 +107,7 @@ export { TessellationSystem } from './systems/index';
 export { ShapeSystem } from './systems/index';
 export { LSystem } from './systems/index';
 export { CloneSystem } from './systems/index';
+export { QuiltSystem } from './systems/index';
 // ==================== System Factory ====================
 /**
  * Main entry point for creating systems.
@@ -121,3 +122,4 @@ export { CloneSystem } from './systems/index';
  * ```
  */
 export { system } from './systems/index';
+export { quiltBlockTemplates } from './patterns/index';

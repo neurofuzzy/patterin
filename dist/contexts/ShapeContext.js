@@ -20,6 +20,10 @@ class SelectableContext {
      * @param offset - Starting offset (default 0)
      */
     every(n, offset = 0) {
+        if (n < 1) {
+            // Prevent infinite loop for n <= 0
+            return this.createNew([]);
+        }
         const selected = [];
         for (let i = offset; i < this._items.length; i += n) {
             selected.push(this._items[i]);

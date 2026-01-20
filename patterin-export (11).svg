@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="816" height="1056">
+  <rect width="100%" height="100%" fill="#1a1a1a"/>
+  <g xmlns="http://www.w3.org/2000/svg" id="quilt-blocks">
+    <path d="M 48 168 L 138 168 L 48 258 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 168 L 138 258 L 48 258 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 138 168 L 228 258 L 138 258 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 168 L 228 168 L 228 258 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 258 L 138 258 L 138 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 48 258 L 138 348 L 48 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 258 L 228 348 L 138 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 258 L 228 258 L 138 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 168 L 288 168 L 288 228 L 228 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 168 L 348.00000000000006 228 L 288 228 Z" fill="none" stroke="#000000"/>
+    <path d="M 288 168 L 348.00000000000006 168 L 288 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 168 L 408.00000000000006 168 L 408.00000000000006 228 L 348.00000000000006 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 228 L 288 228 L 288 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 228 228 L 288 288 L 228 288 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 228 L 348.00000000000006 228 L 348.00000000000006 288 L 288 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 228 L 408.00000000000006 288 L 348.00000000000006 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 228 L 408.00000000000006 228 L 408.00000000000006 288 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 288 L 288 288 L 288 348 L 228 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 288 L 348.00000000000006 288 L 288 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 288 L 348.00000000000006 348 L 288 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 288 L 408.00000000000006 288 L 408.00000000000006 348 L 348.00000000000006 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 168 L 498 168 L 408 258 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 168 L 498 258 L 408 258 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 498 168 L 588 258 L 498 258 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 168 L 588 168 L 588 258 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 258 L 498 258 L 498 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 408 258 L 498 348 L 408 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 258 L 588 348 L 498 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 258 L 588 258 L 498 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 168 L 648 168 L 648 228 L 588 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 168 L 708 228 L 648 228 Z" fill="none" stroke="#000000"/>
+    <path d="M 648 168 L 708 168 L 648 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 168 L 768 168 L 768 228 L 708 228 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 228 L 648 228 L 648 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 588 228 L 648 288 L 588 288 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 228 L 708 228 L 708 288 L 648 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 228 L 768 288 L 708 288 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 228 L 768 228 L 768 288 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 288 L 648 288 L 648 348 L 588 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 288 L 708 288 L 648 348 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 288 L 708 348 L 648 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 288 L 768 288 L 768 348 L 708 348 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 348 L 138 348 L 48 438 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 348 L 138 438 L 48 438 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 138 348 L 228 438 L 138 438 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 348 L 228 348 L 228 438 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 438 L 138 438 L 138 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 48 438 L 138 528 L 48 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 438 L 228 528 L 138 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 438 L 228 438 L 138 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 348 L 288 348 L 288 408 L 228 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 348 L 348.00000000000006 408 L 288 408 Z" fill="none" stroke="#000000"/>
+    <path d="M 288 348 L 348.00000000000006 348 L 288 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 348 L 408.00000000000006 348 L 408.00000000000006 408 L 348.00000000000006 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 408 L 288 408 L 288 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 228 408 L 288 468.00000000000006 L 228 468.00000000000006 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 408 L 348.00000000000006 408 L 348.00000000000006 468.00000000000006 L 288 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 408 L 408.00000000000006 468.00000000000006 L 348.00000000000006 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 408 L 408.00000000000006 408 L 408.00000000000006 468.00000000000006 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 468.00000000000006 L 288 468.00000000000006 L 288 528 L 228 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 468.00000000000006 L 348.00000000000006 468.00000000000006 L 288 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 468.00000000000006 L 348.00000000000006 528 L 288 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 468.00000000000006 L 408.00000000000006 468.00000000000006 L 408.00000000000006 528 L 348.00000000000006 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 348 L 498 348 L 408 438 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 348 L 498 438 L 408 438 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 498 348 L 588 438 L 498 438 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 348 L 588 348 L 588 438 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 438 L 498 438 L 498 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 408 438 L 498 528 L 408 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 438 L 588 528 L 498 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 438 L 588 438 L 498 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 348 L 648 348 L 648 408 L 588 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 348 L 708 408 L 648 408 Z" fill="none" stroke="#000000"/>
+    <path d="M 648 348 L 708 348 L 648 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 348 L 768 348 L 768 408 L 708 408 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 408 L 648 408 L 648 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 588 408 L 648 468.00000000000006 L 588 468.00000000000006 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 408 L 708 408 L 708 468.00000000000006 L 648 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 408 L 768 468.00000000000006 L 708 468.00000000000006 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 408 L 768 408 L 768 468.00000000000006 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 468.00000000000006 L 648 468.00000000000006 L 648 528 L 588 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 468.00000000000006 L 708 468.00000000000006 L 648 528 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 468.00000000000006 L 708 528 L 648 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 468.00000000000006 L 768 468.00000000000006 L 768 528 L 708 528 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 528 L 138 528 L 48 618 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 528 L 138 618 L 48 618 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 138 528 L 228 618 L 138 618 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 528 L 228 528 L 228 618 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 618 L 138 618 L 138 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 48 618 L 138 708 L 48 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 618 L 228 708 L 138 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 618 L 228 618 L 138 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 528 L 288 528 L 288 588 L 228 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 528 L 348.00000000000006 588 L 288 588 Z" fill="none" stroke="#000000"/>
+    <path d="M 288 528 L 348.00000000000006 528 L 288 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 528 L 408.00000000000006 528 L 408.00000000000006 588 L 348.00000000000006 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 588 L 288 588 L 288 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 228 588 L 288 648 L 228 648 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 588 L 348.00000000000006 588 L 348.00000000000006 648 L 288 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 588 L 408.00000000000006 648 L 348.00000000000006 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 588 L 408.00000000000006 588 L 408.00000000000006 648 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 648 L 288 648 L 288 708 L 228 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 648 L 348.00000000000006 648 L 288 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 648 L 348.00000000000006 708 L 288 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 648 L 408.00000000000006 648 L 408.00000000000006 708 L 348.00000000000006 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 528 L 498 528 L 408 618 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 528 L 498 618 L 408 618 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 498 528 L 588 618 L 498 618 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 528 L 588 528 L 588 618 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 618 L 498 618 L 498 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 408 618 L 498 708 L 408 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 618 L 588 708 L 498 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 618 L 588 618 L 498 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 528 L 648 528 L 648 588 L 588 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 528 L 708 588 L 648 588 Z" fill="none" stroke="#000000"/>
+    <path d="M 648 528 L 708 528 L 648 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 528 L 768 528 L 768 588 L 708 588 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 588 L 648 588 L 648 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 588 588 L 648 648 L 588 648 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 588 L 708 588 L 708 648 L 648 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 588 L 768 648 L 708 648 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 588 L 768 588 L 768 648 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 648 L 648 648 L 648 708 L 588 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 648 L 708 648 L 648 708 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 648 L 708 708 L 648 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 648 L 768 648 L 768 708 L 708 708 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 708 L 138 708 L 48 798 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 708 L 138 798 L 48 798 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 138 708 L 228 798 L 138 798 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 708 L 228 708 L 228 798 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 48 798 L 138 798 L 138 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 48 798 L 138 888 L 48 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 798 L 228 888 L 138 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 138 798 L 228 798 L 138 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 708 L 288 708 L 288 768 L 228 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 708 L 348.00000000000006 768 L 288 768 Z" fill="none" stroke="#000000"/>
+    <path d="M 288 708 L 348.00000000000006 708 L 288 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 708 L 408.00000000000006 708 L 408.00000000000006 768 L 348.00000000000006 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 768 L 288 768 L 288 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 228 768 L 288 828 L 228 828 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 768 L 348.00000000000006 768 L 348.00000000000006 828 L 288 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 768 L 408.00000000000006 828 L 348.00000000000006 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 768 L 408.00000000000006 768 L 408.00000000000006 828 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 228 828 L 288 828 L 288 888 L 228 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 288 828 L 348.00000000000006 828 L 288 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 348.00000000000006 828 L 348.00000000000006 888 L 288 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 348.00000000000006 828 L 408.00000000000006 828 L 408.00000000000006 888 L 348.00000000000006 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 708 L 498 708 L 408 798 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 708 L 498 798 L 408 798 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 498 708 L 588 798 L 498 798 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 708 L 588 708 L 588 798 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 408 798 L 498 798 L 498 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 408 798 L 498 888 L 408 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 798 L 588 888 L 498 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 498 798 L 588 798 L 498 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 708 L 648 708 L 648 768 L 588 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 708 L 708 768 L 648 768 Z" fill="none" stroke="#000000"/>
+    <path d="M 648 708 L 708 708 L 648 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 708 L 768 708 L 768 768 L 708 768 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 768 L 648 768 L 648 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 588 768 L 648 828 L 588 828 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 768 L 708 768 L 708 828 L 648 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 768 L 768 828 L 708 828 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 768 L 768 768 L 768 828 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 588 828 L 648 828 L 648 888 L 588 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 648 828 L 708 828 L 648 888 Z" fill="none" stroke="#000000"/>
+    <path d="M 708 828 L 708 888 L 648 888 Z" fill="#ecf0f1" stroke="#000000"/>
+    <path d="M 708 828 L 768 828 L 768 888 L 708 888 Z" fill="#ecf0f1" stroke="#000000"/>
+  </g>
+</svg>

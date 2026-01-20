@@ -233,7 +233,7 @@ function createAutoCollectContext() {
         });
     }
 
-    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem | patterin.LSystem | patterin.CloneSystem)[] = [];
+    const createdSystems: (patterin.GridSystem | patterin.TessellationSystem | patterin.ShapeSystem | patterin.LSystem | patterin.CloneSystem | patterin.QuiltSystem)[] = [];
 
     // Wrap shape factory to track created shapes
     const autoShape = {
@@ -283,6 +283,11 @@ function createAutoCollectContext() {
         },
         lsystem: (options: patterin.LSystemOptions) => {
             const sys = patterin.LSystem.create(options);
+            createdSystems.push(sys);
+            return sys;
+        },
+        quilt: (options: patterin.QuiltOptions) => {
+            const sys = new patterin.QuiltSystem(options);
             createdSystems.push(sys);
             return sys;
         },
@@ -391,10 +396,16 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             const paramValues = Object.values(sandboxContext);
 
             const sandbox = new Function(...paramNames, code);
-            sandbox(...paramValues);
+            const returnValue = sandbox(...paramValues);
 
+            // If user code returned an SVG string, use it directly
+            if (typeof returnValue === 'string' && returnValue.includes('<svg')) {
+                resultSVG = returnValue;
+                // Try to extract collector data from the returned SVG for export
+                // (this won't have the collector object, but we can still export the SVG)
+            }
             // Auto-render: if autoRender is enabled, shapes or systems were created, and render() wasn't called explicitly
-            if (autoRender && (shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
+            else if (autoRender && (shapeRegistry.size > 0 || createdSystems.length > 0) && !renderCalled) {
                 // Stamp all created systems to the collector (skip consumed systems)
                 for (const sys of createdSystems) {
                     if (!consumedSystems.has(sys) && typeof sys.stamp === 'function') {

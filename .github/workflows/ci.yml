@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, pattern]
+  pull_request:
+    branches: [main, pattern]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Lint
+        run: npm run lint
+        if: matrix.node-version == '20.x'
+
+  build-examples:
+    name: Build Examples
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build library
+        run: npm run build
+      
+      - name: Test example execution
+        run: |
+          npx tsx examples/01-basics/circle.ts
+          npx tsx examples/10-quilting/quilting-sampler.ts
+      
+      - name: Verify outputs
+        run: |
+          test -f examples/output/circle.svg
+          test -f examples/output/quilting-sampler.svg
