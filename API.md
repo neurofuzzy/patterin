@@ -721,14 +721,17 @@ Available blocks with two-character shortcuts:
 **Returns:** `QuiltSystem`
 
 **Methods:**
+- `.pattern` - Get QuiltPatternContext for block selection and placement
+- `.trace()` - Make quilt concrete for rendering
+- `.stamp(collector, style?)` - Render to SVG collector
+- `.toSVG(options?)` - Render to SVG
+
+**QuiltPatternContext Methods:**
 - `.every(n, offset?)` - Select every nth placement
 - `.slice(start, end?)` - Select range of placements
 - `.at(...indices)` - Select specific placements
 - `.all()` - Clear selection (select all)
 - `.placeBlock(blockName)` - Assign block template to selected placements
-- `.place(shape)` - Place custom shape at selected placements
-- `.stamp(collector, style?)` - Render to SVG collector
-- `.toSVG(options?)` - Render to SVG
 
 **Example:**
 ```typescript
@@ -738,14 +741,14 @@ const quilt = system.quilt({
   blockSize: 100
 });
 
-// Alternate between two patterns
-quilt.every(2).placeBlock('BD');        // Broken Dishes on even positions
-quilt.every(2, 1).placeBlock('FS');     // Friendship Star on odd positions
+// Alternate between two patterns using .pattern context
+quilt.pattern.every(2).placeBlock('BD');        // Broken Dishes on even positions
+quilt.pattern.every(2, 1).placeBlock('FS');     // Friendship Star on odd positions
 
 // Access generated shapes by group
 const shapes = quilt.shapes;
 shapes.shapes.forEach(shape => {
-  const color = shape.group === 'dark' ? '#3498db' : '#ecf0f1';
+  const color = shape.group === 'dark' ? '#333' : '#999';
   svg.addShape(shape, { fill: color, stroke: '#000' });
 });
 
@@ -754,16 +757,16 @@ const simple = system.quilt({
   gridSize: [3, 3],
   blockSize: 80
 });
-simple.placeBlock('PW');  // All pinwheels
+simple.pattern.placeBlock('PW');  // All pinwheels
 
 // Mix multiple blocks
 const sampler = system.quilt({
   gridSize: [3, 3],
   blockSize: 80
 });
-sampler.at(0, 2, 6, 8).placeBlock('FS');      // Corners
-sampler.at(1, 3, 5, 7).placeBlock('BD');      // Sides
-sampler.at(4).placeBlock('SS');               // Center
+sampler.pattern.at(0, 2, 6, 8).placeBlock('FS');      // Corners
+sampler.pattern.at(1, 3, 5, 7).placeBlock('BD');      // Sides
+sampler.pattern.at(4).placeBlock('SS');               // Center
 ```
 
 ### `system.fromShape(shape: ShapeContext, options?)`
@@ -1035,7 +1038,7 @@ const quilt = system.quilt({ gridSize: [3, 3], blockSize: 80 });
 quilt.placeBlock('FS');
 
 quilt.shapes.shapes.forEach(shape => {
-  const color = shape.group === 'dark' ? '#3498db' : '#ecf0f1';
+  const color = shape.group === 'dark' ? '#333' : '#999';
   svg.addShape(shape, { fill: color, stroke: '#000' });
 });
 ```

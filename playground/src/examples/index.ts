@@ -271,8 +271,13 @@ const quilt = system.quilt({
 })
 
 // Fill all with pinwheel blocks
-quilt.placeBlock('PW')
-quilt.trace()`,
+quilt.pattern.placeBlock('PW')
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
   },
   {
     name: 'Alternating Blocks',
@@ -285,9 +290,14 @@ const quilt = system.quilt({
 })
 
 // Alternate between Broken Dishes and Friendship Star
-quilt.every(2).placeBlock('BD')
-quilt.every(2, 1).placeBlock('FS')
-quilt.trace()`,
+quilt.pattern.every(2).placeBlock('BD')
+quilt.pattern.every(2, 1).placeBlock('FS')
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
   },
   {
     name: 'Sawtooth Star',
@@ -299,15 +309,19 @@ const quilt = system.quilt({
   blockSize: 80,
 })
 
-quilt.placeBlock('SS')  // Sawtooth Star
-quilt.trace()`,
+quilt.pattern.placeBlock('SS')  // Sawtooth Star
+
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
   },
   {
     name: 'Quilt Sampler',
     category: 'Quilting',
     description: 'All block types with colors',
     code: `// Create 3x3 sampler showing different blocks
-const svg = new SVGCollector()
 const blocks = ['PW', 'BD', 'FS', 'SF', 'BT', 'DP', 'SS', 'PW', 'BD']
 
 blocks.forEach((blockName, i) => {
@@ -318,18 +332,16 @@ blocks.forEach((blockName, i) => {
     gridSize: [1, 1],
     blockSize: 60,
   })
-  quilt.placeBlock(blockName)
+  quilt.pattern.placeBlock(blockName)
   
   // Offset each block in the grid
   const shapes = quilt.shapes.shapes
   shapes.forEach(shape => {
     shape.translate({ x: col * 70, y: row * 70 })
-    const color = shape.group === 'dark' ? '#3498db' : '#ecf0f1'
-    svg.addShape(shape, { fill: color, stroke: '#2c3e50', strokeWidth: 1 })
+    const color = shape.group === 'dark' ? '#333' : '#999'
+    svg.addShape(shape, { fill: color, stroke: '#000', strokeWidth: 1 })
   })
-})
-
-return svg.toString({ width: 250, height: 250 })`,
+})`,
   },
   {
     name: 'Custom Quilt Layout',
@@ -342,10 +354,14 @@ const quilt = system.quilt({
 })
 
 // Place different blocks at specific positions
-quilt.at(0, 2, 6, 8).placeBlock('FS')  // Corners: Friendship Star
-quilt.at(1, 3, 5, 7).placeBlock('BD')  // Sides: Broken Dishes
-quilt.at(4).placeBlock('SS')           // Center: Sawtooth Star
+quilt.pattern.at(0, 2, 6, 8).placeBlock('FS')  // Corners: Friendship Star
+quilt.pattern.at(1, 3, 5, 7).placeBlock('BD')  // Sides: Broken Dishes
+quilt.pattern.at(4).placeBlock('SS')           // Center: Sawtooth Star
 
-quilt.trace()`,
+// Render with colors
+quilt.shapes.shapes.forEach(s => {
+  const color = s.group === 'dark' ? '#333' : '#999'
+  svg.addShape(s, { fill: color, stroke: '#000' })
+})`,
   },
 ];

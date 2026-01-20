@@ -12,7 +12,7 @@ export { TessellationSystem, type TessellationOptions, type TessellationPattern 
 export { ShapeSystem, type ShapeSystemOptions } from './ShapeSystem';
 export { LSystem, type LSystemOptions } from './LSystem';
 export { CloneSystem, type CloneOptions } from './CloneSystem';
-export { QuiltSystem, type QuiltOptions, blockShortcuts } from './QuiltSystem';
+export { QuiltSystem, type QuiltOptions, blockShortcuts, QuiltPatternContext } from './QuiltSystem';
 /**
  * System factory - main entry point for creating parametric scaffolds.
  *

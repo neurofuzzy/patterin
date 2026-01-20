@@ -1,5 +1,5 @@
 import { Shape, Vector2, Vertex } from '../primitives';
-import { ShapeContext } from '../contexts/ShapeContext';
+import { ShapeContext, ShapesContext } from '../contexts/ShapeContext';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { SystemBounds } from '../types';
 import { BaseSystem, type RenderGroup, type GroupItem } from './BaseSystem';
@@ -8,6 +8,95 @@ import {
     QuiltBlockTemplate,
     BlockRotation
 } from '../patterns/QuiltPattern';
+
+// =============================================================================
+// QuiltPatternContext
+// =============================================================================
+
+/**
+ * QuiltPatternContext - Context for selecting and placing quilt blocks.
+ * Similar to PointsContext and LinesContext, provides selection methods
+ * that return this for chaining with placeBlock().
+ * 
+ * @example
+ * ```typescript
+ * const quilt = system.quilt({ gridSize: [4, 4], blockSize: 100 });
+ * quilt.pattern.every(2).placeBlock('BD');
+ * quilt.pattern.every(2, 1).placeBlock('FS');
+ * ```
+ */
+export class QuiltPatternContext {
+    private _system: QuiltSystem;
+    private _placements: QuiltBlockPlacement[];
+    private _selectedIndices: number[] = [];
+
+    constructor(system: QuiltSystem, placements: QuiltBlockPlacement[]) {
+        this._system = system;
+        this._placements = placements;
+    }
+
+    /**
+     * Select every nth placement.
+     * @param n - Select every nth placement
+     * @param offset - Starting offset (default 0)
+     */
+    every(n: number, offset = 0): this {
+        this._selectedIndices = this._placements
+            .filter((_, i) => (i - offset) % n === 0)
+            .map(p => p.index);
+        return this;
+    }
+
+    /**
+     * Select a range of placements.
+     * @param start - Start index (inclusive)
+     * @param end - End index (exclusive)
+     */
+    slice(start: number, end?: number): this {
+        const sliced = this._placements.slice(start, end);
+        this._selectedIndices = sliced.map(p => p.index);
+        return this;
+    }
+
+    /**
+     * Select placements at specific indices.
+     */
+    at(...indices: number[]): this {
+        this._selectedIndices = indices.filter(i => i >= 0 && i < this._placements.length);
+        return this;
+    }
+
+    /**
+     * Clear selection (select all).
+     */
+    all(): this {
+        this._selectedIndices = [];
+        return this;
+    }
+
+    /**
+     * Assign a block template to selected placements.
+     * Use full names ('friendshipStar') or shortcuts ('FS').
+     * 
+     * @param blockName - Block template name or shortcut
+     * @returns The parent QuiltSystem for further chaining
+     */
+    placeBlock(blockName: string): QuiltSystem {
+        // Validate block name
+        resolveBlockName(blockName);
+
+        const targets = this._selectedIndices.length > 0
+            ? this._selectedIndices
+            : this._placements.map(p => p.index);
+
+        for (const idx of targets) {
+            this._placements[idx].blockName = blockName;
+        }
+
+        this._selectedIndices = [];  // Clear selection
+        return this._system;
+    }
+}
 
 // =============================================================================
 // Block Name Shortcuts
@@ -76,23 +165,22 @@ export interface QuiltOptions {
 /**
  * QuiltSystem - Creates a grid of quilt block placements with selection support.
  * 
- * Use every(), slice(), and at() to select placements, then placeBlock() to assign
- * different templates to different positions.
+ * Use .pattern to access block selection and placement methods.
  * 
  * @example
  * ```typescript
  * const quilt = system.quilt({ gridSize: [4, 4], blockSize: 100 });
  * 
  * // Alternate between two patterns
- * quilt.every(2).placeBlock('BD');        // BrokenDishes on even positions
- * quilt.every(2, 1).placeBlock('FS');     // FriendshipStar on odd positions
+ * quilt.pattern.every(2).placeBlock('BD');        // BrokenDishes on even positions
+ * quilt.pattern.every(2, 1).placeBlock('FS');     // FriendshipStar on odd positions
  * 
+ * quilt.trace();
  * quilt.stamp(svg);
  * ```
  */
 export class QuiltSystem extends BaseSystem {
     private _quiltPlacements: QuiltBlockPlacement[] = [];
-    private _selectedIndices: number[] = [];
     private _blockSize: number;
     private _defaultBlock: string;
     private _cols: number;
@@ -125,116 +213,36 @@ export class QuiltSystem extends BaseSystem {
     }
 
     // =========================================================================
-    // Selection Methods (Override BaseSystem for quilt-specific behavior)
+    // Pattern Context Access
     // =========================================================================
 
     /**
-     * Select every nth placement.
-     * Overrides BaseSystem to return this for placeBlock() chaining.
-     * @param n - Select every nth placement
-     * @param offset - Starting offset (default 0)
+     * Access pattern selection and block placement methods.
+     * Returns a QuiltPatternContext for selecting placements and assigning blocks.
      */
-    // @ts-expect-error - Intentionally override with different return type for quilt-specific API
-    every(n: number, offset = 0): this {
-        this._selectedIndices = this._quiltPlacements
-            .filter((_, i) => (i - offset) % n === 0)
-            .map(p => p.index);
-        return this;
+    get pattern(): QuiltPatternContext {
+        return new QuiltPatternContext(this, this._quiltPlacements);
     }
 
     /**
-     * Select a range of placements.
-     * Overrides BaseSystem to return this for placeBlock() chaining.
-     * @param start - Start index (inclusive)
-     * @param end - End index (exclusive)
+     * Get all generated quilt block shapes.
+     * Overrides BaseSystem to return quilt blocks instead of placements.
      */
-    // @ts-expect-error - Intentionally override with different return type for quilt-specific API
-    slice(start: number, end?: number): this {
-        const sliced = this._quiltPlacements.slice(start, end);
-        this._selectedIndices = sliced.map(p => p.index);
-        return this;
+    get shapes(): ShapesContext {
+        const blockShapes = this.getSourceForSelection();
+        const allShapes = [...blockShapes, ...this._placements.map(p => p.shape)];
+        return new ShapesContext(allShapes);
     }
 
     /**
-     * Select placements at specific indices.
-     * Note: BaseSystem does not have an at() method, this is quilt-specific.
+     * Get the number of quilt block placements (not individual shapes).
+     * Overrides BaseSystem to return placement count instead of shape count.
      */
-    at(...indices: number[]): this {
-        this._selectedIndices = indices.filter(i => i >= 0 && i < this._quiltPlacements.length);
-        return this;
+    get length(): number {
+        return this._quiltPlacements.length;
     }
 
-    /**
-     * Clear selection (select all).
-     * Quilt-specific method for clearing selection.
-     */
-    all(): this {
-        this._selectedIndices = [];
-        return this;
-    }
-
-    // =========================================================================
-    // Block Placement
-    // =========================================================================
-
-    /**
-     * Assign a block template to selected placements.
-     * Use full names ('friendshipStar') or shortcuts ('FS').
-     * 
-     * @param blockName - Block template name or shortcut
-     */
-    placeBlock(blockName: string): this {
-        // Validate block name
-        resolveBlockName(blockName);
-
-        const targets = this._selectedIndices.length > 0
-            ? this._selectedIndices
-            : this._quiltPlacements.map(p => p.index);
-
-        for (const idx of targets) {
-            this._quiltPlacements[idx].blockName = blockName;
-        }
-
-        this._selectedIndices = [];  // Clear selection
-        return this;
-    }
-
-    /**
-     * Place a shape at each selected placement (inherited from BaseSystem).
-     * This places a custom shape instead of a block template.
-     */
-    place(shapeCtx: ShapeContext, style?: PathStyle): this {
-        const targets = this._selectedIndices.length > 0
-            ? this._selectedIndices
-            : this._quiltPlacements.map(p => p.index);
-
-        // Create nodes for selected placements
-        const selectedNodes = targets.map(idx => {
-            const placement = this._quiltPlacements[idx];
-            return new Vertex(
-                placement.x + this._blockSize / 2,
-                placement.y + this._blockSize / 2
-            );
-        });
-
-        // Place shapes at selected nodes using BaseSystem's place logic
-        for (const node of selectedNodes) {
-            const clone = shapeCtx.shape.clone();
-            clone.ephemeral = false;  // Clones are concrete
-            clone.moveTo(node.position);
-            this._placements.push({ 
-                position: node.position, 
-                shape: clone, 
-                style 
-            });
-        }
-
-        // Mark source shape as ephemeral (construction geometry)
-        shapeCtx.shape.ephemeral = true;
-
-        this._selectedIndices = [];
-        return this;
-    }
+    // Inherited place() method from BaseSystem works for custom shapes
 
     // =========================================================================
     // Build Shapes

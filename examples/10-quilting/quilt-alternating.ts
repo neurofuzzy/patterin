@@ -1,7 +1,7 @@
 /**
  * QuiltSystem Example - Alternating Block Patterns
  * 
- * Demonstrates using every() to apply different quilt blocks to specific positions.
+ * Demonstrates using pattern.every() to apply different quilt blocks to specific positions.
  */
 
 import { system, SVGCollector } from '../../src/index';
@@ -16,10 +16,10 @@ const quilt = system.quilt({
 });
 
 // Apply BrokenDishes to even positions (0, 2, 4, ...)
-quilt.every(2).placeBlock('BD');
+quilt.pattern.every(2).placeBlock('BD');
 
 // Apply FriendshipStar to odd positions (1, 3, 5, ...)
-quilt.every(2, 1).placeBlock('FS');
+quilt.pattern.every(2, 1).placeBlock('FS');
 
 // Stamp to SVG - shapes are grouped by 'light' and 'dark'
 const shapes = quilt.shapes;

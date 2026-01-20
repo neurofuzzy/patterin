@@ -239,14 +239,14 @@ const quilt = system.quilt({
   blockSize: 100
 });
 
-// Alternate between Broken Dishes and Friendship Star
-quilt.every(2).placeBlock('BD');
-quilt.every(2, 1).placeBlock('FS');
+// Alternate between Broken Dishes and Friendship Star using .pattern
+quilt.pattern.every(2).placeBlock('BD');
+quilt.pattern.every(2, 1).placeBlock('FS');
 
 // Access shapes by fabric group (light/dark)
 const shapes = quilt.shapes;
 shapes.shapes.forEach(shape => {
-  const color = shape.group === 'dark' ? '#3498db' : '#ecf0f1';
+  const color = shape.group === 'dark' ? '#333' : '#999';
   svg.addShape(shape, { fill: color, stroke: '#000' });
 });
 ```

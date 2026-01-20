@@ -35,7 +35,7 @@ blockConfigs.forEach((config, index) => {
     gridSize: [1, 1],
     blockSize
   });
-  quilt.placeBlock(config.block);
+  quilt.pattern.placeBlock(config.block);
 
   // Offset and add to SVG
   const offsetX = col * (blockSize + spacing);

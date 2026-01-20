@@ -238,13 +238,16 @@ function updatePreview(container: HTMLElement): void {
         autoScale: true,
       });
 
-      // Modify stroke colors if needed
+      // Modify stroke colors if needed (preserve fills)
       if (settings.strokeColor !== 'themed') {
         const strokeVal = settings.strokeColor === 'black' ? '#000000' : '#ffffff';
         const parser = new DOMParser();
         const doc = parser.parseFromString(contentSVG, 'image/svg+xml');
         doc.querySelectorAll('path').forEach(path => {
-          path.setAttribute('stroke', strokeVal);
+          // Only set stroke if path has one (preserve fill-only paths)
+          if (path.getAttribute('stroke') !== 'none' && path.getAttribute('stroke') !== null) {
+            path.setAttribute('stroke', strokeVal);
+          }
         });
         contentSVG = new XMLSerializer().serializeToString(doc.documentElement);
       }
@@ -329,11 +332,14 @@ function downloadSVG(): void {
     const parser = new DOMParser();
     const doc = parser.parseFromString(innerSVG, 'image/svg+xml');
 
-    // Modify strokes if needed
+    // Modify strokes if needed (preserve fills)
     if (settings.strokeColor !== 'themed') {
       const strokeVal = settings.strokeColor === 'black' ? '#000000' : '#ffffff';
       doc.querySelectorAll('path').forEach(path => {
-        path.setAttribute('stroke', strokeVal);
+        // Only set stroke if path has one (preserve fill-only paths)
+        if (path.getAttribute('stroke') !== 'none' && path.getAttribute('stroke') !== null) {
+          path.setAttribute('stroke', strokeVal);
+        }
       });
     }
 

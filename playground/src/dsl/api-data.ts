@@ -365,14 +365,8 @@ export const API_DATA: Record<string, TypeInfo> = {
 
     'QuiltSystem': {
         type: 'class',
-        doc: 'Quilt block system with selection support. Use every() to apply different blocks to different positions.',
+        doc: 'Quilt block system with selection support. Use .pattern to access block placement methods.',
         methods: {
-            'every': { params: ['n: number', 'offset?: number'], returns: 'this', doc: 'Select every nth placement' },
-            'slice': { params: ['start: number', 'end?: number'], returns: 'this', doc: 'Select range of placements' },
-            'at': { params: ['...indices: number[]'], returns: 'this', doc: 'Select placements at indices' },
-            'all': { returns: 'this', doc: 'Clear selection (select all)' },
-            'placeBlock': { params: ['blockName: string'], returns: 'this', doc: 'Assign block template to selected positions. Supports shortcuts: PW, BD, FS, SF, BT, DP, SS' },
-            'place': { params: ['shapeCtx: ShapeContext', 'style?: PathStyle'], returns: 'this', doc: 'Place custom shape at selected positions' },
             'trace': { returns: 'this', doc: 'Make quilt concrete' },
             'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
             'mask': { params: ['maskShape: ShapeContext'], returns: 'this', doc: 'Clip system to mask shape boundary' },
@@ -380,10 +374,24 @@ export const API_DATA: Record<string, TypeInfo> = {
             'rotate': { params: ['angleDeg: number'], returns: 'this', doc: 'Rotate all shapes' },
             'getBounds': { returns: '{ minX, minY, maxX, maxY }', doc: 'Get quilt bounds' },
             'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
+            'place': { params: ['shapeCtx: ShapeContext', 'style?: PathStyle'], returns: 'this', doc: 'Place custom shape at nodes (inherited from BaseSystem)' },
         },
         getters: {
+            'pattern': { returns: 'QuiltPatternContext', doc: 'Access pattern selection and block placement' },
             'shapes': { returns: 'ShapesContext', doc: 'Get all generated shapes' },
             'length': { returns: 'number', doc: 'Number of placements' },
+        },
+    },
+
+    'QuiltPatternContext': {
+        type: 'class',
+        doc: 'Context for selecting placements and assigning quilt blocks',
+        methods: {
+            'every': { params: ['n: number', 'offset?: number'], returns: 'this', doc: 'Select every nth placement' },
+            'slice': { params: ['start: number', 'end?: number'], returns: 'this', doc: 'Select range of placements' },
+            'at': { params: ['...indices: number[]'], returns: 'this', doc: 'Select placements at indices' },
+            'all': { returns: 'this', doc: 'Clear selection (select all)' },
+            'placeBlock': { params: ['blockName: string'], returns: 'QuiltSystem', doc: 'Assign block template to selected positions. Supports shortcuts: PW, BD, FS, SF, BT, DP, SS' },
         },
     },
 
