@@ -32,6 +32,11 @@ export class EdgeBasedSystem extends BaseSystem {
             const scaledEnd = new Vertex(edge.end.x * factor, edge.end.y * factor);
             return new Segment(scaledStart, scaledEnd);
         });
+        // Re-connect segments to maintain vertex prev/next references
+        if (this._edges.length > 0) {
+            const tempShape = new Shape(this._edges);
+            tempShape.connectSegments();
+        }
     }
     rotateGeometry(angleRad) {
         const cos = Math.cos(angleRad);
