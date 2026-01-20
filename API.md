@@ -1100,7 +1100,9 @@ import { Sequence } from 'patterin';
 const sizes = Sequence.repeat(10, 20, 30);
 
 console.log(sizes.current);  // 10 (current value, doesn't advance)
-console.log(sizes());         // 20 (advances and returns next)
+console.log(sizes());         // 10 (returns current, then advances)
+console.log(sizes.current);  // 20 (now at second value)
+console.log(sizes());         // 20
 console.log(sizes());         // 30
 console.log(sizes());         // 10 (cycles back)
 ```

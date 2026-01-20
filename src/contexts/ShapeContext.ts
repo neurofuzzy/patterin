@@ -1243,22 +1243,36 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
 
     /** Set x position of collective center (supports sequences) */
     x(xPos: number | SequenceFunction): this {
-        // If it's a sequence, position each shape individually
-        for (const shape of this._items) {
-            const targetX = this.resolveValue(xPos);
-            const currentX = shape.centroid().x;
-            shape.translate(new Vector2(targetX - currentX, 0));
+        if (typeof xPos === 'function' && 'current' in xPos) {
+            // If it's a sequence, position each shape individually
+            for (const shape of this._items) {
+                const targetX = this.resolveValue(xPos);
+                const currentX = shape.centroid().x;
+                shape.translate(new Vector2(targetX - currentX, 0));
+            }
+        } else {
+            // For a single number, move the entire collection as a group
+            const bounds = this.getBounds();
+            const currentX = (bounds.minX + bounds.maxX) / 2;
+            this.translate(xPos - currentX, 0);
         }
         return this;
     }
 
     /** Set y position of collective center (supports sequences) */
     y(yPos: number | SequenceFunction): this {
-        // If it's a sequence, position each shape individually
-        for (const shape of this._items) {
-            const targetY = this.resolveValue(yPos);
-            const currentY = shape.centroid().y;
-            shape.translate(new Vector2(0, targetY - currentY));
+        if (typeof yPos === 'function' && 'current' in yPos) {
+            // If it's a sequence, position each shape individually
+            for (const shape of this._items) {
+                const targetY = this.resolveValue(yPos);
+                const currentY = shape.centroid().y;
+                shape.translate(new Vector2(0, targetY - currentY));
+            }
+        } else {
+            // For a single number, move the entire collection as a group
+            const bounds = this.getBounds();
+            const currentY = (bounds.minY + bounds.maxY) / 2;
+            this.translate(0, yPos - currentY);
         }
         return this;
     }

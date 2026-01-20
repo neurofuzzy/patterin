@@ -35,7 +35,7 @@ class Sequence {
     constructor(values, mode = 'repeat', seed = Date.now()) {
         this.values = values;
         this.mode = mode;
-        this.index = -1;
+        this.index = 0;
         this.direction = 1; // Used for yoyo mode
         this.completed = false; // Used for once mode
         this.accumulator = 0; // Used for additive/multiplicative modes
@@ -147,9 +147,8 @@ class Sequence {
      * @returns A callable function that also has current, reset, and peek methods
      */
     createFunction() {
-        // Main function: advances and returns new value
+        // Main function: returns current value, then advances
         const seq = (() => {
-            this.getNextIndex();
             // Handle accumulation modes
             if (this.mode === 'additive' || this.mode === 'multiplicative') {
                 const currentValue = this.resolveValue(this.values[this.index % this.values.length]);
@@ -159,45 +158,36 @@ class Sequence {
                 else {
                     this.accumulator *= currentValue;
                 }
-                return this.accumulator;
+                const result = this.accumulator;
+                this.getNextIndex(); // Advance after getting value
+                return result;
             }
-            // For non-accumulation modes, return current value
+            // For non-accumulation modes, get current value then advance
             const arr = (this.mode === 'shuffle' || this.mode === 'random')
                 ? this.shuffled
                 : this.values;
-            return this.resolveValue(arr[this.index % arr.length]);
+            const result = this.resolveValue(arr[this.index % arr.length]);
+            this.getNextIndex(); // Advance after getting value
+            return result;
         }).bind(this);
-        // current: property that returns the value that will be returned on next call (without advancing)
+        // current: property that returns the current value (without advancing)
         Object.defineProperty(seq, 'current', {
             get: () => {
-                // For accumulation modes, we need to peek at what the next value would be after accumulation
+                // For accumulation modes, return current accumulator
                 if (this.mode === 'additive' || this.mode === 'multiplicative') {
-                    // Calculate what the next index will be
-                    let peekIndex = this.index + 1;
-                    if (peekIndex >= this.values.length) {
-                        peekIndex = 0;
-                    }
-                    const nextValue = this.resolveValue(this.values[peekIndex]);
-                    if (this.mode === 'additive') {
-                        return this.accumulator + nextValue;
-                    }
-                    else {
-                        return this.accumulator * nextValue;
-                    }
+                    return this.accumulator;
                 }
                 const arr = (this.mode === 'shuffle' || this.mode === 'random')
                     ? this.shuffled
                     : this.values;
-                // Return the value that would be returned on the next call
-                // This is index + 1 (what getNextIndex will set it to)
-                const nextIndex = (this.index + 1) % arr.length;
-                return this.resolveValue(arr[nextIndex]);
+                // Return the value at the current index
+                return this.resolveValue(arr[this.index % arr.length]);
             },
             enumerable: true
         });
         // reset: resets to initial state
         seq.reset = () => {
-            this.index = -1;
+            this.index = 0;
             this.direction = 1;
             this.completed = false;
             // Reset accumulator based on mode
