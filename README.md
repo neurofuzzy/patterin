@@ -189,6 +189,42 @@ const withOriginal = shape.circle()
   .offset(10, 5, 4, true); // includeOriginal = true
 ```
 
+### Sequence Generators
+
+Replace manual indexing with **declarative sequences** that advance automatically:
+
+```typescript
+import { Sequence } from 'patterin';
+
+// Create repeating values
+const sizes = Sequence.repeat(10, 20, 30);
+
+for (let i = 0; i < 6; i++) {
+  shape.circle()
+    .radius(sizes())  // Auto-advances: 10, 20, 30, 10, 20, 30
+    .move(i * 50, 0)
+    .stamp(svg);
+}
+
+// Yoyo (bounce back and forth)
+const heights = Sequence.yoyo(20, 40, 60);
+
+// Random with seed (deterministic)
+const angles = Sequence.random(42, 0, 15, 30, 45);
+
+// Additive (running total)
+const spacing = Sequence.additive(10, 5, 3);
+
+// Multiplicative (exponential growth)
+const growth = Sequence.multiplicative(1.2, 1.5);
+```
+
+**Modes:** `repeat`, `yoyo`, `once`, `shuffle`, `random`, `additive`, `multiplicative`  
+**Properties/Methods:** `.current`, `peek()`, `reset()`  
+**Advanced:** Nest sequences inside sequences for complex patterns
+
+See [API docs](API.md#sequence-generators) for full details.
+
 ## Examples
 
 ### Mandala

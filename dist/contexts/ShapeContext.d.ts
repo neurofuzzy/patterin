@@ -2,6 +2,7 @@ import { BoundingBox, Shape, Segment, Vector2, Vertex, Winding } from '../primit
 import { SVGCollector, PathStyle } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
+import { SequenceFunction } from '../sequence/sequence';
 /**
  * Base class for contexts that operate on collections with selection capabilities.
  * Provides common selection methods: every(), at(), length
@@ -123,8 +124,14 @@ export declare class ShapeContext {
      * @param y - Vertical offset between each clone (default 0)
      */
     clone(n?: number, x?: number, y?: number): CloneSystem;
-    /** Scale shape by factor */
+    /** Scale shape uniformly by factor */
     scale(factor: number): this;
+    /** Scale shape with different factors for X and Y axes */
+    scale(factorX: number, factorY: number): this;
+    /** Scale shape along X axis only */
+    scaleX(factor: number): this;
+    /** Scale shape along Y axis only */
+    scaleY(factor: number): this;
     /** Rotate shape by angle in degrees */
     rotate(degrees: number): this;
     /** Rotate shape by angle in radians */
@@ -476,6 +483,12 @@ export declare class ShapesContext extends SelectableContext<Shape, ShapesContex
     get shapes(): Shape[];
     protected createNew(items: Shape[]): ShapesContext;
     /**
+     * Helper to resolve a value that might be a sequence or a number.
+     * If it's a sequence, call it to advance and get the next value.
+     * Otherwise, return the number as-is.
+     */
+    private resolveValue;
+    /**
      * Select a range of shapes (similar to Array.slice).
      *
      * @param start - Starting index (inclusive)
@@ -522,12 +535,16 @@ export declare class ShapesContext extends SelectableContext<Shape, ShapesContex
     get lines(): LinesContext;
     /** Make all shapes concrete */
     trace(): ShapesContext;
-    /** Scale all shapes uniformly */
-    scale(factor: number): this;
-    /** Rotate all shapes by angle (degrees) */
-    rotate(angleDeg: number): this;
-    /** Translate all shapes by delta */
-    translate(x: number, y: number): this;
+    /** Scale all shapes uniformly (supports sequences) */
+    scale(factor: number | SequenceFunction): this;
+    /** Scale all shapes along X axis only (supports sequences) */
+    scaleX(factor: number | SequenceFunction): this;
+    /** Scale all shapes along Y axis only (supports sequences) */
+    scaleY(factor: number | SequenceFunction): this;
+    /** Rotate all shapes by angle in degrees (supports sequences) */
+    rotate(angleDeg: number | SequenceFunction): this;
+    /** Translate all shapes by delta (supports sequences for x and y) */
+    translate(x: number | SequenceFunction, y: number | SequenceFunction): this;
     /**
      * Offset (inset/outset) all shape outlines.
      * @param distance - Offset distance
@@ -542,10 +559,10 @@ export declare class ShapesContext extends SelectableContext<Shape, ShapesContex
     inset(distance: number, count?: number, miterLimit?: number): ShapesContext;
     /** Move all shapes so their collective center is at position */
     moveTo(x: number, y: number): this;
-    /** Set x position of collective center */
-    x(xPos: number): this;
-    /** Set y position of collective center */
-    y(yPos: number): this;
+    /** Set x position of collective center (supports sequences) */
+    x(xPos: number | SequenceFunction): this;
+    /** Set y position of collective center (supports sequences) */
+    y(yPos: number | SequenceFunction): this;
     /** Set x and y position of collective center */
     xy(xPos: number, yPos: number): this;
     /** Get bounds of all shapes */

@@ -375,6 +375,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 shape: autoShape,    // Override shape with auto-collecting version
                 system: autoSystem,  // Override system with auto-collecting version
                 svg: collector,      // Provide collector as 'svg' for explicit use
+                Sequence: patterin.Sequence,  // Explicitly expose Sequence for easy discovery
                 // Render function for explicit control
                 render: (explicitCollector?: patterin.SVGCollector) => {
                     renderCalled = true;

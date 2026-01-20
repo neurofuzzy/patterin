@@ -164,9 +164,38 @@ export class ShapeContext {
         this._shape.ephemeral = true;
         return new CloneSystem(this._shape, { count: n, offsetX: x, offsetY: y });
     }
-    /** Scale shape by factor */
-    scale(factor) {
-        this._shape.scale(factor);
+    scale(factorX, factorY) {
+        if (factorY === undefined) {
+            // Uniform scaling (existing behavior)
+            this._shape.scale(factorX);
+        }
+        else {
+            // Non-uniform scaling
+            const center = this._shape.centroid();
+            for (const vertex of this._shape.vertices) {
+                const newX = center.x + (vertex.position.x - center.x) * factorX;
+                const newY = center.y + (vertex.position.y - center.y) * factorY;
+                vertex.position = new Vector2(newX, newY);
+            }
+        }
+        return this;
+    }
+    /** Scale shape along X axis only */
+    scaleX(factor) {
+        const center = this._shape.centroid();
+        for (const vertex of this._shape.vertices) {
+            const newX = center.x + (vertex.position.x - center.x) * factor;
+            vertex.position = new Vector2(newX, vertex.position.y);
+        }
+        return this;
+    }
+    /** Scale shape along Y axis only */
+    scaleY(factor) {
+        const center = this._shape.centroid();
+        for (const vertex of this._shape.vertices) {
+            const newY = center.y + (vertex.position.y - center.y) * factor;
+            vertex.position = new Vector2(vertex.position.x, newY);
+        }
         return this;
     }
     /** Rotate shape by angle in degrees */
@@ -884,6 +913,16 @@ export class ShapesContext extends SelectableContext {
         return new ShapesContext(items);
     }
     /**
+     * Helper to resolve a value that might be a sequence or a number.
+     * If it's a sequence, call it to advance and get the next value.
+     * Otherwise, return the number as-is.
+     */
+    resolveValue(value) {
+        return typeof value === 'function' && 'current' in value
+            ? value() // Call sequence to advance and get next value
+            : value; // Use number as-is
+    }
+    /**
      * Select a range of shapes (similar to Array.slice).
      *
      * @param start - Starting index (inclusive)
@@ -978,26 +1017,43 @@ export class ShapesContext extends SelectableContext {
         }
         return this;
     }
-    /** Scale all shapes uniformly */
+    /** Scale all shapes uniformly (supports sequences) */
     scale(factor) {
         for (const shape of this._items) {
-            shape.scale(factor);
+            shape.scale(this.resolveValue(factor));
         }
         return this;
     }
-    /** Rotate all shapes by angle (degrees) */
+    /** Scale all shapes along X axis only (supports sequences) */
+    scaleX(factor) {
+        for (const shape of this._items) {
+            const ctx = new ShapeContext(shape);
+            ctx.scaleX(this.resolveValue(factor));
+        }
+        return this;
+    }
+    /** Scale all shapes along Y axis only (supports sequences) */
+    scaleY(factor) {
+        for (const shape of this._items) {
+            const ctx = new ShapeContext(shape);
+            ctx.scaleY(this.resolveValue(factor));
+        }
+        return this;
+    }
+    /** Rotate all shapes by angle in degrees (supports sequences) */
     rotate(angleDeg) {
-        const angleRad = angleDeg * Math.PI / 180;
         for (const shape of this._items) {
-            shape.rotate(angleRad);
+            const angle = this.resolveValue(angleDeg);
+            shape.rotate(angle * Math.PI / 180);
         }
         return this;
     }
-    /** Translate all shapes by delta */
+    /** Translate all shapes by delta (supports sequences for x and y) */
     translate(x, y) {
-        const delta = new Vector2(x, y);
         for (const shape of this._items) {
-            shape.translate(delta);
+            const dx = this.resolveValue(x);
+            const dy = this.resolveValue(y);
+            shape.translate(new Vector2(dx, dy));
         }
         return this;
     }
@@ -1051,17 +1107,25 @@ export class ShapesContext extends SelectableContext {
         const delta = new Vector2(x, y).subtract(currentCenter);
         return this.translate(delta.x, delta.y);
     }
-    /** Set x position of collective center */
+    /** Set x position of collective center (supports sequences) */
     x(xPos) {
-        const bounds = this.getBounds();
-        const currentX = (bounds.minX + bounds.maxX) / 2;
-        return this.translate(xPos - currentX, 0);
+        // If it's a sequence, position each shape individually
+        for (const shape of this._items) {
+            const targetX = this.resolveValue(xPos);
+            const currentX = shape.centroid().x;
+            shape.translate(new Vector2(targetX - currentX, 0));
+        }
+        return this;
     }
-    /** Set y position of collective center */
+    /** Set y position of collective center (supports sequences) */
     y(yPos) {
-        const bounds = this.getBounds();
-        const currentY = (bounds.minY + bounds.maxY) / 2;
-        return this.translate(0, yPos - currentY);
+        // If it's a sequence, position each shape individually
+        for (const shape of this._items) {
+            const targetY = this.resolveValue(yPos);
+            const currentY = shape.centroid().y;
+            shape.translate(new Vector2(0, targetY - currentY));
+        }
+        return this;
     }
     /** Set x and y position of collective center */
     xy(xPos, yPos) {

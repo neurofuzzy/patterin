@@ -8,6 +8,7 @@ import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollec
 import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
+import { SequenceFunction } from '../sequence/sequence';
 
 export interface CloneOptions {
     count: number;
@@ -273,6 +274,81 @@ export class CloneSystem extends BaseSystem {
         this._segments = [];
         this._buildPathSegments();
 
+        return this;
+    }
+
+    // ==================== Transformation Methods (support sequences) ====================
+
+    /**
+     * Helper to resolve a value that might be a number or a SequenceFunction.
+     */
+    private resolveValue(value: number | SequenceFunction): number {
+        return typeof value === 'function' && 'current' in value
+            ? value()  // Call sequence to advance and get next value
+            : value;   // Use number as-is
+    }
+
+    /**
+     * Scale all shapes uniformly (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scale(factor: number | SequenceFunction): this {
+        this.shapes.scale(factor);
+        return this;
+    }
+
+    /**
+     * Scale all shapes along X axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleX(factor: number | SequenceFunction): this {
+        this.shapes.scaleX(factor);
+        return this;
+    }
+
+    /**
+     * Scale all shapes along Y axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleY(factor: number | SequenceFunction): this {
+        this.shapes.scaleY(factor);
+        return this;
+    }
+
+    /**
+     * Rotate all shapes by angle in degrees (supports sequences).
+     * @param angleDeg - Rotation angle in degrees or sequence
+     */
+    rotate(angleDeg: number | SequenceFunction): this {
+        this.shapes.rotate(angleDeg);
+        return this;
+    }
+
+    /**
+     * Translate all shapes by offset (supports sequences).
+     * @param x - X offset or sequence
+     * @param y - Y offset or sequence
+     */
+    translate(x: number | SequenceFunction, y: number | SequenceFunction): this {
+        this.shapes.translate(x, y);
+        return this;
+    }
+
+    /**
+     * Set x position for each shape (supports sequences).
+     * @param xPos - X position or sequence
+     */
+    x(xPos: number | SequenceFunction): this {
+        this.shapes.x(xPos);
+        return this;
+    }
+
+    /**
+     * Set y position for each shape (supports sequences).
+     * @param yPos - Y position or sequence
+     */
+    y(yPos: number | SequenceFunction): this {
+        this.shapes.y(yPos);
         return this;
     }
 

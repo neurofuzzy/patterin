@@ -12,6 +12,7 @@ Complete reference for the Patterin API. For conceptual guides and tutorials, se
 - [Shapes Context](#shapes-context)
 - [Selection Methods](#selection-methods)
 - [Systems](#systems)
+- [Sequence Generators](#sequence-generators)
 - [SVG Output](#svg-output)
 
 ---
@@ -61,6 +62,11 @@ const rect2 = shape.rect(40, 20);       // 40x20 rectangle
 - `.size(w: number, h?: number)` - Set dimensions (h defaults to w)
 - `.width(w: number)` - Set width
 - `.height(h: number)` - Set height
+- `.wh(w: number, h: number)` - Set width and height together
+
+**Getters:**
+- `.w` - Get width
+- `.h` - Get height
 
 ### `shape.square(size?: number)`
 
@@ -136,19 +142,52 @@ const grid = shape.square()
   .clone(9, 0, 30);    // Clone each 10 times vertically (100 total)
 ```
 
-### `.scale(factor: number)`
+### `.scale(factor: number)` / `.scale(factorX: number, factorY: number)`
 
-Scales the shape around its center point.
+Scales the shape around its center point. Can scale uniformly or with different factors for each axis.
 
 **Parameters:**
-- `factor`: Scale multiplier (1.0 = unchanged, 2.0 = double, 0.5 = half)
+- `factor`: Uniform scale multiplier (1.0 = unchanged, 2.0 = double, 0.5 = half)
+- `factorX`, `factorY`: Non-uniform scaling factors for X and Y axes
 
 **Returns:** `ShapeContext` (for single shapes) or `ShapesContext` (for collections)
 
-**Example:**
+**Examples:**
 ```typescript
+// Uniform scaling
 const large = shape.circle().scale(2);        // 2x size
 const small = shape.square().scale(0.5);      // Half size
+
+// Non-uniform scaling
+const stretched = shape.rect().size(40).scale(2, 0.5);  // 2x width, 0.5x height
+```
+
+### `.scaleX(factor: number)`
+
+Scales the shape along X axis only.
+
+**Parameters:**
+- `factor`: X axis scale factor
+
+**Returns:** `ShapeContext` or `ShapesContext`
+
+**Example:**
+```typescript
+const wide = shape.rect().size(40).scaleX(2);  // Doubles width, height unchanged
+```
+
+### `.scaleY(factor: number)`
+
+Scales the shape along Y axis only.
+
+**Parameters:**
+- `factor`: Y axis scale factor
+
+**Returns:** `ShapeContext` or `ShapesContext`
+
+**Example:**
+```typescript
+const tall = shape.rect().size(40).scaleY(2);  // Doubles height, width unchanged
 ```
 
 ### `.rotate(degrees: number)`
@@ -1044,3 +1083,436 @@ quilt.shapes.shapes.forEach(shape => {
 ```
 
 For more examples and interactive exploration, check out the [Playground](https://neurofuzzy.github.io/patterin/).
+
+---
+
+## Sequence Generators
+
+The `Sequence` class provides flexible sequence generators that can be used like numbers throughout your code. Sequences automatically advance through values when called, eliminating manual index management and enabling more declarative, expressive code.
+
+### Core Concept
+
+A sequence **advances automatically** when called, providing the next value:
+
+```typescript
+import { Sequence } from 'patterin';
+
+const sizes = Sequence.repeat(10, 20, 30);
+
+console.log(sizes.current);  // 10 (current value, doesn't advance)
+console.log(sizes());         // 20 (advances and returns next)
+console.log(sizes());         // 30
+console.log(sizes());         // 10 (cycles back)
+```
+
+**Key behaviors:**
+- **`.current` property**: Returns current value without advancing
+- **Calling** (`sizes()`): Advances to next value and returns it
+- **Auto-advance**: Perfect for loops where you want variation
+
+### Sequence Modes
+
+#### `Sequence.repeat(...values)`
+
+Cycles through values indefinitely.
+
+**Parameters:**
+- `values`: Numbers or nested sequences to cycle through
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const sizes = Sequence.repeat(10, 20, 30);
+
+for (let i = 0; i < 6; i++) {
+  shape.circle()
+    .radius(sizes())  // 10, 20, 30, 10, 20, 30
+    .move(i * 50, 0)
+    .stamp(svg);
+}
+```
+
+#### `Sequence.yoyo(...values)`
+
+Bounces back and forth through values (palindrome pattern).
+
+**Parameters:**
+- `values`: Numbers or nested sequences to bounce through
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const heights = Sequence.yoyo(20, 40, 60);
+
+// Produces: 40, 60, 40, 20, 40, 60, 40, 20...
+for (let i = 0; i < 8; i++) {
+  shape.rect()
+    .size(15, heights())
+    .move(i * 30, 0)
+    .stamp(svg);
+}
+```
+
+**Use cases:** Organic variation, wave patterns, smooth transitions
+
+#### `Sequence.once(...values)`
+
+Plays through values once, then stays on the last value.
+
+**Parameters:**
+- `values`: Numbers or nested sequences to play through
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const decay = Sequence.once(100, 80, 60, 40, 20);
+
+// Produces: 80, 60, 40, 20, 20, 20...
+for (let i = 0; i < 8; i++) {
+  shape.circle()
+    .radius(decay())
+    .move(i * 60, 0)
+    .stamp(svg);
+}
+```
+
+**Use cases:** Fade effects, growth then plateau, one-time animations
+
+#### `Sequence.shuffle(...values)`
+
+Shuffles values once at creation, then cycles through shuffled order.
+
+**Parameters:**
+- `values`: Numbers or nested sequences to shuffle
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const positions = Sequence.shuffle(0, 100, 200, 300);
+
+// Random but consistent: e.g., 200, 0, 300, 100, 200, 0, 300, 100...
+for (let i = 0; i < 8; i++) {
+  shape.circle()
+    .radius(20)
+    .move(positions(), 0)
+    .stamp(svg);
+}
+```
+
+**Use cases:** Varied but repeating patterns, randomized order with cycles
+
+#### `Sequence.random(seed?, ...values)`
+
+Generates random order, **reshuffling after each complete cycle**.
+
+**Overloads:**
+- `Sequence.random(...values)` - Non-deterministic (uses `Date.now()` as seed)
+- `Sequence.random(seed, ...values)` - Deterministic (uses provided seed)
+
+**Parameters:**
+- `seed` (optional): Number for deterministic randomness
+- `values`: Numbers or nested sequences to randomize
+
+**Returns:** `SequenceFunction`
+
+**Example (deterministic):**
+```typescript
+const colors = Sequence.random(42, 1, 2, 3, 4);
+
+const first = [colors(), colors(), colors(), colors()];
+colors.reset();
+const second = [colors(), colors(), colors(), colors()];
+
+// first === second (same seed produces same randomness)
+```
+
+**Example (non-deterministic):**
+```typescript
+const sizes = Sequence.random(10, 20, 30, 40);
+
+// Different order each run
+for (let i = 0; i < 8; i++) {
+  shape.circle().radius(sizes()).stamp(svg);
+}
+```
+
+**Use cases:** Organic variation, pseudo-random but reproducible patterns
+
+#### `Sequence.additive(...values)`
+
+Maintains a **running total**, adding the next value each time.
+
+**Parameters:**
+- `values`: Numbers to add cumulatively
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const spacing = Sequence.additive(10, 5, 3);
+
+let x = 0;
+for (let i = 0; i < 8; i++) {
+  x += spacing();  // Adds 10, then 5, then 3, then 10, then 5...
+  shape.circle()
+    .radius(8)
+    .move(x, 0)
+    .stamp(svg);
+}
+// Positions: 10, 25, 38, 48, 63, 76, 86, 101
+```
+
+**Use cases:** Variable spacing, acceleration, cumulative offsets
+
+#### `Sequence.multiplicative(...values)`
+
+Maintains a **running product**, multiplying by the next value each time.
+
+**Parameters:**
+- `values`: Numbers to multiply cumulatively
+
+**Returns:** `SequenceFunction`
+
+**Example:**
+```typescript
+const growth = Sequence.multiplicative(1.2, 1.5, 1.1);
+
+let size = 10;
+for (let i = 0; i < 6; i++) {
+  size *= growth();  // Multiplies by 1.2, 1.5, 1.1, 1.2, 1.5, 1.1
+  shape.circle()
+    .radius(size)
+    .move(i * 80, 0)
+    .stamp(svg);
+}
+// Sizes: 12, 18, 19.8, 23.76, 35.64, 39.2
+```
+
+**Use cases:** Exponential growth, scaling factors, geometric progressions
+
+### Methods
+
+All sequences support these methods:
+
+#### `sequence.current`
+
+Property that returns the **current value** without advancing the sequence.
+
+**Returns:** `number`
+
+**Example:**
+```typescript
+const s = Sequence.repeat(10, 20, 30);
+
+// Use current value on single shape
+shape.circle().radius(s.current);  // 10 (doesn't advance)
+console.log(s.current);             // Still 10
+
+// Advance manually
+s();                                // Returns 20
+console.log(s.current);             // Now 20
+```
+
+**Use cases:** Getting current value for single shapes, checking state without side effects
+
+**Note:** Implicit coercion has been removed. Use `.current` for all explicit value access:
+- ✅ `s.current + 10`
+- ✅ `Math.max(s.current, 100)`
+- ❌ `s + 10` (no longer works)
+- ❌ `Math.max(s, 100)` (no longer works)
+
+#### `sequence()`
+
+**Advances** to the next value and returns it.
+
+```typescript
+const s = Sequence.repeat(5, 10, 15);
+
+s();  // 10 (advanced from initial 5)
+s();  // 15
+s();  // 5 (cycled back)
+```
+
+#### `sequence.peek(offset?)`
+
+Look ahead at future values **without advancing** the sequence.
+
+**Parameters:**
+- `offset` (optional): Number of steps to look ahead (default: 0 for current)
+
+**Returns:** `number`
+
+**Example:**
+```typescript
+const s = Sequence.repeat(10, 20, 30);
+
+console.log(s.peek());    // 10 (current)
+console.log(s.peek(1));   // 20 (next)
+console.log(s.peek(2));   // 30 (two ahead)
+console.log(s.peek(3));   // 10 (wraps around)
+console.log(s.current);   // 10 (still at current)
+```
+
+**Use cases:** Lookahead for conditional logic, preview without side effects
+
+#### `sequence.reset()`
+
+Resets the sequence to its **initial state**, including PRNG seed for deterministic random/shuffle.
+
+**Returns:** `SequenceFunction` (for chaining)
+
+**Example:**
+```typescript
+const s = Sequence.repeat(1, 2, 3);
+
+s(); s(); s();  // 2, 3, 1
+s.reset();
+s();            // 2 (back to start)
+```
+
+**Deterministic reset example:**
+```typescript
+const rand = Sequence.random(42, 10, 20, 30);
+
+const first = [rand(), rand(), rand()];
+rand.reset();  // Resets PRNG seed
+const second = [rand(), rand(), rand()];
+
+// first === second (deterministic)
+```
+
+### Advanced: Nested Sequences
+
+Sequences can contain **other sequences** as values, enabling complex hierarchical patterns.
+
+**Example:**
+```typescript
+const inner = Sequence.repeat(5, 10);
+const outer = Sequence.repeat(20, inner, 30);
+
+console.log(outer());  // 20
+console.log(outer());  // 5  (from inner)
+console.log(outer());  // 30
+console.log(outer());  // 20
+console.log(outer());  // 10 (inner advanced)
+console.log(outer());  // 30
+```
+
+**Complex nesting example:**
+```typescript
+const sizes = Sequence.yoyo(10, 20);
+const counts = Sequence.repeat(3, 5, sizes);
+
+for (let i = 0; i < 10; i++) {
+  const count = counts();  // 3, 5, 10, 3, 5, 20, 3, 5, 10...
+  // Use count for variations
+}
+```
+
+### Practical Examples
+
+#### Varying Grid Shapes
+
+```typescript
+const grid = system.grid({
+  type: 'square',
+  count: [8, 8],
+  size: 40
+});
+
+const shapes = Sequence.repeat(
+  shape.circle().radius(15),
+  shape.square().size(20),
+  shape.hexagon().radius(15)
+);
+
+grid.nodes.forEach(() => {
+  grid.place(shapes());  // Different shape at each node
+});
+```
+
+#### Wave Pattern
+
+```typescript
+const heights = Sequence.yoyo(20, 40, 60, 80);
+const rotations = Sequence.repeat(0, 5, 10, 5, 0, -5, -10, -5);
+
+for (let i = 0; i < 20; i++) {
+  shape.rect()
+    .size(15, heights())
+    .rotate(rotations())
+    .move(i * 30, 0)
+    .stamp(svg);
+}
+```
+
+#### Accelerating Spacing
+
+```typescript
+const spacing = Sequence.additive(20, 10, 5);
+
+let x = 0;
+for (let i = 0; i < 12; i++) {
+  x += spacing();
+  shape.circle()
+    .radius(12)
+    .move(x, 0)
+    .stamp(svg);
+}
+```
+
+#### Exponential Sizes
+
+```typescript
+const growth = Sequence.multiplicative(1.3, 1.2);
+
+let size = 5;
+for (let i = 0; i < 8; i++) {
+  size *= growth();
+  shape.circle()
+    .radius(Math.min(size, 60))  // Cap at 60
+    .move(i * 100, 0)
+    .stamp(svg);
+}
+```
+
+### Using Sequences with Shape Collections
+
+Sequences integrate seamlessly with transformation methods on shape collections:
+
+**API Pattern:**
+- Single shape: Use `.current` property → `shape.scale(seq.current)`
+- Collection: Pass sequence itself → `shapes.scale(seq)`
+
+**Example:**
+```typescript
+const sizes = Sequence.repeat(10, 20, 30, 40);
+
+// Single shape - uses current value
+shape.circle().radius(sizes.current);  // 10
+
+// Collection - advances through sequence
+const clones = shape.circle()
+  .clone(8, 30)
+  .scale(sizes);  // Each gets next value: 10, 20, 30, 40, 10, 20, 30, 40
+```
+
+**Supported methods:** All transformation methods support sequences in collections:
+- `scale(seq)`, `scaleX(seq)`, `scaleY(seq)`
+- `rotate(seq)`
+- `translate(xSeq, ySeq)` - can sequence both axes
+- `x(seq)`, `y(seq)`
+
+### Tips
+
+1. **Use .current for single shapes** - Access current value: `shape.scale(seq.current)`
+2. **Reset for repeatability** - Call `.reset()` to restart deterministic sequences
+3. **Peek for conditionals** - Use `.peek()` to check future values without side effects
+4. **Nest for complexity** - Combine sequences for rich variation patterns
+5. **Seed for reproducibility** - Always provide a seed to `random()` for consistent output
+
+---

@@ -295,6 +295,28 @@ export const EXAMPLES: ExampleMetadata[] = [
     complexity: 'advanced',
     concepts: ['plotter', 'fabrication', 'line-art', 'precision'],
   },
+
+  // ============================================================================
+  // 08. SEQUENCES
+  // ============================================================================
+  {
+    id: 'sequences-demo',
+    category: 'Sequences',
+    name: 'Sequence Generators',
+    description: 'Comprehensive demo of all sequence modes: repeat, yoyo, random, additive, multiplicative',
+    file: '08-sequences/sequences-demo.ts',
+    complexity: 'intermediate',
+    concepts: ['sequences', 'variation', 'declarative', 'patterns'],
+  },
+  {
+    id: 'animated-wave',
+    category: 'Sequences',
+    name: 'Animated Wave',
+    description: 'Create organic wave patterns using sequence generators',
+    file: '08-sequences/animated-wave.ts',
+    complexity: 'beginner',
+    concepts: ['sequences', 'yoyo', 'additive', 'waves'],
+  },
 ];
 
 /**
