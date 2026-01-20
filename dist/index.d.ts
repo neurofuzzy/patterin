@@ -106,6 +106,7 @@ export { TessellationSystem, type TessellationOptions, type TessellationPattern 
 export { ShapeSystem, type ShapeSystemOptions } from './systems/index';
 export { LSystem, type LSystemOptions } from './systems/index';
 export { CloneSystem, type CloneOptions } from './systems/index';
+export { QuiltSystem, type QuiltOptions } from './systems/index';
 /**
  * Main entry point for creating systems.
  *
@@ -120,16 +121,21 @@ export { CloneSystem, type CloneOptions } from './systems/index';
  */
 export { system } from './systems/index';
 /**
- * Main entry point for creating patterns.
+ * Quilt block templates for use with system.quilt().
  *
  * @example
  * ```typescript
- * import { pattern } from 'patterin';
+ * import { system } from 'patterin';
  *
- * const checker = pattern.checker({ size: 20, bounds: { width: 400, height: 400 } });
- * const chevron = pattern.chevron({ stripeWidth: 30, bounds: { width: 400, height: 400 } });
- * const houndstooth = pattern.houndstooth({ size: 40, bounds: { width: 400, height: 400 } });
+ * // Create a 4x4 quilt
+ * const quilt = system.quilt({ gridSize: [4, 4], blockSize: 100 });
+ *
+ * // Apply different blocks to different positions
+ * quilt.every(2).placeBlock('BD');      // BrokenDishes on even
+ * quilt.every(2, 1).placeBlock('FS');   // FriendshipStar on odd
+ *
+ * quilt.stamp(svg);
  * ```
  */
-export { pattern } from './patterns/index';
-export type { PatternType, CheckerOptions, ChevronOptions, GinghamOptions, HoundstoothOptions, HerringboneOptions, BrickOptions, BrickBondType, PinwheelOptions, LogCabinOptions, BowTieOptions, BrokenDishesOptions, FriendshipStarOptions, ShooFlyOptions, SnowballOptions, FlyingGeeseOptions, DutchmansPuzzleOptions, SawtoothStarOptions, EightPointedStarOptions } from './patterns/index';
+export type { QuiltBlockTemplate, BlockRotation, CellDefinition, } from './patterns/index';
+export { quiltBlockTemplates } from './patterns/index';

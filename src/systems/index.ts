@@ -4,6 +4,7 @@ import { ShapeSystem, ShapeSystemOptions } from './ShapeSystem';
 import { ShapeContext } from '../contexts/ShapeContext';
 import { Shape } from '../primitives/Shape';
 import { LSystem, LSystemOptions } from './LSystem';
+import { QuiltSystem, QuiltOptions } from './QuiltSystem';
 
 export { BaseSystem, type Placement, type RenderGroup } from './BaseSystem';
 export { EdgeBasedSystem } from './EdgeBasedSystem';
@@ -12,6 +13,7 @@ export { TessellationSystem, type TessellationOptions, type TessellationPattern 
 export { ShapeSystem, type ShapeSystemOptions } from './ShapeSystem';
 export { LSystem, type LSystemOptions } from './LSystem';
 export { CloneSystem, type CloneOptions } from './CloneSystem';
+export { QuiltSystem, type QuiltOptions, blockShortcuts } from './QuiltSystem';
 
 
 /**
@@ -194,5 +196,33 @@ export const system = {
      */
     lsystem(options: LSystemOptions): LSystem {
         return LSystem.create(options);
+    },
+
+    /**
+     * Create a quilt system for placing quilt block patterns.
+     * 
+     * Use every(), slice(), and at() to select positions, then placeBlock()
+     * to assign different block templates. Supports shortcuts: PW, BD, FS, SF, BT, DP, SS.
+     * 
+     * @param options - Grid size and block size configuration
+     * @returns A QuiltSystem with positioned block placements
+     * 
+     * @example
+     * ```typescript
+     * // Create a 4x4 quilt
+     * const quilt = system.quilt({
+     *   gridSize: [4, 4],
+     *   blockSize: 100
+     * });
+     * 
+     * // Alternate between two patterns
+     * quilt.every(2).placeBlock('BD');      // BrokenDishes on even
+     * quilt.every(2, 1).placeBlock('FS');   // FriendshipStar on odd
+     * 
+     * quilt.stamp(svg);
+     * ```
+     */
+    quilt(options: QuiltOptions): QuiltSystem {
+        return new QuiltSystem(options);
     },
 };

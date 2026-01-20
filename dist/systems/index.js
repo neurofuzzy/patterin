@@ -2,6 +2,7 @@ import { GridSystem } from './GridSystem';
 import { TessellationSystem } from './TessellationSystem';
 import { ShapeSystem } from './ShapeSystem';
 import { LSystem } from './LSystem';
+import { QuiltSystem } from './QuiltSystem';
 export { BaseSystem } from './BaseSystem';
 export { EdgeBasedSystem } from './EdgeBasedSystem';
 export { GridSystem } from './GridSystem';
@@ -9,6 +10,7 @@ export { TessellationSystem } from './TessellationSystem';
 export { ShapeSystem } from './ShapeSystem';
 export { LSystem } from './LSystem';
 export { CloneSystem } from './CloneSystem';
+export { QuiltSystem, blockShortcuts } from './QuiltSystem';
 /**
  * System factory - main entry point for creating parametric scaffolds.
  *
@@ -186,5 +188,32 @@ export const system = {
      */
     lsystem(options) {
         return LSystem.create(options);
+    },
+    /**
+     * Create a quilt system for placing quilt block patterns.
+     *
+     * Use every(), slice(), and at() to select positions, then placeBlock()
+     * to assign different block templates. Supports shortcuts: PW, BD, FS, SF, BT, DP, SS.
+     *
+     * @param options - Grid size and block size configuration
+     * @returns A QuiltSystem with positioned block placements
+     *
+     * @example
+     * ```typescript
+     * // Create a 4x4 quilt
+     * const quilt = system.quilt({
+     *   gridSize: [4, 4],
+     *   blockSize: 100
+     * });
+     *
+     * // Alternate between two patterns
+     * quilt.every(2).placeBlock('BD');      // BrokenDishes on even
+     * quilt.every(2, 1).placeBlock('FS');   // FriendshipStar on odd
+     *
+     * quilt.stamp(svg);
+     * ```
+     */
+    quilt(options) {
+        return new QuiltSystem(options);
     },
 };

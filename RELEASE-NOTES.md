@@ -6,10 +6,18 @@ Patterin v0.2.0 is ready for npm publishing and GitHub Pages deployment with com
 
 ## What's New in v0.2.0
 
+### New Features
+- **Quilt System** - Traditional quilt block patterns with grid-based placement
+  - 7 quilt block templates (Pinwheel, Broken Dishes, Friendship Star, etc.)
+  - Two-character shortcuts (PW, BD, FS, SF, BT, DP, SS)
+  - Half-Square Triangles (HST) and Flying Geese primitives
+  - Selection methods: `every()`, `slice()`, `at()`, `all()`
+  - Shape groups ('light'/'dark') for fabric color assignment
+
 ### Documentation
 - **Humanized README** - Welcoming intro with simple examples first
-- **Complete API Reference** - 900+ lines covering every method
-- **28 Runnable Examples** - Organized in 7 categories from beginner to advanced
+- **Complete API Reference** - 1000+ lines covering every method including quilting
+- **30+ Runnable Examples** - Organized in 8 categories from beginner to advanced
 - **Deployment Guide** - Step-by-step instructions for npm and GitHub Pages
 
 ### Examples Directory
@@ -19,6 +27,7 @@ Patterin v0.2.0 is ready for npm publishing and GitHub Pages deployment with com
 - **04-grids/** - Square, hexagonal, triangular grids (4 examples)
 - **05-tessellations/** - Truchet, Penrose, trihexagonal (3 examples)
 - **06-fractals/** - Koch, dragon, Hilbert, Sierpiński, plant (6 examples)
+- **10-quilting/** - Traditional quilt blocks and patterns (2 examples)
 - **07-advanced/** - Complex mandalas, geometric patterns, plotter art (4 examples)
 
 All examples now write output to `examples/output/` instead of stdout.
@@ -55,9 +64,10 @@ All examples now write output to `examples/output/` instead of stdout.
 
 - **Package Version:** 0.2.0
 - **Tests:** 194 passing
-- **Examples:** 28 files
-- **API Documentation:** 900+ lines
-- **Line Count:** ~15,000 lines of source code
+- **Examples:** 30+ files
+- **API Documentation:** 1000+ lines
+- **Quilt Blocks:** 7 traditional patterns
+- **Line Count:** ~16,000 lines of source code
 
 ## Installation
 
@@ -118,16 +128,22 @@ Then configure GitHub Pages to serve from `/docs`.
 ### v0.2.0 (2026-01-19)
 
 **Added:**
-- Comprehensive API documentation (API.md)
-- 28 organized examples with utilities
+- **Quilting System** with traditional quilt block patterns
+  - 7 block templates: Pinwheel, Broken Dishes, Friendship Star, Shoo Fly, Bow Tie, Dutchman's Puzzle, Sawtooth Star
+  - Half-Square Triangle (HST) and Flying Geese primitives
+  - Grid-based placement with selection: `every()`, `slice()`, `at()`, `all()`
+  - Shape groups for fabric colors ('light'/'dark')
+- Comprehensive API documentation (API.md) with quilting reference
+- 30+ organized examples including quilting patterns
 - Deployment guide and publishing checklist
 - GitHub Pages configuration for playground
 
 **Improved:**
-- Humanized README with better learning progression
+- Humanized README with better learning progression and quilting examples
 - Example files now write to examples/output/
 - Better package configuration with .npmignore
 - Fixed TypeScript compilation errors
+- Playground examples updated with quilting patterns
 
 **Fixed:**
 - Vector2 immutability issues in EdgeBasedSystem
