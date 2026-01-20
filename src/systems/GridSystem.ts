@@ -261,7 +261,7 @@ export class GridSystem extends EdgeBasedSystem {
         } else {
             // For hex/triangular: connect adjacent nodes by proximity
             // Determine connection distance threshold based on grid type
-            const threshold = this._spacingX * 1.1; // Slightly larger than spacing
+            const threshold = Math.max(this._spacingX, this._spacingY) * 1.1; // Slightly larger than max spacing
 
             // Use edge-key map for de-duplication
             const edgeMap = new Map<string, Segment>();

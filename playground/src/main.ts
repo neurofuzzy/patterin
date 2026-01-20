@@ -23,7 +23,7 @@ const editorContainer = document.querySelector('.editor-container') as HTMLDivEl
 const previewPane = document.getElementById('preview-pane') as HTMLDivElement;
 const errorDisplay = document.getElementById('error-display') as HTMLDivElement;
 const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
-const autoRenderCheckbox = document.getElementById('auto-render-checkbox') as HTMLInputElement;
+const autoRenderCheckbox = document.getElementById('auto-render-checkbox') as HTMLInputElement | null;
 
 let lastCollector: patterin.SVGCollector | null = null;
 
@@ -50,7 +50,9 @@ function saveAutoRenderSetting(enabled: boolean): void {
 
 // Initialize auto-render from localStorage
 autoRenderEnabled = loadAutoRenderSetting();
-autoRenderCheckbox.checked = autoRenderEnabled;
+if (autoRenderCheckbox) {
+    autoRenderCheckbox.checked = autoRenderEnabled;
+}
 
 // Worker management
 const WORKER_TIMEOUT_MS = 5000;
@@ -229,12 +231,14 @@ new Menu({
 });
 
 // Handle auto-render checkbox changes
-autoRenderCheckbox.addEventListener('change', () => {
-    autoRenderEnabled = autoRenderCheckbox.checked;
-    saveAutoRenderSetting(autoRenderEnabled);
-    // Re-run code with new setting
-    runCode(editor.getCode());
-});
+if (autoRenderCheckbox) {
+    autoRenderCheckbox.addEventListener('change', () => {
+        autoRenderEnabled = autoRenderCheckbox.checked;
+        saveAutoRenderSetting(autoRenderEnabled);
+        // Re-run code with new setting
+        runCode(editor.getCode());
+    });
+}
 
 // Initialize Keyboard Shortcuts
 initKeyboardShortcuts({

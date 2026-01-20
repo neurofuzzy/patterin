@@ -21,6 +21,10 @@ abstract class SelectableContext<T, TSelf> {
      * @param offset - Starting offset (default 0)
      */
     every(n: number, offset = 0): TSelf {
+        if (n < 1) {
+            // Prevent infinite loop for n <= 0
+            return this.createNew([]);
+        }
         const selected: T[] = [];
         for (let i = offset; i < this._items.length; i += n) {
             selected.push(this._items[i]);
