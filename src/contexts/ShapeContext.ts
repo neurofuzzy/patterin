@@ -2,6 +2,7 @@ import { BoundingBox, Shape, Segment, Vector2, Vertex, Winding } from '../primit
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
+import { SequenceFunction } from '../sequence/sequence';
 
 /**
  * Base class for contexts that operate on collections with selection capabilities.
@@ -186,9 +187,43 @@ export class ShapeContext {
         return new CloneSystem(this._shape, { count: n, offsetX: x, offsetY: y });
     }
 
-    /** Scale shape by factor */
-    scale(factor: number): this {
-        this._shape.scale(factor);
+    /** Scale shape uniformly by factor */
+    scale(factor: number): this;
+    /** Scale shape with different factors for X and Y axes */
+    scale(factorX: number, factorY: number): this;
+    scale(factorX: number, factorY?: number): this {
+        if (factorY === undefined) {
+            // Uniform scaling (existing behavior)
+            this._shape.scale(factorX);
+        } else {
+            // Non-uniform scaling
+            const center = this._shape.centroid();
+            for (const vertex of this._shape.vertices) {
+                const newX = center.x + (vertex.position.x - center.x) * factorX;
+                const newY = center.y + (vertex.position.y - center.y) * factorY;
+                vertex.position = new Vector2(newX, newY);
+            }
+        }
+        return this;
+    }
+
+    /** Scale shape along X axis only */
+    scaleX(factor: number): this {
+        const center = this._shape.centroid();
+        for (const vertex of this._shape.vertices) {
+            const newX = center.x + (vertex.position.x - center.x) * factor;
+            vertex.position = new Vector2(newX, vertex.position.y);
+        }
+        return this;
+    }
+
+    /** Scale shape along Y axis only */
+    scaleY(factor: number): this {
+        const center = this._shape.centroid();
+        for (const vertex of this._shape.vertices) {
+            const newY = center.y + (vertex.position.y - center.y) * factor;
+            vertex.position = new Vector2(vertex.position.x, newY);
+        }
         return this;
     }
 
@@ -991,6 +1026,17 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
     }
 
     /**
+     * Helper to resolve a value that might be a sequence or a number.
+     * If it's a sequence, call it to advance and get the next value.
+     * Otherwise, return the number as-is.
+     */
+    private resolveValue(value: number | SequenceFunction): number {
+        return typeof value === 'function' && 'current' in value
+            ? value()  // Call sequence to advance and get next value
+            : value;   // Use number as-is
+    }
+
+    /**
      * Select a range of shapes (similar to Array.slice).
      * 
      * @param start - Starting index (inclusive)
@@ -1092,28 +1138,47 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
         return this;
     }
 
-    /** Scale all shapes uniformly */
-    scale(factor: number): this {
+    /** Scale all shapes uniformly (supports sequences) */
+    scale(factor: number | SequenceFunction): this {
         for (const shape of this._items) {
-            shape.scale(factor);
+            shape.scale(this.resolveValue(factor));
         }
         return this;
     }
 
-    /** Rotate all shapes by angle (degrees) */
-    rotate(angleDeg: number): this {
-        const angleRad = angleDeg * Math.PI / 180;
+    /** Scale all shapes along X axis only (supports sequences) */
+    scaleX(factor: number | SequenceFunction): this {
         for (const shape of this._items) {
-            shape.rotate(angleRad);
+            const ctx = new ShapeContext(shape);
+            ctx.scaleX(this.resolveValue(factor));
         }
         return this;
     }
 
-    /** Translate all shapes by delta */
-    translate(x: number, y: number): this {
-        const delta = new Vector2(x, y);
+    /** Scale all shapes along Y axis only (supports sequences) */
+    scaleY(factor: number | SequenceFunction): this {
         for (const shape of this._items) {
-            shape.translate(delta);
+            const ctx = new ShapeContext(shape);
+            ctx.scaleY(this.resolveValue(factor));
+        }
+        return this;
+    }
+
+    /** Rotate all shapes by angle in degrees (supports sequences) */
+    rotate(angleDeg: number | SequenceFunction): this {
+        for (const shape of this._items) {
+            const angle = this.resolveValue(angleDeg);
+            shape.rotate(angle * Math.PI / 180);
+        }
+        return this;
+    }
+
+    /** Translate all shapes by delta (supports sequences for x and y) */
+    translate(x: number | SequenceFunction, y: number | SequenceFunction): this {
+        for (const shape of this._items) {
+            const dx = this.resolveValue(x);
+            const dy = this.resolveValue(y);
+            shape.translate(new Vector2(dx, dy));
         }
         return this;
     }
@@ -1176,18 +1241,40 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
         return this.translate(delta.x, delta.y);
     }
 
-    /** Set x position of collective center */
-    x(xPos: number): this {
-        const bounds = this.getBounds();
-        const currentX = (bounds.minX + bounds.maxX) / 2;
-        return this.translate(xPos - currentX, 0);
+    /** Set x position of collective center (supports sequences) */
+    x(xPos: number | SequenceFunction): this {
+        if (typeof xPos === 'function' && 'current' in xPos) {
+            // If it's a sequence, position each shape individually
+            for (const shape of this._items) {
+                const targetX = this.resolveValue(xPos);
+                const currentX = shape.centroid().x;
+                shape.translate(new Vector2(targetX - currentX, 0));
+            }
+        } else {
+            // For a single number, move the entire collection as a group
+            const bounds = this.getBounds();
+            const currentX = (bounds.minX + bounds.maxX) / 2;
+            this.translate(xPos - currentX, 0);
+        }
+        return this;
     }
 
-    /** Set y position of collective center */
-    y(yPos: number): this {
-        const bounds = this.getBounds();
-        const currentY = (bounds.minY + bounds.maxY) / 2;
-        return this.translate(0, yPos - currentY);
+    /** Set y position of collective center (supports sequences) */
+    y(yPos: number | SequenceFunction): this {
+        if (typeof yPos === 'function' && 'current' in yPos) {
+            // If it's a sequence, position each shape individually
+            for (const shape of this._items) {
+                const targetY = this.resolveValue(yPos);
+                const currentY = shape.centroid().y;
+                shape.translate(new Vector2(0, targetY - currentY));
+            }
+        } else {
+            // For a single number, move the entire collection as a group
+            const bounds = this.getBounds();
+            const currentY = (bounds.minY + bounds.maxY) / 2;
+            this.translate(0, yPos - currentY);
+        }
+        return this;
     }
 
     /** Set x and y position of collective center */

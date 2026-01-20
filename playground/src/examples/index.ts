@@ -258,6 +258,77 @@ gosper.trace()`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // SEQUENCES
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Repeating Sizes',
+    category: 'Sequences',
+    description: 'Cycle through values with Sequence.repeat()',
+    code: `// Create varying sizes with sequences
+const sizes = Sequence.repeat(0.5, 1, 1.5, 2)
+
+// Collection: pass sequence itself
+shape.circle()
+  .radius(15)
+  .clone(11, 30)
+  .scale(sizes)  // Each gets next: 0.5, 1, 1.5, 2, 0.5...
+
+// Single shape: use .current
+shape.circle()
+  .radius(15)
+  .scale(sizes.current)  // Uses current value (doesn't advance)
+  .xy(0, -80)`,
+  },
+  {
+    name: 'Yoyo Pattern',
+    category: 'Sequences',
+    description: 'Bounce back and forth with Sequence.yoyo()',
+    code: `// Create wave effect with yoyo sequence
+const heights = Sequence.yoyo(10, 30, 50, 70)
+
+shape.rect()
+  .size(15)
+  .clone(14, 22)
+  .scaleY(heights)  // Bounces: 30, 50, 70, 50, 30, 10...`,
+  },
+  {
+    name: 'Random Variation',
+    category: 'Sequences',
+    description: 'Deterministic randomness with seed',
+    code: `// Random but reproducible with seed 42
+const angles = Sequence.random(42, 0, 15, 30, 45, 60)
+
+shape.rect()
+  .size(60, 10)
+  .clone(9, 35)
+  .rotate(angles)  // Each rect gets random angle from sequence`,
+  },
+  {
+    name: 'Additive Spacing',
+    category: 'Sequences',
+    description: 'Running total for variable spacing',
+    code: `// Create expanding distances with additive sequence
+const xPositions = Sequence.additive(10, 15, 20)
+
+shape.circle()
+  .radius(8)
+  .clone(9, 0, 0)
+  .x(xPositions)  // Each gets cumulative x: 10, 25, 45, 55...`,
+  },
+  {
+    name: 'Nested Sequences',
+    category: 'Sequences',
+    description: 'Sequences inside sequences',
+    code: `// Create complex variation patterns by nesting
+const inner = Sequence.yoyo(15, 25)
+const outer = Sequence.repeat(20, inner, 30)
+
+shape.circle()
+  .clone(14, 26)
+  .scale(outer)  // 20, 15, 30, 20, 25, 30, 20, 15...`,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // QUILTING
   // ═══════════════════════════════════════════════════════════════════════════
   {

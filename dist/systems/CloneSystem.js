@@ -224,6 +224,72 @@ export class CloneSystem extends BaseSystem {
         this._buildPathSegments();
         return this;
     }
+    // ==================== Transformation Methods (support sequences) ====================
+    /**
+     * Helper to resolve a value that might be a number or a SequenceFunction.
+     */
+    resolveValue(value) {
+        return typeof value === 'function' && 'current' in value
+            ? value() // Call sequence to advance and get next value
+            : value; // Use number as-is
+    }
+    /**
+     * Scale all shapes uniformly (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scale(factor) {
+        this.shapes.scale(factor);
+        return this;
+    }
+    /**
+     * Scale all shapes along X axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleX(factor) {
+        this.shapes.scaleX(factor);
+        return this;
+    }
+    /**
+     * Scale all shapes along Y axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleY(factor) {
+        this.shapes.scaleY(factor);
+        return this;
+    }
+    /**
+     * Rotate all shapes by angle in degrees (supports sequences).
+     * @param angleDeg - Rotation angle in degrees or sequence
+     */
+    rotate(angleDeg) {
+        this.shapes.rotate(angleDeg);
+        return this;
+    }
+    /**
+     * Translate all shapes by offset (supports sequences).
+     * @param x - X offset or sequence
+     * @param y - Y offset or sequence
+     */
+    translate(x, y) {
+        this.shapes.translate(x, y);
+        return this;
+    }
+    /**
+     * Set x position for each shape (supports sequences).
+     * @param xPos - X position or sequence
+     */
+    x(xPos) {
+        this.shapes.x(xPos);
+        return this;
+    }
+    /**
+     * Set y position for each shape (supports sequences).
+     * @param yPos - Y position or sequence
+     */
+    y(yPos) {
+        this.shapes.y(yPos);
+        return this;
+    }
     // ==================== BaseSystem Implementation ====================
     getNodes() {
         return this._nodes;

@@ -7,6 +7,7 @@ import { SVGCollector, PathStyle } from '../collectors/SVGCollector';
 import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
+import { SequenceFunction } from '../sequence/sequence';
 export interface CloneOptions {
     count: number;
     offsetX: number;
@@ -90,6 +91,46 @@ export declare class CloneSystem extends BaseSystem {
      * @returns This CloneSystem (modified in place)
      */
     spreadPolar(radius: number, arc?: number | [number, number]): this;
+    /**
+     * Helper to resolve a value that might be a number or a SequenceFunction.
+     */
+    private resolveValue;
+    /**
+     * Scale all shapes uniformly (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scale(factor: number | SequenceFunction): this;
+    /**
+     * Scale all shapes along X axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleX(factor: number | SequenceFunction): this;
+    /**
+     * Scale all shapes along Y axis only (supports sequences).
+     * @param factor - Scale factor or sequence
+     */
+    scaleY(factor: number | SequenceFunction): this;
+    /**
+     * Rotate all shapes by angle in degrees (supports sequences).
+     * @param angleDeg - Rotation angle in degrees or sequence
+     */
+    rotate(angleDeg: number | SequenceFunction): this;
+    /**
+     * Translate all shapes by offset (supports sequences).
+     * @param x - X offset or sequence
+     * @param y - Y offset or sequence
+     */
+    translate(x: number | SequenceFunction, y: number | SequenceFunction): this;
+    /**
+     * Set x position for each shape (supports sequences).
+     * @param xPos - X position or sequence
+     */
+    x(xPos: number | SequenceFunction): this;
+    /**
+     * Set y position for each shape (supports sequences).
+     * @param yPos - Y position or sequence
+     */
+    y(yPos: number | SequenceFunction): this;
     protected getNodes(): Vertex[];
     protected filterByMask(shape: Shape): void;
     protected scaleGeometry(factor: number): void;

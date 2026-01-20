@@ -139,3 +139,27 @@ export { system } from './systems/index';
  */
 export type { QuiltBlockTemplate, BlockRotation, CellDefinition, } from './patterns/index';
 export { quiltBlockTemplates } from './patterns/index';
+/**
+ * Flexible sequence generator that can be used as a number in any function.
+ * Supports multiple modes: repeat, yoyo, once, shuffle, random, additive, and multiplicative.
+ *
+ * @example
+ * ```typescript
+ * import { Sequence, shape } from 'patterin';
+ *
+ * // Create a repeating sequence
+ * const sizes = Sequence.repeat(10, 20, 30);
+ *
+ * // Use it like a number - advances each time it's called
+ * for (let i = 0; i < 5; i++) {
+ *   shape.circle().radius(sizes()).move(i * 50, 0).stamp(svg);
+ * }
+ *
+ * // Yoyo sequence (bounces back and forth)
+ * const angles = Sequence.yoyo(0, 45, 90);
+ *
+ * // Random with seed (deterministic)
+ * const colors = Sequence.random(42, 1, 2, 3, 4, 5);
+ * ```
+ */
+export { Sequence, type SequenceFunction, type SequenceValue, type SequenceMode } from './sequence/sequence';
