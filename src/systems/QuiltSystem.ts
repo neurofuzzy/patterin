@@ -347,22 +347,22 @@ export class QuiltSystem extends BaseSystem {
         let sky2Points: Vector2[];
 
         switch (rotation) {
-            case 0:
+            case 0: // Pointing right
                 goosePoints = [tl, rm, bl];
                 sky1Points = [tl, tr, rm];
                 sky2Points = [rm, br, bl];
                 break;
-            case 90:
+            case 90: // Pointing down
                 goosePoints = [tl, tr, bm];
                 sky1Points = [tl, bm, bl];
                 sky2Points = [tr, br, bm];
                 break;
-            case 180:
+            case 180: // Pointing left
                 goosePoints = [lm, tr, br];
                 sky1Points = [tl, tr, lm];
                 sky2Points = [lm, br, bl];
                 break;
-            case 270:
+            case 270: // Pointing up
                 goosePoints = [tm, bl, br];
                 sky1Points = [tl, tm, bl];
                 sky2Points = [tm, tr, br];
@@ -463,12 +463,23 @@ export class QuiltSystem extends BaseSystem {
     }
 
     protected getGeometryBounds(): SystemBounds {
-        return {
-            minX: 0,
-            minY: 0,
-            maxX: this._cols * this._blockSize,
-            maxY: this._rows * this._blockSize
-        };
+        if (this._quiltPlacements.length === 0) {
+            return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for (const p of this._quiltPlacements) {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x + this._blockSize);
+            maxY = Math.max(maxY, p.y + this._blockSize);
+        }
+
+        return { minX, minY, maxX, maxY };
     }
 
     protected getSourceForSelection(): Shape[] {
