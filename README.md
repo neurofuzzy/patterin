@@ -2,6 +2,9 @@
 
 **Declarative procedural 2D vector graphics for the modern web.**
 
+<img src="./screenshot.png" width="600">
+<br /><br />
+
 Patterin helps you create intricate geometric patterns with code. Whether you're designing for a plotter, generating art for a gallery wall, or exploring algorithmic beauty—Patterin gives you the tools to think in systems, not just shapes.
 
 ```typescript
