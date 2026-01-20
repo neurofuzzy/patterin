@@ -1,21 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { Sequence } from '../../src/sequence/sequence';
-import { CircleContext, RectContext, ShapesContext } from '../../src/contexts';
+import { CircleContext, RectContext } from '../../src/contexts';
 import { SVGCollector } from '../../src/collectors/SVGCollector';
 
 describe('Sequence Integration with Collections', () => {
     it('should apply sequence values to each shape in a collection', () => {
         const sizes = Sequence.repeat(0.5, 1, 1.5, 2);
-        
-        // Test that sequence advances properly
-        let callCount = 0;
-        const testSeq = function() {
-            callCount++;
-            return sizes();
-        } as SequenceFunction;
-        testSeq.current = sizes.current;
-        testSeq.reset = sizes.reset;
-        testSeq.peek = sizes.peek;
         
         // Create shapes at origin for simpler testing
         const circle = new CircleContext().radius(10).xy(0, 0);
@@ -29,8 +19,7 @@ describe('Sequence Integration with Collections', () => {
         const allShapes = shapes['_items'];
         expect(allShapes.length).toBe(4);
         
-        // Verify sequence was called 4 times (once per shape)
-        // We can't directly count, but we can verify the shapes exist
+        // Verify shapes exist
         expect(allShapes).toBeDefined();
     });
 

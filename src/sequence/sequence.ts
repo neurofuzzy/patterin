@@ -190,100 +190,98 @@ class Sequence {
    * @returns A callable function that also has current, reset, and peek methods
    */
   public createFunction(): SequenceFunction {
-    const self = this;
-
     // Main function: advances and returns new value
-    const seq = function(): number {
-      self.getNextIndex();
+    const seq = (() => {
+      this.getNextIndex();
       
       // Handle accumulation modes
-      if (self.mode === 'additive' || self.mode === 'multiplicative') {
-        const currentValue = self.resolveValue(self.values[self.index % self.values.length]);
+      if (this.mode === 'additive' || this.mode === 'multiplicative') {
+        const currentValue = this.resolveValue(this.values[this.index % this.values.length]);
         
-        if (self.mode === 'additive') {
-          self.accumulator += currentValue;
+        if (this.mode === 'additive') {
+          this.accumulator += currentValue;
         } else {
-          self.accumulator *= currentValue;
+          this.accumulator *= currentValue;
         }
         
-        return self.accumulator;
+        return this.accumulator;
       }
       
       // For non-accumulation modes, return current value
-      const arr = (self.mode === 'shuffle' || self.mode === 'random') 
-        ? self.shuffled 
-        : self.values;
-      return self.resolveValue(arr[self.index % arr.length]);
-    } as SequenceFunction;
+      const arr = (this.mode === 'shuffle' || this.mode === 'random') 
+        ? this.shuffled 
+        : this.values;
+      return this.resolveValue(arr[this.index % arr.length]);
+    }).bind(this) as SequenceFunction;
 
     // current: property that returns the value that will be returned on next call (without advancing)
     Object.defineProperty(seq, 'current', {
-      get: function(): number {
+      get: (): number => {
         // For accumulation modes, we need to peek at what the next value would be after accumulation
-        if (self.mode === 'additive' || self.mode === 'multiplicative') {
+        if (this.mode === 'additive' || this.mode === 'multiplicative') {
           // Calculate what the next index will be
-          let peekIndex = self.index + 1;
-          if (peekIndex >= self.values.length) {
+          let peekIndex = this.index + 1;
+          if (peekIndex >= this.values.length) {
             peekIndex = 0;
           }
-          const nextValue = self.resolveValue(self.values[peekIndex]);
+          const nextValue = this.resolveValue(this.values[peekIndex]);
           
-          if (self.mode === 'additive') {
-            return self.accumulator + nextValue;
+          if (this.mode === 'additive') {
+            return this.accumulator + nextValue;
           } else {
-            return self.accumulator * nextValue;
+            return this.accumulator * nextValue;
           }
         }
         
-        const arr = (self.mode === 'shuffle' || self.mode === 'random') 
-          ? self.shuffled 
-          : self.values;
+        const arr = (this.mode === 'shuffle' || this.mode === 'random') 
+          ? this.shuffled 
+          : this.values;
         
         // Return the value that would be returned on the next call
         // This is index + 1 (what getNextIndex will set it to)
-        const nextIndex = (self.index + 1) % arr.length;
-        return self.resolveValue(arr[nextIndex]);
+        const nextIndex = (this.index + 1) % arr.length;
+        return this.resolveValue(arr[nextIndex]);
       },
       enumerable: true
     });
 
     // reset: resets to initial state
-    seq.reset = function(): SequenceFunction {
-      self.index = 0;
-      self.direction = 1;
-      self.completed = false;
+    seq.reset = (): SequenceFunction => {
+      this.index = -1;
+      this.direction = 1;
+      this.completed = false;
 
       // Reset accumulator based on mode
-      if (self.mode === 'additive') {
-        self.accumulator = 0;
-      } else if (self.mode === 'multiplicative') {
-        self.accumulator = 1;
+      if (this.mode === 'additive') {
+        this.accumulator = 0;
+      } else if (this.mode === 'multiplicative') {
+        this.accumulator = 1;
       }
 
       // Reset PRNG to original seed for deterministic behavior
-      self.prng = self.createPRNG(self.originalSeed);
+      this.prng = this.createPRNG(this.originalSeed);
 
       // Re-shuffle with reset seed
-      if (self.mode === 'shuffle' || self.mode === 'random') {
-        self.shuffled = self.shuffle(self.values);
+      if (this.mode === 'shuffle' || this.mode === 'random') {
+        this.shuffled = this.shuffle(this.values);
       }
 
       return seq;
     };
 
     // peek: look ahead without advancing
-    seq.peek = function(offset: number = 0): number {
+    seq.peek = (offset: number = 0): number => {
       // For accumulation modes, peek doesn't make as much sense
       // Return what the accumulator would be after 'offset' more steps
-      if (self.mode === 'additive' || self.mode === 'multiplicative') {
-        let tempAccumulator = self.accumulator;
-        let tempIndex = self.index;
+      if (this.mode === 'additive' || this.mode === 'multiplicative') {
+        let tempAccumulator = this.accumulator;
+        let tempIndex = this.index;
         
         for (let i = 0; i < offset; i++) {
-          tempIndex = (tempIndex + 1) % self.values.length;
-          const value = self.resolveValue(self.values[tempIndex]);
+          tempIndex = (tempIndex + 1) % this.values.length;
+          const value = this.resolveValue(this.values[tempIndex]);
           
-          if (self.mode === 'additive') {
+          if (this.mode === 'additive') {
             tempAccumulator += value;
           } else {
             tempAccumulator *= value;
@@ -293,10 +291,10 @@ class Sequence {
         return tempAccumulator;
       }
       
-      const arr = (self.mode === 'shuffle' || self.mode === 'random') 
-        ? self.shuffled 
-        : self.values;
-      return self.resolveValue(arr[(self.index + offset) % arr.length]);
+      const arr = (this.mode === 'shuffle' || this.mode === 'random') 
+        ? this.shuffled 
+        : this.values;
+      return this.resolveValue(arr[(this.index + offset) % arr.length]);
     };
 
     return seq;
