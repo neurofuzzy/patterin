@@ -197,4 +197,48 @@ declare class Sequence {
      */
     static multiplicative(...values: SequenceValue[]): SequenceFunction;
 }
+/**
+ * Sequence factory - lowercase entry point for creating sequences.
+ * Follows the same pattern as shape.* and system.* factories.
+ *
+ * @example
+ * ```typescript
+ * import { sequence } from 'patterin';
+ *
+ * // Create sequences using lowercase factory
+ * const sizes = sequence.repeat(10, 20, 30);
+ * const angles = sequence.yoyo(0, 45, 90);
+ * const colors = sequence.random(42, '#f00', '#0f0', '#00f');
+ * ```
+ */
+export declare const sequence: {
+    /**
+     * Create a repeating sequence that cycles through values indefinitely
+     */
+    repeat(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create a yoyo sequence that bounces back and forth through values
+     */
+    yoyo(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create a sequence that plays once then stops at the last value
+     */
+    once(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create a shuffled sequence (shuffles once at creation)
+     */
+    shuffle(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create a random sequence with seed (deterministic, reshuffles on cycle)
+     */
+    random(seed: number, ...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create an additive sequence (running total)
+     */
+    additive(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Create a multiplicative sequence (running product)
+     */
+    multiplicative(...values: SequenceValue[]): SequenceFunction;
+};
 export { Sequence, type SequenceFunction, type SequenceValue, type SequenceMode };

@@ -299,6 +299,25 @@ export class GridSystem extends EdgeBasedSystem {
     addPlacement(position, shape, style) {
         this._placements.push({ position, shape, style });
     }
+    /**
+     * Set color for all placed shapes in this grid.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This GridSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const grid = system.grid({ rows: 5, cols: 5, spacing: 30 });
+     * grid.place(shape.circle().radius(5));
+     * grid.color(palette.create(25, "blues", "cyans").vibrant());
+     * ```
+     */
+    color(colorValue) {
+        this.shapes.color(colorValue);
+        return this;
+    }
 }
 /**
  * Grid-specific PointsContext with place() support.
@@ -339,5 +358,38 @@ class GridPointsContext extends PointsContext {
             }
         }
         return new GridPointsContext(this._grid, selected, selectedNodes);
+    }
+    /**
+     * Set color for shapes placed at selected grid points.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This GridPointsContext for chaining
+     *
+     * @example
+     * ```typescript
+     * // Color specific grid positions
+     * grid.place(shape.circle().radius(5));
+     * grid.every(2).color(palette.create(3, "reds").vibrant());
+     * grid.every(2, 1).color(palette.create(3, "blues").vibrant());
+     * ```
+     */
+    color(colorValue) {
+        // Get placements at selected positions
+        const selectedPositions = new Set(this._items.map(v => `${v.position.x},${v.position.y}`));
+        const placements = this._grid._placements.filter((p) => selectedPositions.has(`${p.position.x},${p.position.y}`));
+        if (typeof colorValue === 'function' && 'current' in colorValue) {
+            // Sequence: each placement gets next color
+            for (const placement of placements) {
+                const nextColor = colorValue();
+                placement.shape.color = String(nextColor);
+            }
+        }
+        else {
+            // String: all placements get same color
+            for (const placement of placements) {
+                placement.shape.color = colorValue;
+            }
+        }
+        return this;
     }
 }

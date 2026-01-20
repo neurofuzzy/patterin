@@ -121,6 +121,24 @@ export class CloneSystem extends BaseSystem {
         return new ShapesContext(this._shapes);
     }
     /**
+     * Set color for all shapes in this clone system.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This CloneSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const circles = shape.circle().clone(5, 40, 0);
+     * circles.color(palette.create(5, "blues").vibrant());
+     * ```
+     */
+    color(colorValue) {
+        this.shapes.color(colorValue);
+        return this;
+    }
+    /**
      * Make the system concrete (renderable).
      */
     trace() {
@@ -322,7 +340,9 @@ export class CloneSystem extends BaseSystem {
         if (this._ephemeral) {
             return;
         }
-        const shapeStyle = style ?? DEFAULT_STYLES.shape;
+        // When no explicit style is provided, use empty object to allow
+        // render mode and color system to control styling
+        const shapeStyle = style ?? {};
         const pathStyle = style ?? DEFAULT_STYLES.line;
         // Stamp shapes
         collector.beginGroup('clone-shapes');

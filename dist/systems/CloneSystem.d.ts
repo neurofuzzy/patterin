@@ -56,6 +56,21 @@ export declare class CloneSystem extends BaseSystem {
     get pathSegments(): Segment[];
     get shapes(): ShapesContext;
     /**
+     * Set color for all shapes in this clone system.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This CloneSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const circles = shape.circle().clone(5, 40, 0);
+     * circles.color(palette.create(5, "blues").vibrant());
+     * ```
+     */
+    color(colorValue: string | SequenceFunction): this;
+    /**
      * Make the system concrete (renderable).
      */
     trace(): this;

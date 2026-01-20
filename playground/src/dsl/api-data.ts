@@ -57,6 +57,61 @@ export const API_DATA: Record<string, TypeInfo> = {
         },
     },
 
+    'Palette': {
+        type: 'class',
+        doc: 'Color palette generator with zone-based distribution',
+        static: {
+            'new': { params: ['count: number', '...zones: ColorZone[]'], returns: 'Palette', doc: 'Create palette with colors distributed across zones' },
+        },
+        methods: {
+            'vibrant': { params: ['intensity?: number'], returns: 'this', doc: 'Increase saturation (default: 0.2)' },
+            'muted': { params: ['intensity?: number'], returns: 'this', doc: 'Decrease saturation (default: 0.2)' },
+            'darkMode': { params: ['intensity?: number'], returns: 'this', doc: 'Increase lightness for dark backgrounds (default: 0.3)' },
+            'lightMode': { params: ['intensity?: number'], returns: 'this', doc: 'Decrease lightness for light backgrounds (default: 0.3)' },
+            'toArray': { returns: 'string[]', doc: 'Get palette as array of hex colors' },
+            'toObject': { returns: 'Record<string, string>', doc: 'Get palette as object with semantic names' },
+            'toCss': { params: ['prefix?: string'], returns: 'string', doc: 'Generate CSS custom properties' },
+            'shuffle': { returns: 'SequenceFunction', doc: 'Convert palette to shuffled sequence' },
+            'yoyo': { returns: 'SequenceFunction', doc: 'Convert palette to yoyo sequence (bounces back and forth)' },
+            'random': { params: ['seed: number'], returns: 'SequenceFunction', doc: 'Convert palette to random sequence with seed' },
+        },
+    },
+
+    'Sequence': {
+        type: 'class',
+        doc: 'Sequence generator for automatic value progression',
+        static: {
+            'repeat': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Cycle through values indefinitely' },
+            'yoyo': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Bounce back and forth through values' },
+            'once': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Play once then stop at last value' },
+            'shuffle': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Shuffled order (shuffles once at creation)' },
+            'random': { params: ['seed: number', '...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Random with seed (reshuffles on cycle)' },
+            'additive': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Running total of values' },
+            'multiplicative': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Running product of values' },
+        },
+    },
+
+    'palette': {
+        type: 'object',
+        doc: 'Palette factory - streamlined entry point for creating color palettes',
+        methods: {
+            'create': { params: ['count: number', '...zones: ColorZone[]'], returns: 'Palette', doc: 'Create palette with colors distributed across zones' },
+        },
+    },
+
+    'sequence': {
+        type: 'object',
+        doc: 'Sequence factory - streamlined entry point for creating sequences',
+        methods: {
+            'repeat': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Cycle through values indefinitely' },
+            'yoyo': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Bounce back and forth through values' },
+            'once': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Play once then stop at last value' },
+            'shuffle': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Shuffled order (shuffles once at creation)' },
+            'random': { params: ['seed: number', '...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Random with seed (reshuffles on cycle)' },
+            'additive': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Running total of values' },
+            'multiplicative': { params: ['...values: SequenceValue[]'], returns: 'SequenceFunction', doc: 'Running product of values' },
+        },
+    },
 
     // ═══════════════════════════════════════════════════════════════════════════
     // SHAPE CONTEXTS
@@ -90,6 +145,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'explode': { returns: 'LinesContext', doc: 'Break into independent segments' },
             'collapse': { returns: 'PointContext', doc: 'Reduce to centroid point' },
             'offsetShape': { params: ['distance: number', 'miterLimit?: number'], returns: 'ShapeContext', doc: 'Inset/outset outline' },
+            'color': { params: ['colorValue: string'], returns: 'this', doc: 'Set color for this shape (hex string)' },
         },
         getters: {
             'vertices': { returns: 'Vertex[]', doc: 'All vertices of the shape' },
@@ -228,6 +284,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'trace': { returns: 'ShapesContext', doc: 'Make all shapes concrete' },
             'stamp': { params: ['collector: SVGCollector', 'x?: number', 'y?: number', 'style?: PathStyle'], returns: 'void', doc: 'Render all shapes' },
             'spreadPolar': { params: ['radius: number', 'arc?: number | [number, number]'], returns: 'this', doc: 'Distribute shapes radially' },
+            'color': { params: ['colorValue: string | SequenceFunction'], returns: 'this', doc: 'Set color for all shapes (supports sequences)' },
         },
         getters: {
             'shapes': { returns: 'Shape[]', doc: 'All shapes in context' },
@@ -277,6 +334,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'getBounds': { returns: '{ minX, minY, maxX, maxY }', doc: 'Get grid bounds' },
             'toSVG': { params: ['options: { width, height, margin? }'], returns: 'string', doc: 'Render to SVG string' },
             'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render system to collector' },
+            'color': { params: ['colorValue: string | SequenceFunction | Palette'], returns: 'this', doc: 'Set color for all placed shapes' },
         },
     },
 
@@ -288,6 +346,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'place': { params: ['shapeCtx: ShapeContext', 'style?: PathStyle'], returns: 'this', doc: 'Place shape at each node' },
             'every': { params: ['n: number', 'offset?: number'], returns: 'GridPointsContext', doc: 'Select every nth node' },
             'at': { params: ['...indices: number[]'], returns: 'GridPointsContext', doc: 'Select nodes at indices' },
+            'color': { params: ['colorValue: string | SequenceFunction | Palette'], returns: 'this', doc: 'Set color for shapes at selected nodes' },
         },
     },
 
@@ -408,9 +467,14 @@ export const API_DATA: Record<string, TypeInfo> = {
             'toString': { params: ['options?: { width?, height?, margin?, background? }'], returns: 'string', doc: 'Generate SVG string' },
             'clear': { returns: 'void', doc: 'Clear all paths' },
             'getBounds': { params: ['margin?: number'], returns: '{ x, y, width, height }', doc: 'Get computed bounds' },
+            'setRenderMode': { params: ["mode: 'fill' | 'stroke' | 'glass'"], returns: 'void', doc: 'Set rendering mode for shapes' },
+            'getRenderMode': { returns: "'fill' | 'stroke' | 'glass'", doc: 'Get current rendering mode' },
+            'beginGroup': { params: ['name: string'], returns: 'void', doc: 'Begin a named group' },
+            'endGroup': { returns: 'void', doc: 'End current group' },
         },
         getters: {
             'length': { returns: 'number', doc: 'Number of paths collected' },
+            'stats': { returns: '{ shapes: number; segments: number }', doc: 'Get statistics' },
         },
     },
 

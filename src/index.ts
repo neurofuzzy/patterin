@@ -116,7 +116,7 @@ export { shape } from './shapes/index';
  * console.log(svg.toString());
  * ```
  */
-export { SVGCollector, type PathStyle } from './collectors/index';
+export { SVGCollector, type PathStyle, type RenderMode } from './collectors/index';
 
 // ==================== Systems ====================
 /**
@@ -194,5 +194,30 @@ export { quiltBlockTemplates } from './patterns/index';
  * const colors = Sequence.random(42, 1, 2, 3, 4, 5);
  * ```
  */
-export { Sequence, type SequenceFunction, type SequenceValue, type SequenceMode } from './sequence/sequence';
+export { Sequence, sequence, type SequenceFunction, type SequenceValue, type SequenceMode } from './sequence/sequence';
+
+// ==================== Color Palette Generator ====================
+/**
+ * Declarative color palette generator with zone-based distribution.
+ * Generates harmonious color palettes with even distribution across specified zones.
+ * 
+ * @example
+ * ```typescript
+ * import { Palette, Sequence, shape, SVGCollector } from 'patterin';
+ * 
+ * // Generate a palette
+ * const colors = new Palette(6, "blues", "cyans").vibrant().toArray();
+ * 
+ * // Use with Sequence for shape coloring
+ * const colorSeq = Sequence.repeat(...colors);
+ * const shapes = shape.circle().radius(20).clone(5, 40, 0);
+ * shapes.color(colorSeq);
+ * 
+ * // Render with different modes
+ * const svg = new SVGCollector();
+ * svg.setRenderMode('glass'); // 'fill', 'stroke', or 'glass'
+ * shapes.stamp(svg);
+ * ```
+ */
+export { Palette, palette, type ColorZone, type HSLColor } from './color/palette';
 

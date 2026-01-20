@@ -1,1 +1,1 @@
-export { SVGCollector, type PathStyle } from './SVGCollector';
+export { SVGCollector, type PathStyle, type RenderMode } from './SVGCollector';

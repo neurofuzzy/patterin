@@ -2,6 +2,7 @@ import { Shape, Vector2, Vertex } from '../primitives';
 import { PathStyle } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
+import { SequenceFunction } from '../sequence/sequence';
 export type GridType = 'square' | 'hexagonal' | 'triangular';
 export interface GridOptions {
     type?: GridType;
@@ -59,6 +60,22 @@ export declare class GridSystem extends EdgeBasedSystem {
     get columns(): LinesContext;
     /** Add a placement */
     addPlacement(position: Vector2, shape: Shape, style?: PathStyle): void;
+    /**
+     * Set color for all placed shapes in this grid.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This GridSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const grid = system.grid({ rows: 5, cols: 5, spacing: 30 });
+     * grid.place(shape.circle().radius(5));
+     * grid.color(palette.create(25, "blues", "cyans").vibrant());
+     * ```
+     */
+    color(colorValue: string | SequenceFunction): this;
 }
 /**
  * Grid-specific PointsContext with place() support.
@@ -73,5 +90,20 @@ declare class GridPointsContext extends PointsContext {
     every(n: number, offset?: number): GridPointsContext;
     /** Select nodes at specific indices */
     at(...indices: number[]): GridPointsContext;
+    /**
+     * Set color for shapes placed at selected grid points.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This GridPointsContext for chaining
+     *
+     * @example
+     * ```typescript
+     * // Color specific grid positions
+     * grid.place(shape.circle().radius(5));
+     * grid.every(2).color(palette.create(3, "reds").vibrant());
+     * grid.every(2, 1).color(palette.create(3, "blues").vibrant());
+     * ```
+     */
+    color(colorValue: string | SequenceFunction): this;
 }
 export {};

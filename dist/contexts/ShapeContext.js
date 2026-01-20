@@ -2,6 +2,7 @@ import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
+import { Palette } from '../color/palette';
 /**
  * Base class for contexts that operate on collections with selection capabilities.
  * Provides common selection methods: every(), at(), length
@@ -415,6 +416,28 @@ export class ShapeContext {
         return this;
     }
     /**
+     * Set the color for this shape.
+     *
+     * Color is stored as a hex string and used by SVGCollector during rendering.
+     * The rendering mode (fill, stroke, glass) determines how the color is applied.
+     *
+     * @param colorValue - Hex color string (e.g., '#ff5733')
+     * @returns This context for chaining
+     *
+     * @example
+     * ```typescript
+     * const circle = shape.circle().radius(30).color('#ff5733');
+     *
+     * // Use with palette
+     * const colors = new Palette(6, "blues").toArray();
+     * shape.rect().size(40).color(colors[0]);
+     * ```
+     */
+    color(colorValue) {
+        this._shape.color = colorValue;
+        return this;
+    }
+    /**
      * Stamp (render) this shape to an SVG collector.
      *
      * @param collector - The SVGCollector to render to
@@ -440,11 +463,8 @@ export class ShapeContext {
         if (x !== 0 || y !== 0) {
             clone.translate(new Vector2(x, y));
         }
-        const finalStyle = {
-            ...DEFAULT_STYLES.shape,
-            ...style
-        };
-        collector.addShape(clone, finalStyle);
+        // Use the provided style directly, allowing render mode to control defaults
+        collector.addShape(clone, style);
     }
     // ==================== Phase 1.5 Operations ====================
     /**
@@ -1100,6 +1120,50 @@ export class ShapesContext extends SelectableContext {
     inset(distance, count = 0, miterLimit = 4) {
         return this.offset(-Math.abs(distance), count, miterLimit);
     }
+    /**
+     * Set color for all shapes (supports sequences and palettes).
+     *
+     * When a Palette is provided, each shape gets the next color from the palette.
+     * When a sequence is provided, each shape gets the next color from the sequence.
+     * When a string is provided, all shapes get the same color.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This ShapesContext for chaining
+     *
+     * @example
+     * ```typescript
+     * // Same color for all shapes
+     * shapes.color('#ff5733');
+     *
+     * // Use palette directly (streamlined API)
+     * shapes.color(palette.create(6, "blues", "cyans").vibrant());
+     *
+     * // Use sequence for different colors
+     * shapes.color(sequence.repeat(10, 20, 30));
+     * ```
+     */
+    color(colorValue) {
+        if (colorValue instanceof Palette) {
+            // Palette: assign next color to each shape
+            for (const shape of this._items) {
+                shape.color = colorValue.next();
+            }
+        }
+        else if (typeof colorValue === 'function' && 'current' in colorValue) {
+            // Sequence: assign next color to each shape
+            for (const shape of this._items) {
+                const nextColor = colorValue();
+                shape.color = String(nextColor);
+            }
+        }
+        else {
+            // String: assign same color to all shapes
+            for (const shape of this._items) {
+                shape.color = colorValue;
+            }
+        }
+        return this;
+    }
     /** Move all shapes so their collective center is at position */
     moveTo(x, y) {
         const bounds = this.getBounds();
@@ -1184,11 +1248,7 @@ export class ShapesContext extends SelectableContext {
     }
     /** Stamp all shapes to collector */
     stamp(collector, x = 0, y = 0, style = {}) {
-        // Default style
-        const finalStyle = {
-            ...DEFAULT_STYLES.shape,
-            ...style
-        };
+        // Use the provided style directly, allowing render mode to control defaults
         for (const shape of this._items) {
             if (shape.ephemeral)
                 continue;
@@ -1196,7 +1256,7 @@ export class ShapesContext extends SelectableContext {
             if (x !== 0 || y !== 0) {
                 clone.translate(new Vector2(x, y));
             }
-            collector.addShape(clone, finalStyle);
+            collector.addShape(clone, style);
         }
     }
     // ==================== Phase 1.5 Operations ====================

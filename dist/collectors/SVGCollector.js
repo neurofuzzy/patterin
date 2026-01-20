@@ -1,3 +1,4 @@
+import { Palette } from '../color/palette';
 /**
  * Default styles for system rendering.
  * Traced connections use thinner strokes than placed shapes.
@@ -62,6 +63,12 @@ export class SVGCollector {
         this.maxX = -Infinity;
         this.maxY = -Infinity;
         this._segmentCount = 0;
+        /** Current rendering mode for shapes */
+        this.renderMode = 'stroke';
+        /** Current color index for auto-assignment */
+        this.colorIndex = 0;
+        // Create a diverse default palette covering the spectrum
+        this.defaultPalette = new Palette(16, "reds", "oranges", "yellows", "greens", "cyans", "blues", "purples", "magentas").toArray();
     }
     /**
      * Add a path (raw SVG path data) to the collector.
@@ -87,9 +94,10 @@ export class SVGCollector {
      * Add a shape to the collector.
      *
      * Ephemeral shapes are skipped automatically.
+     * Colors are applied based on the current render mode.
      *
      * @param shape - The Shape primitive to add
-     * @param style - Optional PathStyle for stroke, fill, etc.
+     * @param style - Optional PathStyle for stroke, fill, etc. (overrides render mode)
      *
      * @example
      * ```typescript
@@ -100,7 +108,21 @@ export class SVGCollector {
     addShape(shape, style = {}) {
         if (shape.ephemeral)
             return;
-        this.addPath(shape.toPathData(), style);
+        // Determine the color to use
+        let shapeColor = shape.color;
+        if (!shapeColor) {
+            // Auto-assign from default palette
+            shapeColor = this.defaultPalette[this.colorIndex % this.defaultPalette.length];
+            this.colorIndex++;
+        }
+        // Apply render mode to get base style
+        const renderModeStyle = this.applyRenderMode(shapeColor);
+        // Merge: render mode base → explicit style overrides
+        const finalStyle = {
+            ...renderModeStyle,
+            ...style
+        };
+        this.addPath(shape.toPathData(), finalStyle);
     }
     /**
      * Begin a named group for organizational purposes.
@@ -133,6 +155,62 @@ export class SVGCollector {
      */
     endGroup() {
         this.currentGroup = undefined;
+    }
+    /**
+     * Set the rendering mode for shapes.
+     *
+     * Determines how shape colors are rendered:
+     * - 'fill': Solid fill with no stroke
+     * - 'stroke': Stroke only with no fill
+     * - 'glass': Semi-transparent fill (50% opacity) with stroke
+     *
+     * @param mode - The rendering mode to use
+     *
+     * @example
+     * ```typescript
+     * const svg = new SVGCollector();
+     * svg.setRenderMode('fill');
+     * shape.circle().radius(30).color('#ff5733').stamp(svg);
+     *
+     * svg.setRenderMode('glass');
+     * shape.rect().size(40).color('#3498db').stamp(svg);
+     * ```
+     */
+    setRenderMode(mode) {
+        this.renderMode = mode;
+    }
+    /**
+     * Get the current rendering mode.
+     */
+    getRenderMode() {
+        return this.renderMode;
+    }
+    /**
+     * Apply render mode styling to a color.
+     * @param color - The color to apply
+     * @returns PathStyle based on the current render mode
+     */
+    applyRenderMode(color) {
+        switch (this.renderMode) {
+            case 'fill':
+                return {
+                    fill: color,
+                    stroke: 'none'
+                };
+            case 'stroke':
+                return {
+                    fill: 'none',
+                    stroke: color,
+                    strokeWidth: 1
+                };
+            case 'glass':
+                return {
+                    fill: color,
+                    fillOpacity: 0.5,
+                    stroke: color,
+                    strokeWidth: 1
+                };
+        }
     }
     /**
      * Parse path data to update bounds.
@@ -345,6 +423,12 @@ export class SVGCollector {
         if (style.opacity !== undefined) {
             attrs.push(`opacity="${style.opacity}"`);
         }
+        if (style.fillOpacity !== undefined) {
+            attrs.push(`fill-opacity="${style.fillOpacity}"`);
+        }
+        if (style.strokeOpacity !== undefined) {
+            attrs.push(`stroke-opacity="${style.strokeOpacity}"`);
+        }
         if (style.dash && style.dash.length > 0) {
             attrs.push(`stroke-dasharray="${style.dash.join(' ')}"`);
         }
@@ -370,6 +454,12 @@ export class SVGCollector {
         }
         if (style.opacity !== undefined) {
             attrs.push(`opacity="${style.opacity}"`);
+        }
+        if (style.fillOpacity !== undefined) {
+            attrs.push(`fill-opacity="${style.fillOpacity}"`);
+        }
+        if (style.strokeOpacity !== undefined) {
+            attrs.push(`stroke-opacity="${style.strokeOpacity}"`);
         }
         if (style.dash && style.dash.length > 0) {
             attrs.push(`stroke-dasharray="${style.dash.join(' ')}"`);

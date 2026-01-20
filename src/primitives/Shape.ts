@@ -20,6 +20,9 @@ export class Shape {
     /** Optional group/role identifier for color layering */
     group?: string;
 
+    /** Optional color for this shape (hex string) */
+    color?: string;
+
     constructor(
         public segments: Segment[],
         public winding: Winding = 'ccw'
@@ -223,6 +226,8 @@ export class Shape {
         const shape = new Shape(segments, this.winding);
         shape.ephemeral = this.ephemeral;
         shape.open = this.open;
+        shape.group = this.group;
+        shape.color = this.color;
         shape.connectSegments();
         return shape;
     }
