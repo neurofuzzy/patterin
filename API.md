@@ -1043,4 +1043,4 @@ quilt.shapes.shapes.forEach(shape => {
 });
 ```
 
-For more examples and interactive exploration, check out the [Playground](https://neurofuzzy.github.io/patterin/playground).
+For more examples and interactive exploration, check out the [Playground](https://neurofuzzy.github.io/patterin/).

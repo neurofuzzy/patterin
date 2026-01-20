@@ -24,7 +24,7 @@
     "type": "git",
     "url": "https://github.com/neurofuzzy/patterin.git"
   },
-  "homepage": "https://neurofuzzy.github.io/patterin/playground",
+  "homepage": "https://neurofuzzy.github.io/patterin/",
   "bugs": {
     "url": "https://github.com/neurofuzzy/patterin/issues"
   },
@@ -47,7 +47,7 @@
   "scripts": {
     "build": "tsc",
     "build:playground": "cd playground && npm install && npm run build",
-    "deploy": "npm run build && npm run build:playground && gh-pages -d playground/dist",
+    "deploy": "npm run build && npm run build:playground && rm -rf /tmp/patterin-deploy && mkdir -p /tmp/patterin-deploy && cp -r playground/dist/* /tmp/patterin-deploy/ && cd /tmp/patterin-deploy && git init && git add . && git commit -m 'Deploy playground' && git push -f https://github.com/neurofuzzy/patterin.git HEAD:gh-pages",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

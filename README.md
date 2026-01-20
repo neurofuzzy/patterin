@@ -18,7 +18,7 @@ gear.lines.every(2).extrude(15);
 
 Simple, right? But Patterin goes deeper. Create grids, tessellations, fractals. Operate on points, lines, or entire collections of shapes. Transform patterns with a few method calls. Export clean SVG for fabrication or the web.
 
-**[Try it live in the Playground →](https://neurofuzzy.github.io/patterin/playground)** | **[Read the API Docs →](API.md)**
+**[Try it live in the Playground →](https://neurofuzzy.github.io/patterin/)** | **[Read the API Docs →](API.md)**
 
 ## Why Patterin?
 
@@ -50,7 +50,7 @@ Install directly from GitHub to get the latest version between releases.
 
 ### Or Just Use the Playground
 
-**Don't want to install anything?** Try the **[live playground](https://neurofuzzy.github.io/patterin/playground/)** with full TypeScript autocomplete, built-in examples, and instant SVG preview. Perfect for learning, prototyping, or creating one-off designs.
+**Don't want to install anything?** Try the **[live playground](https://neurofuzzy.github.io/patterin/)** with full TypeScript autocomplete, built-in examples, and instant SVG preview. Perfect for learning, prototyping, or creating one-off designs.
 
 ## Quick Start
 
@@ -255,7 +255,7 @@ shapes.shapes.forEach(shape => {
 
 - **[Complete API Reference](API.md)** - Detailed documentation for every method and option
 - **[Examples Directory](examples/)** - 25+ runnable examples from basic to advanced
-- **[Playground](https://neurofuzzy.github.io/patterin/playground)** - Interactive live coding environment
+- **[Playground](https://neurofuzzy.github.io/patterin/)** - Interactive live coding environment
 
 ## API Overview
 
@@ -337,7 +337,7 @@ Patterin includes a **live coding playground** with:
 - Export to SVG
 - Theme picker
 
-[Try it live →](https://neurofuzzy.github.io/patterin/playground)
+[Try it live →](https://neurofuzzy.github.io/patterin/)
 
 Or run locally:
 
@@ -430,7 +430,7 @@ MIT © [Geoff Gaudreault](https://github.com/neurofuzzy)
 
 ## Links
 
-- [Playground](https://neurofuzzy.github.io/patterin/playground)
+- [Playground](https://neurofuzzy.github.io/patterin/)
 - [GitHub](https://github.com/neurofuzzy/patterin)
 - [npm](https://www.npmjs.com/package/patterin)
 - [Issues](https://github.com/neurofuzzy/patterin/issues)

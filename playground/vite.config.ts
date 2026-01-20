@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
-    base: '/patterin/playground/',
+    base: '/patterin/',
     resolve: {
         alias: {
             'patterin': resolve(__dirname, '../src/index.ts'),
