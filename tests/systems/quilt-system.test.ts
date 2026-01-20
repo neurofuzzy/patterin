@@ -8,7 +8,7 @@ const saveTestOutput = (svg: string, filename: string) => {
     const outputDir = join(process.cwd(), 'test-output');
     try {
         mkdirSync(outputDir, { recursive: true });
-    } catch (e) {
+    } catch {
         // Directory might already exist
     }
     writeFileSync(join(outputDir, filename), svg);

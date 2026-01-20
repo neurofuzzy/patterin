@@ -13,7 +13,7 @@
  * ```
  */
 
-import { Shape, Vector2 } from '../primitives';
+// Unused imports removed - templates are pure data structures
 
 // =============================================================================
 // Block Rotation Type

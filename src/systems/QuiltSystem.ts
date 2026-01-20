@@ -1,5 +1,5 @@
 import { Shape, Vector2, Vertex } from '../primitives';
-import { ShapeContext, ShapesContext } from '../contexts/ShapeContext';
+import { ShapesContext } from '../contexts/ShapeContext';
 import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { SystemBounds } from '../types';
 import { BaseSystem, type RenderGroup, type GroupItem } from './BaseSystem';
