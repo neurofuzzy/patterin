@@ -63,10 +63,10 @@ function renderThumbnailFromCollectorData(data: {
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
     
-    // Thumbnail dimensions
-    const thumbWidth = 100;
-    const thumbHeight = 60;
-    const padding = 4; // Small padding
+    // Thumbnail dimensions (16:9 aspect ratio)
+    const thumbWidth = 160;
+    const thumbHeight = 90;
+    const padding = 6; // Small padding
     
     // Calculate scale to FILL thumbnail (zoom in for close-up)
     const scaleX = (thumbWidth - padding * 2) / contentWidth;
@@ -106,12 +106,12 @@ function renderThumbnailFromCollectorData(data: {
         return `<path ${attrs.join(' ')} />`;
     }).join('\n  ');
     
-    return `<svg width="100" height="60" viewBox="${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}" xmlns="http://www.w3.org/2000/svg">
+    return `<svg width="160" height="90" viewBox="${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}" xmlns="http://www.w3.org/2000/svg">
   ${pathElements}
 </svg>`;
 }
 
-// Scale SVG to fit in thumbnail (100x60px) with "scale to fill"
+// Scale SVG to fit in thumbnail (160x90px) with "scale to fill"
 function scaleSVGForThumbnail(svgString: string): string {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, 'image/svg+xml');
@@ -122,18 +122,18 @@ function scaleSVGForThumbnail(svgString: string): string {
     // Get the viewBox which contains the actual content bounds
     const viewBox = svg.getAttribute('viewBox');
     if (!viewBox) {
-        // Fallback: just set fixed dimensions
-        svg.setAttribute('width', '100');
-        svg.setAttribute('height', '60');
+        // Fallback: just set fixed dimensions (16:9 aspect ratio)
+        svg.setAttribute('width', '160');
+        svg.setAttribute('height', '90');
         return new XMLSerializer().serializeToString(svg);
     }
     
     const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
     
-    // Target thumbnail dimensions
-    const targetWidth = 100;
-    const targetHeight = 60;
-    const padding = 8; // pixels of padding
+    // Target thumbnail dimensions (16:9 aspect ratio)
+    const targetWidth = 160;
+    const targetHeight = 90;
+    const padding = 6; // pixels of padding
     
     // Calculate scale to FILL the thumbnail (zoom in to content)
     // Use max instead of min to fill, then we'll crop what doesn't fit
@@ -152,7 +152,7 @@ function scaleSVGForThumbnail(svgString: string): string {
     const newMinY = centerY - scaledHeight / 2;
     
     // Create wrapper SVG with the zoomed viewBox
-    const wrapper = `<svg width="100" height="60" viewBox="${newMinX} ${newMinY} ${scaledWidth} ${scaledHeight}" xmlns="http://www.w3.org/2000/svg">
+    const wrapper = `<svg width="160" height="90" viewBox="${newMinX} ${newMinY} ${scaledWidth} ${scaledHeight}" xmlns="http://www.w3.org/2000/svg">
   ${svg.innerHTML}
 </svg>`;
     

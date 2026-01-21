@@ -316,7 +316,7 @@
 }
 
 .example-preview {
-    height: 60px;
+    height: 90px;
     background: var(--bg-secondary);
     border-radius: 4px;
     display: flex;
