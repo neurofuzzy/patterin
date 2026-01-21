@@ -284,8 +284,33 @@ class Sequence {
      * console.log([s(), s(), s(), s()]); // e.g., [3, 1, 4, 2]
      * ```
      */
-    static shuffle(...values) {
-        return new Sequence(values, 'shuffle').createFunction();
+    /**
+     * Creates a shuffle sequence (one-time shuffle, then repeats)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
+     * @returns A sequence function
+     *
+     * @example With seed (deterministic)
+     * ```typescript
+     * const s = Sequence.shuffle(42, 1, 2, 3);
+     * console.log([s(), s(), s()]); // e.g., [2, 3, 1]
+     * s.reset();
+     * console.log([s(), s(), s()]); // Same: [2, 3, 1]
+     * ```
+     *
+     * @example Without seed (uses current time)
+     * ```typescript
+     * const s = Sequence.shuffle(1, 2, 3);
+     * console.log([s(), s(), s()]); // Shuffled order
+     * ```
+     */
+    static shuffle(seed, ...values) {
+        // If first argument is a number and there are more values, treat it as seed
+        if (typeof seed === 'number' && values.length > 0) {
+            return new Sequence(values, 'shuffle', seed).createFunction();
+        }
+        // Otherwise, first argument is a value, no seed provided
+        return new Sequence([seed, ...values], 'shuffle').createFunction();
     }
     static random(seedOrValue, ...values) {
         if (typeof seedOrValue === 'number' && values.length > 0) {
@@ -369,9 +394,11 @@ export const sequence = {
     },
     /**
      * Create a shuffled sequence (shuffles once at creation)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
      */
-    shuffle(...values) {
-        return Sequence.shuffle(...values);
+    shuffle(seed, ...values) {
+        return Sequence.shuffle(seed, ...values);
     },
     /**
      * Create a random sequence with seed (deterministic, reshuffles on cycle)

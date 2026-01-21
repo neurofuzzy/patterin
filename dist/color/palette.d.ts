@@ -203,15 +203,22 @@ declare class Palette {
      * Create a shuffled sequence from this palette.
      * Returns a SequenceFunction that cycles through colors in random order.
      *
+     * @param seed - Optional seed for deterministic shuffling
      * @returns SequenceFunction that shuffles colors
      *
-     * @example
+     * @example Without seed
      * ```typescript
      * const colors = palette.create(6, "blues", "cyans").vibrant();
-     * circles.color(colors.shuffle());  // Each circle gets random color
+     * circles.color(colors.shuffle());  // Random shuffle each run
+     * ```
+     *
+     * @example With seed (deterministic)
+     * ```typescript
+     * const colors = palette.create(6, "blues", "cyans").vibrant();
+     * circles.color(colors.shuffle(42));  // Same shuffle every run
      * ```
      */
-    shuffle(): SequenceFunction;
+    shuffle(seed?: number): SequenceFunction;
     /**
      * Create a yoyo sequence from this palette.
      * Returns a SequenceFunction that bounces back and forth through colors.

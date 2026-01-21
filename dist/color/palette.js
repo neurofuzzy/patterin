@@ -144,7 +144,8 @@ class Palette {
      * Applies accumulated modifiers to an HSL color
      */
     applyModifiers(color) {
-        let { h, s, l } = color;
+        const { h } = color;
+        let { s, l } = color;
         // Apply each modifier cumulatively
         for (const modifier of this.modifiers) {
             if (modifier.type === 'saturation') {
@@ -398,16 +399,28 @@ class Palette {
      * Create a shuffled sequence from this palette.
      * Returns a SequenceFunction that cycles through colors in random order.
      *
+     * @param seed - Optional seed for deterministic shuffling
      * @returns SequenceFunction that shuffles colors
      *
-     * @example
+     * @example Without seed
      * ```typescript
      * const colors = palette.create(6, "blues", "cyans").vibrant();
-     * circles.color(colors.shuffle());  // Each circle gets random color
+     * circles.color(colors.shuffle());  // Random shuffle each run
+     * ```
+     *
+     * @example With seed (deterministic)
+     * ```typescript
+     * const colors = palette.create(6, "blues", "cyans").vibrant();
+     * circles.color(colors.shuffle(42));  // Same shuffle every run
      * ```
      */
-    shuffle() {
-        return sequence.shuffle(...this.toArray());
+    shuffle(seed) {
+        const colors = this.toArray();
+        if (seed !== undefined) {
+            return sequence.shuffle(seed, ...colors);
+        }
+        // When no seed, pass first color explicitly to satisfy type checker
+        return sequence.shuffle(colors[0], ...colors.slice(1));
     }
     /**
      * Create a yoyo sequence from this palette.

@@ -25,7 +25,7 @@
  * ```
  */
 
-import { sequence, type SequenceFunction } from '../sequence/sequence';
+import { sequence, type SequenceFunction, type SequenceValue } from '../sequence/sequence';
 
 /**
  * Available color zones on the hue spectrum
@@ -220,7 +220,8 @@ class Palette {
    * Applies accumulated modifiers to an HSL color
    */
   private applyModifiers(color: HSLColor): HSLColor {
-    let { h, s, l } = color;
+    const { h } = color;
+    let { s, l } = color;
     
     // Apply each modifier cumulatively
     for (const modifier of this.modifiers) {
@@ -484,16 +485,28 @@ class Palette {
    * Create a shuffled sequence from this palette.
    * Returns a SequenceFunction that cycles through colors in random order.
    * 
+   * @param seed - Optional seed for deterministic shuffling
    * @returns SequenceFunction that shuffles colors
    * 
-   * @example
+   * @example Without seed
    * ```typescript
    * const colors = palette.create(6, "blues", "cyans").vibrant();
-   * circles.color(colors.shuffle());  // Each circle gets random color
+   * circles.color(colors.shuffle());  // Random shuffle each run
+   * ```
+   * 
+   * @example With seed (deterministic)
+   * ```typescript
+   * const colors = palette.create(6, "blues", "cyans").vibrant();
+   * circles.color(colors.shuffle(42));  // Same shuffle every run
    * ```
    */
-  shuffle(): SequenceFunction {
-    return sequence.shuffle(...(this.toArray() as any));
+  shuffle(seed?: number): SequenceFunction {
+    const colors = this.toArray() as unknown as SequenceValue[];
+    if (seed !== undefined) {
+      return sequence.shuffle(seed, ...colors);
+    }
+    // When no seed, pass first color explicitly to satisfy type checker
+    return sequence.shuffle(colors[0], ...colors.slice(1));
   }
 
   /**
@@ -509,7 +522,7 @@ class Palette {
    * ```
    */
   yoyo(): SequenceFunction {
-    return sequence.yoyo(...(this.toArray() as any));
+    return sequence.yoyo(...(this.toArray() as unknown as SequenceValue[]));
   }
 
   /**
@@ -531,11 +544,11 @@ class Palette {
    * ```
    */
   random(seed?: number): SequenceFunction {
-    const colors = this.toArray();
+    const colors = this.toArray() as unknown as SequenceValue[];
     if (seed !== undefined) {
-      return sequence.random(seed, ...(colors as any));
+      return sequence.random(seed, ...colors);
     } else {
-      return (sequence.random as any)(...colors);
+      return (sequence.random as ((...values: SequenceValue[]) => SequenceFunction))(...colors);
     }
   }
 }

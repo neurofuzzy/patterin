@@ -8,6 +8,7 @@ import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
 import { SequenceFunction } from '../sequence/sequence';
+import type { Palette } from '../color/palette';
 export interface CloneOptions {
     count: number;
     offsetX: number;
@@ -69,7 +70,7 @@ export declare class CloneSystem extends BaseSystem {
      * circles.color(palette.create(5, "blues").vibrant());
      * ```
      */
-    color(colorValue: string | SequenceFunction): this;
+    color(colorValue: string | SequenceFunction | Palette): this;
     /**
      * Make the system concrete (renderable).
      */

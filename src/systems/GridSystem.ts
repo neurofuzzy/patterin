@@ -2,7 +2,9 @@ import { Shape, Segment, Vector2, Vertex } from '../primitives';
 import { PathStyle } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
+import { Placement } from './BaseSystem';
 import { SequenceFunction } from '../sequence/sequence';
+import { Palette } from '../color/palette';
 
 export type GridType = 'square' | 'hexagonal' | 'triangular';
 
@@ -398,8 +400,8 @@ export class GridSystem extends EdgeBasedSystem {
      * grid.color(palette.create(25, "blues", "cyans").vibrant());
      * ```
      */
-    color(colorValue: string | SequenceFunction): this {
-        this.shapes.color(colorValue as any);
+    color(colorValue: string | SequenceFunction | Palette): this {
+        this.shapes.color(colorValue as string | SequenceFunction | Palette);
         return this;
     }
 }
@@ -467,7 +469,9 @@ class GridPointsContext extends PointsContext {
     color(colorValue: string | SequenceFunction): this {
         // Get placements at selected positions
         const selectedPositions = new Set(this._items.map(v => `${v.position.x},${v.position.y}`));
-        const placements = (this._grid as any)._placements.filter((p: any) => 
+        // Access protected _placements through type assertion
+        const grid = this._grid as unknown as { _placements: Placement[] };
+        const placements = grid._placements.filter((p) => 
             selectedPositions.has(`${p.position.x},${p.position.y}`)
         );
         

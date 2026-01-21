@@ -1,0 +1,103 @@
+<svg width="160" height="90" viewBox="-7.297297297297305 35.27027027027027 194.5945945945946 109.45945945945947" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 0 0 L 20 0 L 20 20 L 0 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 0 L 40 20 L 20 20 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 20 0 L 40 0 L 20 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 0 L 60 0 L 60 20 L 40 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 20 L 20 20 L 20 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 20 L 20 40 L 0 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 20 L 40 20 L 40 40 L 20 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 20 L 60 40 L 40 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 20 L 60 20 L 60 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 40 L 20 40 L 20 60 L 0 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 40 L 40 40 L 20 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 40 L 40 60 L 20 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 40 L 60 40 L 60 60 L 40 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 0 L 90 0 L 60 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 0 L 90 30 L 60 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 90 0 L 120 30 L 90 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 0 L 120 0 L 120 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 30 L 90 30 L 90 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 60 30 L 90 60 L 60 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 30 L 120 60 L 90 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 30 L 120 30 L 90 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 0 L 140 0 L 140 20 L 120 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 0 L 160 20 L 140 20 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 0 L 160 0 L 140 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 0 L 180 0 L 180 20 L 160 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 20 L 140 20 L 140 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 120 20 L 140 40 L 120 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 20 L 160 20 L 160 40 L 140 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 20 L 180 40 L 160 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 20 L 180 20 L 180 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 40 L 140 40 L 140 60 L 120 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 40 L 160 40 L 140 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 40 L 160 60 L 140 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 40 L 180 40 L 180 60 L 160 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 60 L 30 60 L 0 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 60 L 30 90 L 0 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 30 60 L 60 90 L 30 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 60 L 60 60 L 60 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 90 L 30 90 L 30 120 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 90 L 30 120 L 0 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 90 L 60 120 L 30 120 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 90 L 60 90 L 30 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 60 L 80 60 L 80 80 L 60 80 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 90 60 L 80 80 L 100 80 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 80 60 L 90 60 L 80 80 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 90 60 L 100 60 L 100 80 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 60 L 120 60 L 120 80 L 100 80 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 90 L 80 80 L 80 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 60 80 L 80 80 L 60 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 90 L 80 100 L 60 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 80 80 L 100 80 L 100 100 L 80 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 80 L 120 90 L 100 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 80 L 120 80 L 120 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 90 L 120 100 L 100 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 100 L 80 100 L 80 120 L 60 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 80 100 L 100 100 L 90 120 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 80 100 L 90 120 L 80 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 100 L 100 120 L 90 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 100 L 120 100 L 120 120 L 100 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 60 L 150 60 L 120 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 150 60 L 150 90 L 120 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 150 60 L 180 90 L 150 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 150 60 L 180 60 L 180 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 90 L 150 90 L 150 120 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 120 90 L 150 120 L 120 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 180 90 L 180 120 L 150 120 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 150 90 L 180 90 L 150 120 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 120 L 20 120 L 20 140 L 0 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 120 L 40 140 L 20 140 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 20 120 L 40 120 L 20 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 120 L 60 120 L 60 140 L 40 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 140 L 20 140 L 20 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 140 L 20 160 L 0 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 140 L 40 140 L 40 160 L 20 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 140 L 60 160 L 40 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 140 L 60 140 L 60 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 160 L 20 160 L 20 180 L 0 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 160 L 40 160 L 20 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 160 L 40 180 L 20 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 160 L 60 160 L 60 180 L 40 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 120 L 90 120 L 60 150 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 120 L 90 150 L 60 150 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 90 120 L 120 150 L 90 150 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 120 L 120 120 L 120 150 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 150 L 90 150 L 90 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 60 150 L 90 180 L 60 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 150 L 120 180 L 90 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 90 150 L 120 150 L 90 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 120 L 140 120 L 140 140 L 120 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 120 L 160 140 L 140 140 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 120 L 160 120 L 140 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 120 L 180 120 L 180 140 L 160 140 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 140 L 140 140 L 140 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 120 140 L 140 160 L 120 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 140 L 160 140 L 160 160 L 140 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 140 L 180 160 L 160 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 140 L 180 140 L 180 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 120 160 L 140 160 L 140 180 L 120 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 160 L 160 160 L 140 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 160 L 160 180 L 140 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 160 L 180 160 L 180 180 L 160 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+</svg>

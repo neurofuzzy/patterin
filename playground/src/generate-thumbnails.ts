@@ -179,7 +179,7 @@ function renderExampleCard(result: ThumbnailResult): HTMLElement {
                 <div class="example-title">${result.example.name}</div>
                 <div class="example-category">${result.example.category}</div>
             </div>
-            ${result.svg ? '<button class="copy-btn">Copy SVG</button>' : ''}
+            ${result.svg ? '<button class="download-btn">💾 Save</button>' : ''}
         </div>
         <div class="thumbnail-container">
             ${result.svg ? result.svg : result.error ? `<div class="error">${result.error}</div>` : '<div class="loading">Generating...</div>'}
@@ -187,12 +187,12 @@ function renderExampleCard(result: ThumbnailResult): HTMLElement {
     `;
     
     if (result.svg) {
-        const copyBtn = card.querySelector('.copy-btn');
-        copyBtn?.addEventListener('click', () => {
-            navigator.clipboard.writeText(result.svg!);
-            copyBtn.textContent = '✓ Copied!';
+        const downloadBtn = card.querySelector('.download-btn');
+        downloadBtn?.addEventListener('click', () => {
+            downloadThumbnail(result);
+            downloadBtn.textContent = '✓ Saved!';
             setTimeout(() => {
-                copyBtn.textContent = 'Copy SVG';
+                downloadBtn.textContent = '💾 Save';
             }, 2000);
         });
     }
@@ -200,20 +200,27 @@ function renderExampleCard(result: ThumbnailResult): HTMLElement {
     return card;
 }
 
-// Generate TypeScript code with all thumbnails
+// Convert example name to filename
+function nameToSlug(name: string): string {
+    return name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+// Generate TypeScript code with thumbnail URLs
 function generateTypescriptCode(): string {
-    // Generate the EXAMPLE_THUMBNAILS object
+    // Generate the EXAMPLE_THUMBNAILS object with URL references
     let code = '/**\n';
-    code += ' * Thumbnail SVGs for examples\n';
-    code += ' * Separated from code to allow independent updates\n';
+    code += ' * Thumbnail URLs for examples\n';
+    code += ' * SVG files are stored in playground/public/thumbnails/\n';
     code += ' * Generate using: http://localhost:3000/patterin/generate-thumbnails.html\n';
     code += ' */\n';
     code += 'export const EXAMPLE_THUMBNAILS: Record<string, string> = {\n';
     
     results.forEach((result) => {
         if (result.svg) {
-            const minified = minifySVG(result.svg);
-            code += `  ${JSON.stringify(result.example.name)}: \`${minified.replace(/`/g, '\\`')}\`,\n`;
+            const slug = nameToSlug(result.example.name);
+            code += `  ${JSON.stringify(result.example.name)}: \`/thumbnails/${slug}.svg\`,\n`;
         }
     });
     
@@ -222,9 +229,38 @@ function generateTypescriptCode(): string {
     return code;
 }
 
+// Download individual thumbnail as SVG file
+function downloadThumbnail(result: ThumbnailResult): void {
+    if (!result.svg) return;
+    
+    const slug = nameToSlug(result.example.name);
+    const blob = new Blob([result.svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Download all thumbnails as individual files
+async function downloadAllThumbnails(): Promise<void> {
+    for (const result of results) {
+        if (result.svg) {
+            downloadThumbnail(result);
+            // Small delay between downloads to avoid browser blocking
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+}
+
 // Main generation function
 async function generateAll(): Promise<void> {
     const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
+    const downloadAllBtn = document.getElementById('downloadAllBtn') as HTMLButtonElement;
     const copyAllBtn = document.getElementById('copyAllBtn') as HTMLButtonElement;
     const status = document.getElementById('status') as HTMLElement;
     const grid = document.getElementById('grid') as HTMLElement;
@@ -232,6 +268,7 @@ async function generateAll(): Promise<void> {
     const output = document.getElementById('output') as HTMLTextAreaElement;
     
     generateBtn.disabled = true;
+    downloadAllBtn.disabled = true;
     copyAllBtn.disabled = true;
     results.length = 0;
     grid.innerHTML = '';
@@ -268,6 +305,7 @@ async function generateAll(): Promise<void> {
     outputSection.style.display = 'block';
     
     generateBtn.disabled = false;
+    downloadAllBtn.disabled = false;
     copyAllBtn.disabled = false;
 }
 
@@ -275,17 +313,29 @@ async function generateAll(): Promise<void> {
 document.addEventListener('DOMContentLoaded', () => {
     initWorker();
     
-    const generateBtn = document.getElementById('generateBtn');
-    const copyAllBtn = document.getElementById('copyAllBtn');
+    const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement;
+    const downloadAllBtn = document.getElementById('downloadAllBtn') as HTMLButtonElement;
+    const copyAllBtn = document.getElementById('copyAllBtn') as HTMLButtonElement;
     const output = document.getElementById('output') as HTMLTextAreaElement;
     
     generateBtn?.addEventListener('click', generateAll);
     
+    downloadAllBtn?.addEventListener('click', async () => {
+        downloadAllBtn.textContent = '⏳ Downloading...';
+        downloadAllBtn.disabled = true;
+        await downloadAllThumbnails();
+        downloadAllBtn.textContent = '✓ All Downloaded!';
+        setTimeout(() => {
+            downloadAllBtn.textContent = '💾 Download All SVGs';
+            downloadAllBtn.disabled = false;
+        }, 3000);
+    });
+    
     copyAllBtn?.addEventListener('click', () => {
         navigator.clipboard.writeText(output.value);
-        copyAllBtn.textContent = '✓ Copied to Clipboard!';
+        copyAllBtn.textContent = '✓ Copied!';
         setTimeout(() => {
-            copyAllBtn.textContent = 'Copy All to Clipboard';
+            copyAllBtn.textContent = '📋 Copy Code';
         }, 2000);
     });
 });

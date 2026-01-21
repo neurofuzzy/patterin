@@ -141,7 +141,27 @@ declare class Sequence {
      * console.log([s(), s(), s(), s()]); // e.g., [3, 1, 4, 2]
      * ```
      */
-    static shuffle(...values: SequenceValue[]): SequenceFunction;
+    /**
+     * Creates a shuffle sequence (one-time shuffle, then repeats)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
+     * @returns A sequence function
+     *
+     * @example With seed (deterministic)
+     * ```typescript
+     * const s = Sequence.shuffle(42, 1, 2, 3);
+     * console.log([s(), s(), s()]); // e.g., [2, 3, 1]
+     * s.reset();
+     * console.log([s(), s(), s()]); // Same: [2, 3, 1]
+     * ```
+     *
+     * @example Without seed (uses current time)
+     * ```typescript
+     * const s = Sequence.shuffle(1, 2, 3);
+     * console.log([s(), s(), s()]); // Shuffled order
+     * ```
+     */
+    static shuffle(seed: number | SequenceValue, ...values: SequenceValue[]): SequenceFunction;
     /**
      * Creates a random sequence (reshuffles on each cycle completion)
      * @param seed - Optional seed for deterministic randomness
@@ -226,8 +246,10 @@ export declare const sequence: {
     once(...values: SequenceValue[]): SequenceFunction;
     /**
      * Create a shuffled sequence (shuffles once at creation)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
      */
-    shuffle(...values: SequenceValue[]): SequenceFunction;
+    shuffle(seed: number | SequenceValue, ...values: SequenceValue[]): SequenceFunction;
     /**
      * Create a random sequence with seed (deterministic, reshuffles on cycle)
      */

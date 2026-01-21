@@ -3,6 +3,7 @@ import { PathStyle } from '../collectors/SVGCollector';
 import { ShapeContext, PointsContext, LinesContext } from '../contexts';
 import { EdgeBasedSystem } from './EdgeBasedSystem';
 import { SequenceFunction } from '../sequence/sequence';
+import { Palette } from '../color/palette';
 export type GridType = 'square' | 'hexagonal' | 'triangular';
 export interface GridOptions {
     type?: GridType;
@@ -75,7 +76,7 @@ export declare class GridSystem extends EdgeBasedSystem {
      * grid.color(palette.create(25, "blues", "cyans").vibrant());
      * ```
      */
-    color(colorValue: string | SequenceFunction): this;
+    color(colorValue: string | SequenceFunction | Palette): this;
 }
 /**
  * Grid-specific PointsContext with place() support.

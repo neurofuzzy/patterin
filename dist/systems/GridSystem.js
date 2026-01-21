@@ -376,7 +376,9 @@ class GridPointsContext extends PointsContext {
     color(colorValue) {
         // Get placements at selected positions
         const selectedPositions = new Set(this._items.map(v => `${v.position.x},${v.position.y}`));
-        const placements = this._grid._placements.filter((p) => selectedPositions.has(`${p.position.x},${p.position.y}`));
+        // Access protected _placements through type assertion
+        const grid = this._grid;
+        const placements = grid._placements.filter((p) => selectedPositions.has(`${p.position.x},${p.position.y}`));
         if (typeof colorValue === 'function' && 'current' in colorValue) {
             // Sequence: each placement gets next color
             for (const placement of placements) {

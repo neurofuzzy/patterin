@@ -121,7 +121,7 @@
             font-size: 12px;
         }
 
-        .copy-btn {
+        .download-btn {
             padding: 4px 8px;
             font-size: 12px;
         }
@@ -162,17 +162,21 @@
     
     <div class="controls">
         <button id="generateBtn" class="primary">Generate All Thumbnails</button>
-        <button id="copyAllBtn" disabled>Copy All to Clipboard</button>
+        <button id="downloadAllBtn" disabled>💾 Download All SVGs</button>
+        <button id="copyAllBtn" disabled>📋 Copy Code</button>
         <div class="status" id="status">Ready</div>
     </div>
 
     <div class="grid" id="grid"></div>
 
     <div class="output" id="outputSection" style="display: none;">
-        <h2>Generated Thumbnails Code</h2>
-        <p style="color: #8b949e; font-size: 14px; margin-bottom: 1rem;">
-            Copy this and replace the <code>EXAMPLE_THUMBNAILS</code> object in <code>playground/src/examples/index.ts</code>
-        </p>
+        <h2>Setup Instructions</h2>
+        <ol style="color: #8b949e; font-size: 14px; margin-bottom: 1rem; line-height: 1.6; padding-left: 1.5rem;">
+            <li>Click "💾 Download All SVGs" to save all thumbnail files</li>
+            <li>Move the downloaded SVG files to: <code style="background: #161b22; padding: 2px 6px; border-radius: 3px;">playground/public/thumbnails/</code></li>
+            <li>Copy the code below and replace the <code style="background: #161b22; padding: 2px 6px; border-radius: 3px;">EXAMPLE_THUMBNAILS</code> object in <code style="background: #161b22; padding: 2px 6px; border-radius: 3px;">playground/src/examples/index.ts</code></li>
+        </ol>
+        <h3 style="margin-bottom: 0.5rem; font-size: 14px;">TypeScript Code:</h3>
         <textarea id="output" readonly></textarea>
     </div>
 
