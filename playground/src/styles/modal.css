@@ -25,7 +25,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     min-width: 320px;
-    max-width: 640px;
+    max-width: 900px;
     max-height: 80vh;
     overflow: hidden;
     box-shadow: 0 16px 48px rgba(1, 4, 9, 0.75);
@@ -263,7 +263,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 .examples-modal {
-    min-width: 400px;
+    min-width: 700px;
 }
 
 .examples-tabs {
@@ -295,7 +295,7 @@
 
 .examples-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
 }
 

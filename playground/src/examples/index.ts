@@ -258,6 +258,117 @@ gosper.trace()`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PALETTES
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Basic Colors',
+    category: 'Palettes',
+    description: 'Simple palette coloring',
+    code: `// Create a palette and color shapes
+const colors = palette.create(5, "blues", "purples")
+
+shape.circle().radius(15)
+  .clone(5, 40)
+  .color(colors)`,
+  },
+  {
+    name: 'Muted Tones',
+    category: 'Palettes',
+    description: 'Desaturated color schemes',
+    code: `// Create muted versions of colors
+const colors = palette.create(6, "reds", "oranges").muted()
+
+shape.hexagon().radius(20)
+  .clone(6, 50)
+  .color(colors)`,
+  },
+  {
+    name: 'Random Colors',
+    category: 'Palettes',
+    description: 'Randomize palette order',
+    code: `// Shuffle colors for variation
+const colors = palette.create(8, "greens").random()
+
+shape.circle().radius(12)
+  .clone(8, 30)
+  .color(colors)`,
+  },
+  {
+    name: 'Yoyo Colors',
+    category: 'Palettes',
+    description: 'Bounce through palette',
+    code: `// Colors bounce back and forth
+const colors = palette.create(4, "reds", "yellows").yoyo()
+
+shape.rect().size(20)
+  .clone(10, 28)
+  .color(colors)`,
+  },
+  {
+    name: 'Grid Coloring',
+    category: 'Palettes',
+    description: 'Color grid cells',
+    code: `// Apply palette to grid
+const colors = palette.create(6, "blues", "purples").muted()
+
+const grid = system.grid({
+  rows: 3,
+  cols: 3,
+  spacing: 30,
+  x: -30,
+  y: -30,
+})
+
+grid.place(shape.circle().radius(10))
+  .color(colors)`,
+  },
+  {
+    name: 'Complex Pattern',
+    category: 'Palettes',
+    description: 'Palettes + sequences + transforms',
+    code: `// Combine palettes, sequences, and transforms
+const colors = palette.create(4, "reds", "blues").muted().random()
+const scales = sequence.random(0.75, 1, 1.5)
+
+shape.circle().numSegments(6)
+  .clone(8, 40, 0)
+  .clone(8, 0, 40)
+  .rotate(scales)
+  .scaleX(2)
+  .color(colors)
+  .every(2).rotate(30)`,
+  },
+  {
+    name: 'Vivid vs Muted',
+    category: 'Palettes',
+    description: 'Compare color intensities',
+    code: `// Show vivid and muted side by side
+const vivid = palette.create(5, "oranges", "reds")
+const muted = palette.create(5, "oranges", "reds").muted()
+
+shape.circle().radius(12)
+  .clone(5, 35)
+  .xy(0, -40)
+  .color(vivid)
+
+shape.circle().radius(12)
+  .clone(5, 35)
+  .xy(0, 40)
+  .color(muted)`,
+  },
+  {
+    name: 'Multi-zone Palette',
+    category: 'Palettes',
+    description: 'Blend multiple color zones',
+    code: `// Create complex color gradients
+const colors = palette.create(12, "purples", "blues", "greens")
+
+shape.circle().radius(10)
+  .clone(12, 30)
+  .color(colors)`,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // SEQUENCES
   // ═══════════════════════════════════════════════════════════════════════════
   {
