@@ -99,6 +99,11 @@ export declare class SVGCollector {
      */
     addPath(pathData: string, style?: PathStyle): void;
     /**
+     * Validate path data for NaN or Infinity values
+     * @private
+     */
+    private validatePathData;
+    /**
      * Add a shape to the collector.
      *
      * Ephemeral shapes are skipped automatically.

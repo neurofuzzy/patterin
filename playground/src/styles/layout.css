@@ -299,6 +299,63 @@ body {
   display: none;
 }
 
+/* Error Overlay (Preview Panel) - Zen Caption Style */
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error-overlay.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.error-content {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.error-icon {
+  font-size: 1rem;
+  color: rgba(220, 180, 100, 0.8);
+  font-weight: 100;
+  line-height: 1;
+}
+
+.error-message {
+  color: rgba(220, 200, 150, 0.9);
+  font-size: 0.8rem;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 600px;
+}
+
 /* Hamburger Menu */
 .menu-btn {
   background: transparent;

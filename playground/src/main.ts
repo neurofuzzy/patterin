@@ -6,14 +6,11 @@ import { Preview } from './components/Preview.ts';
 import { MonacoEditor as Editor } from './components/MonacoEditor.ts';
 import { Menu } from './components/Menu.ts';
 import { Modal } from './components/Modal.ts';
-import { initTheme } from './modals/ThemeModal.ts';
+// Theme removed - using Monaco's default vs-dark theme
 import { createExportModal } from './modals/ExportModal.ts';
 import { getSettings } from './modals/SettingsModal.ts';
 import { initKeyboardShortcuts } from './keyboard.ts';
 import type { WorkerMessage, WorkerResponse } from './worker.ts';
-
-// Initialize theme
-initTheme();
 
 // Load settings
 const settings = getSettings();
@@ -167,6 +164,7 @@ function runCode(code: string, options?: { resetView?: boolean }): void {
             editor.saveCode(code);
         } else {
             showError(response.error);
+            preview.showError(response.error);
             editor.setDiagnostics([{
                 message: response.error,
                 line: response.line,

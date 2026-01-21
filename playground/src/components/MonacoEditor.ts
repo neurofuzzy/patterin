@@ -1,6 +1,5 @@
 import * as monaco from 'monaco-editor';
 import '../monaco-setup'; // Ensure workers are set up
-import { getCurrentThemeId, ThemeId, createTheme } from '../editor-themes';
 import { generateDSLTypeDefinition } from '../dsl/dsl-to-dts';
 import { registerDSLLanguage, LANGUAGE_ID } from '../dsl/dsl-language';
 
@@ -132,12 +131,10 @@ export class MonacoEditor {
     private container: HTMLElement;
     private onChange?: (code: string) => void;
     private saveTimer: number = 0;
-    private currentTheme: ThemeId;
 
     constructor(options: EditorOptions) {
         this.container = options.container;
         this.onChange = options.onChange;
-        this.currentTheme = getCurrentThemeId();
 
         // Cleanup existing elements
         const textarea = this.container.querySelector('textarea');
@@ -158,7 +155,7 @@ export class MonacoEditor {
         this.editor = monaco.editor.create(this.container, {
             model: model, // Use our explicitly created TypeScript model
             language: 'typescript', // Use TypeScript for type checking
-            theme: this.mapTheme(this.currentTheme),
+            theme: 'vs-dark', // TEST: Use Monaco's default theme to check for decoration issues
             automaticLayout: true,
             minimap: { enabled: false },
             fontSize: 14,
@@ -167,14 +164,20 @@ export class MonacoEditor {
             scrollBeyondLastLine: false,
             roundedSelection: true,
             padding: { top: 10 },
+            glyphMargin: false, // Disable glyph margin (lightbulbs)
             // Enable inline suggestions (Ghost Text)
             inlineSuggest: {
                 enabled: true,
                 mode: 'prefix'
             },
-            // CRITICAL: Ensure error rendering is enabled
+            // Error rendering - only show squiggles, no extra decorations
             'semanticHighlighting.enabled': true,
-            renderValidationDecorations: 'on' // Force validation decorations to render
+            renderValidationDecorations: 'on', // Show error squiggles
+            lightbulb: {
+                enabled: 'off' as any // Disable lightbulb/quick fix hints
+            },
+            quickSuggestions: false, // Disable quick suggestions that might add decorations
+            codeLens: false // Disable code lens
         });
 
         // Event Listeners
@@ -182,8 +185,6 @@ export class MonacoEditor {
             const code = this.editor.getValue();
             this.onChange?.(code);
         });
-
-        this.setupThemeListener();
     }
 
     private loadCode(): string | null {
@@ -196,27 +197,6 @@ export class MonacoEditor {
             try { localStorage.setItem(STORAGE_KEY, code); }
             catch (e) { console.warn('Failed to save code:', e); }
         }, 500);
-    }
-
-    private mapTheme(themeId: ThemeId): string {
-        // Register the theme dynamically
-        monaco.editor.defineTheme(themeId, createTheme(themeId));
-        return themeId;
-    }
-
-    private setupThemeListener(): void {
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'patterin-theme') this.setTheme(e.newValue as ThemeId);
-        });
-        window.addEventListener('patterin-theme-change', ((e: CustomEvent<ThemeId>) => {
-            this.setTheme(e.detail);
-        }) as EventListener);
-    }
-
-    setTheme(themeId: ThemeId): void {
-        if (themeId === this.currentTheme) return;
-        this.currentTheme = themeId;
-        monaco.editor.setTheme(this.mapTheme(themeId));
     }
 
     setDiagnostics(diagnostics: { message: string; line?: number; column?: number; severity?: 'error' | 'warning' }[]): void {

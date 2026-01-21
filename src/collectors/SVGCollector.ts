@@ -121,6 +121,7 @@ export class SVGCollector {
      * ```
      */
     addPath(pathData: string, style: PathStyle = {}): void {
+        this.validatePathData(pathData);
         this.paths.push({ d: pathData, style, group: this.currentGroup });
         this.updateBoundsFromPath(pathData);
 
@@ -128,6 +129,21 @@ export class SVGCollector {
         const commands = pathData.match(/[LlHhVvCcSsQqTtAaZz]/g);
         if (commands) {
             this._segmentCount += commands.length;
+        }
+    }
+
+    /**
+     * Validate path data for NaN or Infinity values
+     * @private
+     */
+    private validatePathData(d: string, shape?: Shape): void {
+        if (d.includes('NaN') || d.includes('Infinity')) {
+            const shapeName = shape?.constructor.name || 'shape';
+            throw new Error(
+                `Invalid coordinates detected (NaN or Infinity) in ${shapeName}. ` +
+                `This usually means a mathematical operation failed ` +
+                `(division by zero, invalid scale factor, etc.).`
+            );
         }
     }
 
@@ -166,7 +182,9 @@ export class SVGCollector {
             ...style
         };
         
-        this.addPath(shape.toPathData(), finalStyle);
+        const pathData = shape.toPathData();
+        this.validatePathData(pathData, shape);
+        this.addPath(pathData, finalStyle);
     }
 
     /**
