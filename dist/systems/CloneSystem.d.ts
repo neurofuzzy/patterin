@@ -114,7 +114,10 @@ export declare class CloneSystem extends BaseSystem {
      * Scale all shapes uniformly (supports sequences).
      * @param factor - Scale factor or sequence
      */
+    /** Scale uniformly */
     scale(factor: number | SequenceFunction): this;
+    /** Scale with different X and Y factors */
+    scale(factorX: number | SequenceFunction, factorY: number | SequenceFunction): this;
     /**
      * Scale all shapes along X axis only (supports sequences).
      * @param factor - Scale factor or sequence

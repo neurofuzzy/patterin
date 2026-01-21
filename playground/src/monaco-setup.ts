@@ -23,16 +23,25 @@ self.MonacoEnvironment = {
     }
 };
 
-// Use 'any' cast to avoid type issues with monaco properties
-const tsDefaults = (monaco.languages.typescript as any).javascriptDefaults;
+// Configure TypeScript defaults
+const tsDefaults = (monaco.languages.typescript as any).typescriptDefaults;
 
+// Enable semantic and syntax validation, but hide suggestions to avoid double underlines
 tsDefaults.setDiagnosticsOptions({
-    noSemanticValidation: true,
-    noSyntaxValidation: false // Allow syntax errors
+    noSemanticValidation: false,
+    noSyntaxValidation: false,
+    noSuggestionDiagnostics: true, // Hide suggestion diagnostics (they can cause double underlines)
+    diagnosticCodesToIgnore: []
 });
 
 tsDefaults.setCompilerOptions({
-    target: (monaco.languages.typescript as any).ScriptTarget.ES2015,
+    target: (monaco.languages.typescript as any).ScriptTarget.ES2020,
     allowNonTsExtensions: true,
-    lib: ['es2015'] // Remove DOM to avoid noise
+    moduleResolution: (monaco.languages.typescript as any).ModuleResolutionKind.NodeJs,
+    module: (monaco.languages.typescript as any).ModuleKind.CommonJS,
+    noEmit: true,
+    esModuleInterop: true,
+    allowJs: true,
+    strict: false,
+    checkJs: false
 });

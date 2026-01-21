@@ -162,6 +162,13 @@ export function createTheme(themeId: ThemeId): any {
             'editorLineNumber.foreground': c.textMuted,
             'editorLineNumber.activeForeground': c.textPrimary,
             'editor.selectionHighlightBackground': c.accentMuted,
+            // Error/warning/info squiggles
+            'editorError.foreground': '#ff5370',
+            'editorWarning.foreground': '#ffcb6b',
+            'editorInfo.foreground': c.accent,
+            'editorError.border': '#ff5370',
+            'editorWarning.border': '#ffcb6b',
+            'editorInfo.border': c.accent,
         }
     };
 }

@@ -13,6 +13,76 @@ export function generateDSLTypeDefinition(): string {
     type GridType = 'square' | 'hexagonal' | 'triangular';
     type TessellationPattern = 'truchet' | 'trihexagonal' | 'penrose' | 'custom';
     type TruchetVariant = 'quarter-circles' | 'diagonal' | 'triangles';
+    type ColorZone = 'reds' | 'oranges' | 'yellows' | 'greens' | 'cyans' | 'blues' | 'purples' | 'magentas';
+    type RenderMode = 'fill' | 'stroke' | 'glass';
+
+    /** Sequence value - can be a number or another sequence */
+    type SequenceValue = number | SequenceFunction;
+
+    /** Sequence function that can be called to advance or accessed via .current property */
+    interface SequenceFunction {
+        /** Advances to the next value and returns it */
+        (): number;
+        /** Returns the current value without advancing */
+        readonly current: number;
+        /** Resets the sequence to its initial state */
+        reset(): SequenceFunction;
+        /** Peek at a value without advancing the sequence */
+        peek(offset?: number): number;
+    }
+
+    /** Color palette generator */
+    declare class Palette {
+        constructor(count: number, ...zones: ColorZone[]);
+        /** Increase saturation (default: 0.2) */
+        vibrant(intensity?: number): this;
+        /** Decrease saturation (default: 0.2) */
+        muted(intensity?: number): this;
+        /** Increase lightness for dark backgrounds (default: 0.3) */
+        darkMode(intensity?: number): this;
+        /** Decrease lightness for light backgrounds (default: 0.3) */
+        lightMode(intensity?: number): this;
+        /** Get palette as array of hex colors */
+        toArray(): string[];
+        /** Get palette as object with semantic names */
+        toObject(): Record<string, string>;
+        /** Generate CSS custom properties */
+        toCss(prefix?: string): string;
+        /** Convert palette to shuffled sequence */
+        shuffle(): SequenceFunction;
+        /** Convert palette to yoyo sequence (bounces back and forth) */
+        yoyo(): SequenceFunction;
+        /** Convert palette to random sequence (optional seed for determinism) */
+        random(seed?: number): SequenceFunction;
+        /** Get current color without advancing */
+        readonly current: string;
+        /** Peek at a color value without advancing */
+        peek(offset?: number): string;
+        /** Reset to first color */
+        reset(): this;
+        /** Advance to next color and return it */
+        next(): string;
+    }
+
+    /** Sequence generator (uppercase class) */
+    declare const Sequence: {
+        /** Cycle through values indefinitely */
+        repeat(...values: SequenceValue[]): SequenceFunction;
+        /** Bounce back and forth through values */
+        yoyo(...values: SequenceValue[]): SequenceFunction;
+        /** Play once then stop at last value */
+        once(...values: SequenceValue[]): SequenceFunction;
+        /** Shuffled order (shuffles once at creation) */
+        shuffle(...values: SequenceValue[]): SequenceFunction;
+        /** Random with seed (reshuffles on cycle) */
+        random(seed: number, ...values: SequenceValue[]): SequenceFunction;
+        /** Random without seed */
+        random(...values: SequenceValue[]): SequenceFunction;
+        /** Running total of values */
+        additive(...values: SequenceValue[]): SequenceFunction;
+        /** Running product of values */
+        multiplicative(...values: SequenceValue[]): SequenceFunction;
+    };
 
     /** Grid system options */
     interface GridOptions {
@@ -165,6 +235,28 @@ export function generateDSLTypeDefinition(): string {
         fromShape(source: ShapeContext | Shape, options?: ShapeSystemOptions): ShapeSystem;
         /** Create an L-System */
         lsystem(options: LSystemOptions): LSystem;
+    };
+
+    declare const palette: {
+        /** Create a color palette */
+        create(count: number, ...zones: ColorZone[]): Palette;
+    };
+
+    declare const sequence: {
+        /** Cycle through values indefinitely */
+        repeat(...values: SequenceValue[]): SequenceFunction;
+        /** Bounce back and forth through values */
+        yoyo(...values: SequenceValue[]): SequenceFunction;
+        /** Play once then stop at last value */
+        once(...values: SequenceValue[]): SequenceFunction;
+        /** Shuffled order (shuffles once at creation) */
+        shuffle(...values: SequenceValue[]): SequenceFunction;
+        /** Random with seed (reshuffles on cycle) */
+        random(seed: number, ...values: SequenceValue[]): SequenceFunction;
+        /** Running total of values */
+        additive(...values: SequenceValue[]): SequenceFunction;
+        /** Running product of values */
+        multiplicative(...values: SequenceValue[]): SequenceFunction;
     };
 
     declare const points: PointsContext;

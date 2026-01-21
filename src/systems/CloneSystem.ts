@@ -311,8 +311,28 @@ export class CloneSystem extends BaseSystem {
      * Scale all shapes uniformly (supports sequences).
      * @param factor - Scale factor or sequence
      */
-    scale(factor: number | SequenceFunction): this {
-        this.shapes.scale(factor);
+    /** Scale uniformly */
+    scale(factor: number | SequenceFunction): this;
+    /** Scale with different X and Y factors */
+    scale(factorX: number | SequenceFunction, factorY: number | SequenceFunction): this;
+    scale(factorX: number | SequenceFunction, factorY?: number | SequenceFunction): this {
+        if (factorY === undefined) {
+            // Uniform scaling
+            this.shapes.scale(factorX);
+        } else {
+            // Non-uniform scaling - apply to each shape individually
+            for (const shape of this._shapes) {
+                const center = shape.centroid();
+                const fx = typeof factorX === 'function' ? factorX() : factorX;
+                const fy = typeof factorY === 'function' ? factorY() : factorY;
+                
+                for (const vertex of shape.vertices) {
+                    const newX = center.x + (vertex.position.x - center.x) * fx;
+                    const newY = center.y + (vertex.position.y - center.y) * fy;
+                    vertex.position = new Vector2(newX, newY);
+                }
+            }
+        }
         return this;
     }
 

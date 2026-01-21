@@ -73,7 +73,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'toCss': { params: ['prefix?: string'], returns: 'string', doc: 'Generate CSS custom properties' },
             'shuffle': { returns: 'SequenceFunction', doc: 'Convert palette to shuffled sequence' },
             'yoyo': { returns: 'SequenceFunction', doc: 'Convert palette to yoyo sequence (bounces back and forth)' },
-            'random': { params: ['seed: number'], returns: 'SequenceFunction', doc: 'Convert palette to random sequence with seed' },
+            'random': { params: ['seed?: number'], returns: 'SequenceFunction', doc: 'Convert palette to random sequence (optional seed for determinism)' },
         },
     },
 
@@ -126,8 +126,10 @@ export const API_DATA: Record<string, TypeInfo> = {
             'centroid': { returns: 'Vector2', doc: 'Get centroid position' },
             'centerPoint': { returns: 'Vector2', doc: 'Get center as Vector2' },
             'bbox': { returns: 'RectContext', doc: 'Get bounding box as RectContext' },
-            'clone': { params: ['n: number'], returns: 'ShapesContext', doc: 'Clone shape n times' },
-            'scale': { params: ['factor: number'], returns: 'this', doc: 'Scale by factor around center' },
+            'clone': { params: ['n: number', 'x?: number', 'y?: number'], returns: 'CloneSystem', doc: 'Clone shape n times with optional offset' },
+            'scale': { params: ['factorOrX: number', 'factorY?: number'], returns: 'this', doc: 'Scale uniformly (1 arg) or non-uniformly (2 args)' },
+            'scaleX': { params: ['factor: number'], returns: 'this', doc: 'Scale along X axis only' },
+            'scaleY': { params: ['factor: number'], returns: 'this', doc: 'Scale along Y axis only' },
             'rotate': { params: ['degrees: number'], returns: 'this', doc: 'Rotate by angle in degrees' },
             'rotateRad': { params: ['radians: number'], returns: 'this', doc: 'Rotate by angle in radians' },
             'moveTo': { params: ['x: number', 'y: number'], returns: 'this', doc: 'Move center to position' },
@@ -270,8 +272,10 @@ export const API_DATA: Record<string, TypeInfo> = {
             'slice': { params: ['start: number', 'end?: number'], returns: 'ShapesContext', doc: 'Select range of shapes' },
             'spread': { params: ['x: number', 'y: number'], returns: 'ShapesContext', doc: 'Offset each shape incrementally' },
             'clone': { params: ['n: number', 'x?: number', 'y?: number'], returns: 'ShapesContext', doc: 'Clone entire selection n times with offset' },
-            'scale': { params: ['factor: number'], returns: 'this', doc: 'Scale all shapes by factor' },
-            'rotate': { params: ['degrees: number'], returns: 'this', doc: 'Rotate all shapes by angle in degrees' },
+            'scale': { params: ['factor: number | SequenceFunction'], returns: 'this', doc: 'Scale all shapes uniformly (supports sequences)' },
+            'scaleX': { params: ['factor: number | SequenceFunction'], returns: 'this', doc: 'Scale along X axis (supports sequences)' },
+            'scaleY': { params: ['factor: number | SequenceFunction'], returns: 'this', doc: 'Scale along Y axis (supports sequences)' },
+            'rotate': { params: ['degrees: number | SequenceFunction'], returns: 'this', doc: 'Rotate all shapes by angle in degrees (supports sequences)' },
             'translate': { params: ['x: number', 'y: number'], returns: 'this', doc: 'Translate all shapes by delta' },
             'offset': { params: ['distance: number', 'count?: number', 'miterLimit?: number', 'includeOriginal?: boolean'], returns: 'ShapesContext', doc: 'Inset/outset (count=0: in-place, count>0: returns offset copies only by default)' },
             'expand': { params: ['distance: number', 'count?: number', 'miterLimit?: number', 'includeOriginal?: boolean'], returns: 'ShapesContext', doc: 'Expand/outset shapes (alias for offset)' },
@@ -315,6 +319,26 @@ export const API_DATA: Record<string, TypeInfo> = {
     // ═══════════════════════════════════════════════════════════════════════════
     // SYSTEMS
     // ═══════════════════════════════════════════════════════════════════════════
+
+    'CloneSystem': {
+        type: 'class',
+        doc: 'System for cloning shapes with transformations',
+        methods: {
+            'clone': { params: ['n: number', 'x?: number', 'y?: number'], returns: 'CloneSystem', doc: 'Clone shapes n times with optional offset' },
+            'scale': { params: ['factorOrX: number | SequenceFunction', 'factorY?: number | SequenceFunction'], returns: 'this', doc: 'Scale uniformly (1 arg) or non-uniformly (2 args), supports sequences' },
+            'scaleX': { params: ['factor: number | SequenceFunction'], returns: 'this', doc: 'Scale along X axis (supports sequences)' },
+            'scaleY': { params: ['factor: number | SequenceFunction'], returns: 'this', doc: 'Scale along Y axis (supports sequences)' },
+            'rotate': { params: ['degrees: number | SequenceFunction'], returns: 'this', doc: 'Rotate cloned shapes (supports sequences)' },
+            'translate': { params: ['x: number', 'y: number'], returns: 'this', doc: 'Translate all clones' },
+            'color': { params: ['colorValue: string | SequenceFunction | Palette'], returns: 'this', doc: 'Set color for all clones' },
+            'every': { params: ['n: number', 'offset?: number'], returns: 'ShapesContext', doc: 'Select every nth clone' },
+            'at': { params: ['...indices: number[]'], returns: 'ShapesContext', doc: 'Select clones at indices' },
+            'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
+        },
+        getters: {
+            'shapes': { returns: 'ShapesContext', doc: 'Get all cloned shapes as ShapesContext' },
+        },
+    },
 
     'GridSystem': {
         type: 'class',

@@ -1718,19 +1718,24 @@ const colors = palette.create(6, "reds", "oranges").vibrant();
 circles.color(colors.yoyo());  // Creates smooth gradient effect
 ```
 
-##### `.random(seed)`
+##### `.random(seed?)`
 
-Create a random sequence with deterministic seed.
+Create a random sequence.
 
 **Parameters:**
-- `seed: number` - Random seed for reproducible randomness
+- `seed: number` (optional) - Random seed for reproducible randomness. If omitted, uses default seed.
 
 **Returns:** `SequenceFunction` - Sequence that randomly picks colors
 
 **Example:**
 ```typescript
 const colors = palette.create(4, "greens").muted();
+
+// Deterministic random with seed
 circles.color(colors.random(42));  // Same random order every time
+
+// Random with default seed
+circles.color(colors.random());
 ```
 
 **Note:** Sequence methods like `.shuffle()`, `.yoyo()`, and `.random()` return `SequenceFunction` and end the palette chain. Color modifiers (`.vibrant()`, `.muted()`, etc.) must be called before sequence methods:

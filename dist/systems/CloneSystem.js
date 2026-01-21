@@ -251,12 +251,24 @@ export class CloneSystem extends BaseSystem {
             ? value() // Call sequence to advance and get next value
             : value; // Use number as-is
     }
-    /**
-     * Scale all shapes uniformly (supports sequences).
-     * @param factor - Scale factor or sequence
-     */
-    scale(factor) {
-        this.shapes.scale(factor);
+    scale(factorX, factorY) {
+        if (factorY === undefined) {
+            // Uniform scaling
+            this.shapes.scale(factorX);
+        }
+        else {
+            // Non-uniform scaling - apply to each shape individually
+            for (const shape of this._shapes) {
+                const center = shape.centroid();
+                const fx = typeof factorX === 'function' ? factorX() : factorX;
+                const fy = typeof factorY === 'function' ? factorY() : factorY;
+                for (const vertex of shape.vertices) {
+                    const newX = center.x + (vertex.position.x - center.x) * fx;
+                    const newY = center.y + (vertex.position.y - center.y) * fy;
+                    vertex.position = new Vector2(newX, newY);
+                }
+            }
+        }
         return this;
     }
     /**

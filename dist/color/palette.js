@@ -425,20 +425,31 @@ class Palette {
         return sequence.yoyo(...this.toArray());
     }
     /**
-     * Create a random sequence from this palette with a seed.
-     * Returns a SequenceFunction that picks random colors (deterministic with seed).
+     * Create a random sequence from this palette.
+     * Returns a SequenceFunction that picks random colors.
      *
-     * @param seed - Random seed for deterministic randomness
+     * @param seed - Optional random seed for deterministic randomness. If omitted, uses default seed.
      * @returns SequenceFunction that randomly picks colors
      *
      * @example
      * ```typescript
      * const colors = palette.create(4, "greens").muted();
-     * circles.color(colors.random(42));  // Deterministic random colors
+     *
+     * // Deterministic random with seed
+     * circles.color(colors.random(42));
+     *
+     * // Random with default seed
+     * circles.color(colors.random());
      * ```
      */
     random(seed) {
-        return sequence.random(seed, ...this.toArray());
+        const colors = this.toArray();
+        if (seed !== undefined) {
+            return sequence.random(seed, ...colors);
+        }
+        else {
+            return sequence.random(...colors);
+        }
     }
 }
 // Zone definitions mapping to hue ranges
