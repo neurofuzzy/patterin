@@ -39,6 +39,14 @@ const gear = shape.circle().radius(50).numSegments(16)
 gear.lines.every(2).extrude(15)`,
   },
   {
+    name: 'Subdivide Lines',
+    category: 'Basics',
+    description: 'Split edges into subsegments',
+    code: `// Subdivide and extrude for detailed patterns
+const hex = shape.hexagon().radius(50)
+hex.lines.subdivide(3).every(4).extrude(5)`,
+  },
+  {
     name: 'Hexagon',
     category: 'Basics',
     description: 'Regular hexagon',

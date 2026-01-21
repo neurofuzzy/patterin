@@ -252,6 +252,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'every': { params: ['n: number', 'offset?: number'], returns: 'LinesContext', doc: 'Select every nth line' },
             'at': { params: ['...indices: number[]'], returns: 'LinesContext', doc: 'Select lines at indices' },
             'extrude': { params: ['distance: number'], returns: 'ShapeContext', doc: 'Extrude lines outward' },
+            'subdivide': { params: ['n: number'], returns: 'LinesContext', doc: 'Split lines into n subsegments (mutates shape), returns new subsegments' },
             'divide': { params: ['n: number'], returns: 'PointsContext', doc: 'Subdivide lines, return division points' },
             'midPoint': { returns: 'Vector2', doc: 'Get average midpoint of selected lines' },
             'collapse': { returns: 'PointsContext', doc: 'Reduce segments to midpoints' },

@@ -426,7 +426,7 @@ Moves selected edges perpendicular to their direction (outward from shape center
 **Parameters:**
 - `distance`: Extrusion distance (positive = outward, negative = inward)
 
-**Returns:** `LinesContext`
+**Returns:** `ShapeContext`
 
 **Example:**
 ```typescript
@@ -436,6 +436,60 @@ const gear = shape.circle()
   .numSegments(16);
 
 gear.lines.every(2).extrude(15);
+```
+
+### `.subdivide(n: number)`
+
+Splits selected edges into `n` equal subsegments, mutating the parent shape(s). Returns a `LinesContext` containing all newly created subsegments, enabling further selection and operations.
+
+**Parameters:**
+- `n`: Number of subsegments to create per selected edge (must be ≥ 2)
+
+**Returns:** `LinesContext` - Contains all newly created subsegments
+
+**Key Features:**
+- Works on single shapes (`ShapeContext.lines`)
+- Works across multiple shapes (`ShapesContext.lines`)
+- Enables chaining with other line operations
+- Mutates the original shape(s)
+
+**Example:**
+```typescript
+// Basic subdivision: split one edge into 3 segments
+const rect = shape.rect().size(100);
+rect.lines.at(0).subdivide(3);
+// Edge 0 is now 3 segments
+
+// Subdivide and extrude middle segment
+const rect2 = shape.rect().size(100);
+rect2.lines.at(0).subdivide(3).at(1).extrude(10);
+// Creates a notch in the middle of edge 0
+
+// Create gear pattern with subdivision
+const gear = shape.hexagon().radius(50);
+gear.lines.subdivide(3).every(4).extrude(4);
+// Each edge becomes 3 segments, every 4th is extruded
+
+// Works across multiple shapes
+const shapes = shape.circle()
+  .radius(20)
+  .clone(5)
+  .spread(60, 0);
+shapes.lines.every(2).subdivide(4);
+// Every 2nd edge across all shapes is subdivided into 4
+```
+
+**Chaining:**
+```typescript
+// Subdivide returns LinesContext with new subsegments
+const subsegments = rect.lines.subdivide(3);
+console.log(subsegments.length); // 3x the number of selected segments
+
+// Chain with selection methods
+rect.lines
+  .subdivide(4)     // Split each edge into 4
+  .at(1, 2)         // Select 2nd and 3rd subsegments
+  .extrude(5);      // Extrude selected subsegments
 ```
 
 ### Selection Methods

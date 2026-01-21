@@ -839,7 +839,8 @@ export class PointsContext extends SelectableContext<Vertex, PointsContext> {
 export class LinesContext extends SelectableContext<Segment, LinesContext> {
     constructor(
         protected _shape: Shape,
-        segments: Segment[]
+        segments: Segment[],
+        protected _parentShapes?: Map<Segment, Shape>
     ) {
         super(segments);
     }
@@ -850,7 +851,7 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
     }
 
     protected createNew(items: Segment[]): LinesContext {
-        return new LinesContext(this._shape, items);
+        return new LinesContext(this._shape, items, this._parentShapes);
     }
 
     /**
@@ -925,6 +926,107 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
         }
 
         return new PointsContext(this._shape, vertices);
+    }
+
+    /**
+     * Subdivide selected lines into n segments each.
+     * Mutates the parent shape(s) by replacing each selected segment with n subsegments.
+     * Returns a LinesContext with all newly created subsegments.
+     * 
+     * @param n - Number of subsegments to create per selected line
+     * @returns LinesContext containing all newly created subsegments
+     * 
+     * @example
+     * ```typescript
+     * // Subdivide and extrude middle segment
+     * rect.lines.at(0).subdivide(3).at(1).extrude(10);
+     * 
+     * // Subdivide every other line in multiple shapes
+     * shapes.lines.every(2).subdivide(4);
+     * ```
+     */
+    subdivide(n: number): LinesContext {
+        // Handle edge case
+        if (n < 2) {
+            return new LinesContext(this._shape, this._items, this._parentShapes);
+        }
+
+        // Group selected segments by their parent shape
+        const segmentsByShape = new Map<Shape, Segment[]>();
+        
+        // Build parent shapes map if not provided (single shape case)
+        const parentMap = this._parentShapes ?? new Map(this._items.map(s => [s, this._shape]));
+        
+        for (const seg of this._items) {
+            const parent = parentMap.get(seg);
+            if (!parent) continue;
+            
+            if (!segmentsByShape.has(parent)) {
+                segmentsByShape.set(parent, []);
+            }
+            segmentsByShape.get(parent)!.push(seg);
+        }
+
+        // Track all newly created subsegments to return
+        const allNewSubsegments: Segment[] = [];
+
+        // Process each shape
+        for (const [shape, selectedSegs] of segmentsByShape) {
+            const selectedSet = new Set(selectedSegs);
+            const newSegments: Segment[] = [];
+            const segmentToSubsegments = new Map<Segment, Segment[]>();
+
+            // Build new segments array in one pass
+            for (const seg of shape.segments) {
+                if (selectedSet.has(seg)) {
+                    // Subdivide this segment
+                    const subsegments = this.subdivideSegment(seg, n);
+                    newSegments.push(...subsegments);
+                    segmentToSubsegments.set(seg, subsegments);
+                    allNewSubsegments.push(...subsegments);
+                } else {
+                    // Keep original segment
+                    newSegments.push(seg);
+                }
+            }
+
+            // Replace shape's segments array
+            shape.segments = newSegments;
+            shape.connectSegments();
+        }
+
+        // Return LinesContext with all newly created subsegments
+        // Use the first parent shape as reference, or this._shape if none
+        const refShape = segmentsByShape.keys().next().value ?? this._shape;
+        return new LinesContext(refShape, allNewSubsegments, parentMap);
+    }
+
+    /**
+     * Helper to subdivide a single segment into n subsegments.
+     * Creates n-1 new vertices at division points and n new segments.
+     */
+    private subdivideSegment(seg: Segment, n: number): Segment[] {
+        const subsegments: Segment[] = [];
+        const vertices: Vertex[] = [seg.start];
+
+        // Create n-1 intermediate vertices
+        for (let i = 1; i < n; i++) {
+            const t = i / n;
+            const point = seg.pointAt(t);
+            vertices.push(new Vertex(point.x, point.y));
+        }
+
+        // Add end vertex
+        vertices.push(seg.end);
+
+        // Create n segments connecting the vertices
+        for (let i = 0; i < n; i++) {
+            const newSeg = new Segment(vertices[i], vertices[i + 1]);
+            newSeg.winding = seg.winding;
+            subsegments.push(newSeg);
+        }
+
+        return subsegments;
     }
 
     /** Get midpoint of all selected lines */
@@ -1139,15 +1241,21 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
     /** Get all lines from all shapes */
     get lines(): LinesContext {
         const allSegments: Segment[] = [];
+        const parentShapes = new Map<Segment, Shape>();
+        
         for (const shape of this._items) {
-            allSegments.push(...shape.segments);
+            for (const seg of shape.segments) {
+                allSegments.push(seg);
+                parentShapes.set(seg, shape);
+            }
         }
+        
         const refShape = this._items[0] ?? Shape.fromPoints([
             Vector2.zero(),
             new Vector2(1, 0),
             new Vector2(0, 1),
         ]);
-        return new LinesContext(refShape, allSegments);
+        return new LinesContext(refShape, allSegments, parentShapes);
     }
 
     /** Make all shapes concrete */
