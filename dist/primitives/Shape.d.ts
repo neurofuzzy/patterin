@@ -18,6 +18,8 @@ export declare class Shape {
     ephemeral: boolean;
     /** Optional group/role identifier for color layering */
     group?: string;
+    /** Optional color for this shape (hex string) */
+    color?: string;
     constructor(segments: Segment[], winding?: Winding);
     /** Get unique vertices in winding order */
     get vertices(): Vertex[];

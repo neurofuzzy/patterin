@@ -4,8 +4,17 @@ export interface PathStyle {
     stroke?: string;
     strokeWidth?: number;
     opacity?: number;
+    fillOpacity?: number;
+    strokeOpacity?: number;
     dash?: number[];
 }
+/**
+ * Rendering mode for shapes.
+ * - 'fill': Solid fill with the shape's color, no stroke
+ * - 'stroke': Stroke only with the shape's color, no fill
+ * - 'glass': Semi-transparent fill (50% opacity) with stroke
+ */
+export type RenderMode = 'fill' | 'stroke' | 'glass';
 /**
  * Default styles for system rendering.
  * Traced connections use thinner strokes than placed shapes.
@@ -70,6 +79,13 @@ export declare class SVGCollector {
     private maxY;
     private currentGroup?;
     private _segmentCount;
+    /** Current rendering mode for shapes */
+    private renderMode;
+    /** Default color palette for auto-assignment */
+    private readonly defaultPalette;
+    /** Current color index for auto-assignment */
+    private colorIndex;
+    constructor();
     /**
      * Add a path (raw SVG path data) to the collector.
      *
@@ -83,12 +99,18 @@ export declare class SVGCollector {
      */
     addPath(pathData: string, style?: PathStyle): void;
     /**
+     * Validate path data for NaN or Infinity values
+     * @private
+     */
+    private validatePathData;
+    /**
      * Add a shape to the collector.
      *
      * Ephemeral shapes are skipped automatically.
+     * Colors are applied based on the current render mode.
      *
      * @param shape - The Shape primitive to add
-     * @param style - Optional PathStyle for stroke, fill, etc.
+     * @param style - Optional PathStyle for stroke, fill, etc. (overrides render mode)
      *
      * @example
      * ```typescript
@@ -125,6 +147,37 @@ export declare class SVGCollector {
      * `beginGroup()` is called again.
      */
     endGroup(): void;
+    /**
+     * Set the rendering mode for shapes.
+     *
+     * Determines how shape colors are rendered:
+     * - 'fill': Solid fill with no stroke
+     * - 'stroke': Stroke only with no fill
+     * - 'glass': Semi-transparent fill (50% opacity) with stroke
+     *
+     * @param mode - The rendering mode to use
+     *
+     * @example
+     * ```typescript
+     * const svg = new SVGCollector();
+     * svg.setRenderMode('fill');
+     * shape.circle().radius(30).color('#ff5733').stamp(svg);
+     *
+     * svg.setRenderMode('glass');
+     * shape.rect().size(40).color('#3498db').stamp(svg);
+     * ```
+     */
+    setRenderMode(mode: RenderMode): void;
+    /**
+     * Get the current rendering mode.
+     */
+    getRenderMode(): RenderMode;
+    /**
+     * Apply render mode styling to a color.
+     * @param color - The color to apply
+     * @returns PathStyle based on the current render mode
+     */
+    private applyRenderMode;
     /**
      * Parse path data to update bounds.
      */

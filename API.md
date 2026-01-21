@@ -13,6 +13,7 @@ Complete reference for the Patterin API. For conceptual guides and tutorials, se
 - [Selection Methods](#selection-methods)
 - [Systems](#systems)
 - [Sequence Generators](#sequence-generators)
+- [Color & Styling](#color--styling)
 - [SVG Output](#svg-output)
 
 ---
@@ -1516,5 +1517,392 @@ const clones = shape.circle()
 3. **Peek for conditionals** - Use `.peek()` to check future values without side effects
 4. **Nest for complexity** - Combine sequences for rich variation patterns
 5. **Seed for reproducibility** - Always provide a seed to `random()` for consistent output
+
+---
+
+## Color & Styling
+
+Patterin includes a declarative color palette generator and flexible rendering modes for SVG output. The color system integrates seamlessly with Sequences for automatic color assignment.
+
+### Quick Start (Streamlined API)
+
+Use the lowercase `palette` and `sequence` factories for the most intuitive experience:
+
+```typescript
+import { palette, sequence, shape } from 'patterin';
+
+// Create palette and use directly - no .toArray() needed!
+const colors = palette.create(6, "blues", "cyans").vibrant();
+
+const circles = shape.circle().radius(20).clone(5, 50, 0);
+circles.color(colors);  // Each circle gets next color
+
+// Sequences work the same way
+const sizes = sequence.repeat(10, 20, 30);
+circles.scale(sizes);
+```
+
+### Palette
+
+The `Palette` class generates harmonious color palettes with zone-based distribution across the color spectrum.
+
+#### `palette.create(count, ...zones)` (Recommended)
+
+Streamlined factory for creating palettes. Returns a `Palette` instance.
+
+**Parameters:**
+- `count: number` - Total number of colors to generate
+- `zones: ColorZone[]` - One or more color zones to distribute colors across
+
+**Returns:** `Palette` instance (chainable)
+
+**Example:**
+```typescript
+import { palette } from 'patterin';
+
+// Streamlined factory pattern
+const colors = palette.create(6, "blues", "cyans");
+circles.color(colors);  // Use directly!
+
+// Still works with .toArray() if needed
+const colorArray = palette.create(4, "reds").vibrant().toArray();
+```
+
+#### `new Palette(count, ...zones)` (Alternative)
+
+Creates a color palette with even distribution across specified hue zones.
+
+**Parameters:**
+- `count: number` - Total number of colors to generate
+- `zones: ColorZone[]` - One or more color zones to distribute colors across
+
+**Color Zones:**
+- `"reds"` (0-30°)
+- `"oranges"` (30-60°)
+- `"yellows"` (60-90°)
+- `"greens"` (90-150°)
+- `"cyans"` (150-210°)
+- `"blues"` (210-270°)
+- `"purples"` (270-300°)
+- `"magentas"` (300-360°)
+
+**Returns:** `Palette` instance (chainable)
+
+**Example:**
+```typescript
+import { Palette } from 'patterin';
+
+// Generate 6 colors across blues and cyans
+const palette = new Palette(6, "blues", "cyans");
+const colors = palette.toArray();
+// → ['#0d9af2', '#0dc3f2', '#0df2eb', '#0df2c3', '#0df29a', '#0da7f2']
+```
+
+#### Palette Modifiers
+
+All modifiers are chainable and cumulative.
+
+##### `.vibrant(intensity?: number)`
+
+Increases color saturation (makes colors more vivid).
+
+**Parameters:**
+- `intensity: number` (optional) - Effect strength, 0-1 (default: 0.2)
+
+**Returns:** `this` (for chaining)
+
+**Example:**
+```typescript
+const vibrant = new Palette(4, "reds").vibrant().toArray();
+const veryVibrant = new Palette(4, "reds").vibrant(0.5).toArray();
+```
+
+##### `.muted(intensity?: number)`
+
+Decreases color saturation (makes colors more desaturated).
+
+**Parameters:**
+- `intensity: number` (optional) - Effect strength, 0-1 (default: 0.2)
+
+**Returns:** `this` (for chaining)
+
+##### `.darkMode(intensity?: number)`
+
+Increases lightness for use on dark backgrounds.
+
+**Parameters:**
+- `intensity: number` (optional) - Effect strength, 0-1 (default: 0.3)
+
+**Returns:** `this` (for chaining)
+
+##### `.lightMode(intensity?: number)`
+
+Decreases lightness for use on light backgrounds.
+
+**Parameters:**
+- `intensity: number` (optional) - Effect strength, 0-1 (default: 0.3)
+
+**Returns:** `this` (for chaining)
+
+#### Palette Output Methods
+
+##### `.toArray()`
+
+Returns the palette as an array of hex color strings.
+
+**Returns:** `string[]` - Array of hex colors (e.g., `['#ff5733', '#3498db']`)
+
+**Example:**
+```typescript
+const colors = new Palette(8, "reds", "oranges", "yellows")
+  .vibrant()
+  .darkMode()
+  .toArray();
+```
+
+##### `.toObject()`
+
+Returns the palette as an object with semantic names.
+
+**Returns:** `Record<string, string>` - Object with keys: `primary`, `secondary`, etc.
+
+**Example:**
+```typescript
+const colors = new Palette(4, "blues").toObject();
+// → { primary: '#...', secondary: '#...', tertiary: '#...', quaternary: '#...' }
+```
+
+##### `.toCss(prefix?: string)`
+
+Generates CSS custom properties string.
+
+**Parameters:**
+- `prefix: string` (optional) - Prefix for CSS variable names (default: `'color'`)
+
+**Returns:** `string` - CSS custom properties
+
+**Example:**
+```typescript
+const css = new Palette(3, "blues").toCss();
+// → "--color-1: #...; --color-2: #...; --color-3: #...;"
+
+const themed = new Palette(3, "blues").toCss('theme');
+// → "--theme-1: #...; --theme-2: #...; --theme-3: #...;"
+```
+
+#### Palette Sequence Methods
+
+Palette includes convenience methods to convert to different sequence iteration modes. These methods return `SequenceFunction` and end the palette chain.
+
+##### `.shuffle()`
+
+Create a shuffled sequence from the palette colors.
+
+**Returns:** `SequenceFunction` - Sequence that cycles through colors in random order
+
+**Example:**
+```typescript
+const colors = palette.create(6, "blues", "cyans").vibrant();
+circles.color(colors.shuffle());  // Each circle gets random color
+```
+
+##### `.yoyo()`
+
+Create a yoyo sequence that bounces back and forth through the palette colors.
+
+**Returns:** `SequenceFunction` - Sequence that bounces through colors
+
+**Example:**
+```typescript
+const colors = palette.create(6, "reds", "oranges").vibrant();
+circles.color(colors.yoyo());  // Creates smooth gradient effect
+```
+
+##### `.random(seed?)`
+
+Create a random sequence.
+
+**Parameters:**
+- `seed: number` (optional) - Random seed for reproducible randomness. If omitted, uses default seed.
+
+**Returns:** `SequenceFunction` - Sequence that randomly picks colors
+
+**Example:**
+```typescript
+const colors = palette.create(4, "greens").muted();
+
+// Deterministic random with seed
+circles.color(colors.random(42));  // Same random order every time
+
+// Random with default seed
+circles.color(colors.random());
+```
+
+**Note:** Sequence methods like `.shuffle()`, `.yoyo()`, and `.random()` return `SequenceFunction` and end the palette chain. Color modifiers (`.vibrant()`, `.muted()`, etc.) must be called before sequence methods:
+
+```typescript
+// ✅ Correct order
+palette.create(6, "blues").vibrant().shuffle()
+
+// ❌ Won't work - can't chain modifiers after sequence methods
+palette.create(6, "blues").shuffle().vibrant()
+```
+
+### Color Assignment
+
+Assign colors to shapes using the `.color()` method. Colors integrate with the Sequence system for automatic progression.
+
+#### `ShapeContext.color(colorValue)`
+
+Assign a color to a single shape.
+
+**Parameters:**
+- `colorValue: string` - Hex color string (e.g., `'#ff5733'`)
+
+**Returns:** `this` (for chaining)
+
+**Example:**
+```typescript
+const circle = shape.circle()
+  .radius(30)
+  .color('#ff5733');
+```
+
+#### `ShapesContext.color(colorValue)`
+
+Assign colors to multiple shapes. Supports static colors, sequences, and palettes.
+
+**Parameters:**
+- `colorValue: string | SequenceFunction | Palette` - Hex color, Sequence, or Palette
+
+**Returns:** `this` (for chaining)
+
+**Example:**
+```typescript
+import { palette, sequence, shape } from 'patterin';
+
+// Same color for all shapes
+const shapes = shape.circle().clone(5, 50, 0);
+shapes.color('#3498db');  // Direct on CloneSystem!
+
+// Use palette directly (streamlined API)
+const circles = shape.circle().clone(5, 50, 0);
+circles.color(palette.create(6, "blues", "cyans").vibrant());
+
+// Or use sequence
+circles.color(sequence.repeat('#f00', '#0f0', '#00f'));
+```
+
+**Note:** `.color()` is now available directly on `CloneSystem` and `GridSystem` - no need to access `.shapes`!
+
+### Render Modes
+
+SVGCollector supports three rendering modes that determine how colors are applied to shapes.
+
+#### `SVGCollector.setRenderMode(mode)`
+
+Set the rendering mode for all subsequently stamped shapes.
+
+**Parameters:**
+- `mode: 'fill' | 'stroke' | 'glass'` - The rendering mode
+
+**Render Modes:**
+- **`'fill'`** - Solid fill with no stroke
+  - `fill={color}`, `stroke="none"`
+- **`'stroke'`** - Stroke only with no fill (default)
+  - `fill="none"`, `stroke={color}`, `stroke-width="1"`
+- **`'glass'`** - Semi-transparent fill with opaque stroke
+  - `fill={color}`, `fill-opacity="0.5"`, `stroke={color}`, `stroke-width="1"`
+
+**Example:**
+```typescript
+import { SVGCollector } from 'patterin';
+
+const svg = new SVGCollector();
+svg.setRenderMode('glass');
+
+const circle = shape.circle()
+  .radius(30)
+  .color('#2ecc71');
+
+circle.stamp(svg);
+// Renders with 50% transparent green fill and solid green stroke
+```
+
+#### `SVGCollector.getRenderMode()`
+
+Get the current rendering mode.
+
+**Returns:** `'fill' | 'stroke' | 'glass'`
+
+### Auto-Color Assignment
+
+Shapes without an explicitly assigned color automatically receive colors from a default 16-color palette that cycles through the full spectrum.
+
+**Example:**
+```typescript
+const svg = new SVGCollector();
+svg.setRenderMode('fill');
+
+// These shapes get auto-assigned colors from the default palette
+shape.rect().size(30).xy(0, 0).stamp(svg);    // Color 1
+shape.circle().radius(20).xy(50, 0).stamp(svg); // Color 2
+shape.hexagon().radius(15).xy(100, 0).stamp(svg); // Color 3
+```
+
+### Complete Example
+
+```typescript
+import { shape, palette, sequence, SVGCollector } from 'patterin';
+
+// Streamlined API - create palette and use directly!
+const colors = palette.create(6, "blues", "purples")
+  .vibrant()
+  .darkMode();
+
+// Create shapes and assign colors
+const circles = shape.circle()
+  .radius(25)
+  .clone(5, 60, 0);
+
+// Use palette directly - no .toArray() or .shapes needed!
+circles.color(colors);
+
+// Or shuffle for random colors
+circles.color(colors.shuffle());
+
+// Or yoyo for gradient effect
+circles.color(colors.yoyo());
+
+// Render with glass effect
+const svg = new SVGCollector();
+svg.setRenderMode('glass');
+circles.stamp(svg);
+
+console.log(svg.toString({ width: 400, height: 200 }));
+```
+
+**With Grid Systems:**
+```typescript
+import { system, palette, shape } from 'patterin';
+
+const grid = system.grid({ rows: 5, cols: 5, spacing: 30 });
+grid.place(shape.circle().radius(5));
+
+// Color every other grid point
+const colors = palette.create(13, "reds", "oranges").vibrant();
+grid.every(2).color(colors.shuffle());
+grid.every(2, 1).color(palette.create(12, "blues").muted());
+```
+
+**Legacy API (still supported):**
+```typescript
+import { shape, Palette, Sequence, SVGCollector } from 'patterin';
+
+const colors = new Palette(6, "blues", "purples").vibrant().toArray();
+const colorSeq = Sequence.repeat(...colors);
+const circles = shape.circle().radius(25).clone(5, 60, 0);
+circles.shapes.color(colorSeq);
+```
 
 ---

@@ -18,6 +18,7 @@ export class Preview {
     private controls: HTMLDivElement;
     private statusBar: HTMLDivElement;
     private statsDisplay: HTMLDivElement;
+    private errorOverlay: HTMLDivElement;
 
     private zoom = 1;
     private panX = 0;
@@ -41,8 +42,10 @@ export class Preview {
         this.controls = this.createControls();
         this.statusBar = this.createElement('div', 'status-bar');
         this.statsDisplay = this.createElement('div', 'stats-display');
+        this.errorOverlay = this.createErrorOverlay();
 
         this.canvas.appendChild(this.svgContainer);
+        this.canvas.appendChild(this.errorOverlay);
         this.container.appendChild(this.gridOverlay);
         this.container.appendChild(this.centerMark);
         this.container.appendChild(this.canvas);
@@ -58,6 +61,21 @@ export class Preview {
         const el = document.createElement(tag) as HTMLDivElement;
         el.className = className;
         return el;
+    }
+
+    /**
+     * Create error overlay for displaying NaN/validation errors
+     */
+    private createErrorOverlay(): HTMLDivElement {
+        const overlay = document.createElement('div');
+        overlay.className = 'error-overlay hidden';
+        overlay.innerHTML = `
+            <div class="error-content">
+                <div class="error-icon">○</div>
+                <div class="error-message"></div>
+            </div>
+        `;
+        return overlay;
     }
 
     private createIconButton(IconClass: typeof Home, title: string, onClick: () => void): HTMLButtonElement {
@@ -375,9 +393,28 @@ export class Preview {
      * Set the SVG content to display
      */
     setSVG(svgString: string): void {
+        this.clearError();
         this.svgContainer.innerHTML = svgString;
         // Sync overlays after new content size might change centering
         requestAnimationFrame(() => this.syncOverlays());
+    }
+
+    /**
+     * Show error overlay in preview panel
+     */
+    showError(message: string): void {
+        const messageEl = this.errorOverlay.querySelector('.error-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        this.errorOverlay.classList.remove('hidden');
+    }
+
+    /**
+     * Clear error overlay
+     */
+    clearError(): void {
+        this.errorOverlay.classList.add('hidden');
     }
 
     /**

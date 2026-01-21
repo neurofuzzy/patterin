@@ -3,6 +3,7 @@ import { SVGCollector, PathStyle } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
 import { SequenceFunction } from '../sequence/sequence';
+import { Palette } from '../color/palette';
 /**
  * Base class for contexts that operate on collections with selection capabilities.
  * Provides common selection methods: every(), at(), length
@@ -272,6 +273,25 @@ export declare class ShapeContext {
      * ```
      */
     ephemeral(): this;
+    /**
+     * Set the color for this shape.
+     *
+     * Color is stored as a hex string and used by SVGCollector during rendering.
+     * The rendering mode (fill, stroke, glass) determines how the color is applied.
+     *
+     * @param colorValue - Hex color string (e.g., '#ff5733')
+     * @returns This context for chaining
+     *
+     * @example
+     * ```typescript
+     * const circle = shape.circle().radius(30).color('#ff5733');
+     *
+     * // Use with palette
+     * const colors = new Palette(6, "blues").toArray();
+     * shape.rect().size(40).color(colors[0]);
+     * ```
+     */
+    color(colorValue: string): this;
     /**
      * Stamp (render) this shape to an SVG collector.
      *
@@ -557,6 +577,29 @@ export declare class ShapesContext extends SelectableContext<Shape, ShapesContex
     expand(distance: number, count?: number, miterLimit?: number, includeOriginal?: boolean): ShapesContext;
     /** Inset all shapes */
     inset(distance: number, count?: number, miterLimit?: number): ShapesContext;
+    /**
+     * Set color for all shapes (supports sequences and palettes).
+     *
+     * When a Palette is provided, each shape gets the next color from the palette.
+     * When a sequence is provided, each shape gets the next color from the sequence.
+     * When a string is provided, all shapes get the same color.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This ShapesContext for chaining
+     *
+     * @example
+     * ```typescript
+     * // Same color for all shapes
+     * shapes.color('#ff5733');
+     *
+     * // Use palette directly (streamlined API)
+     * shapes.color(palette.create(6, "blues", "cyans").vibrant());
+     *
+     * // Use sequence for different colors
+     * shapes.color(sequence.repeat(10, 20, 30));
+     * ```
+     */
+    color(colorValue: string | SequenceFunction | Palette): this;
     /** Move all shapes so their collective center is at position */
     moveTo(x: number, y: number): this;
     /** Set x position of collective center (supports sequences) */

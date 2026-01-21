@@ -2,7 +2,7 @@
  * Menu Component - Hamburger dropdown menu
  */
 import { Modal } from './Modal.ts';
-import { createThemeModal } from '../modals/ThemeModal.ts';
+// Theme removed - using Monaco's default vs-dark theme
 import { createExamplesModal } from '../modals/ExamplesModal.ts';
 import { createSettingsModal } from '../modals/SettingsModal.ts';
 
@@ -40,11 +40,6 @@ export class Menu {
 
     private getMenuItems(): MenuItem[] {
         return [
-            {
-                label: 'Theme...',
-                icon: '◐',
-                action: () => this.showThemeModal(),
-            },
             {
                 label: 'Examples...',
                 icon: '◇',
@@ -122,12 +117,6 @@ export class Menu {
         this.isOpen = false;
     }
 
-    private showThemeModal(): void {
-        Modal.show({
-            title: 'Choose Theme',
-            content: createThemeModal(),
-        });
-    }
 
     private showExamplesModal(): void {
         Modal.show({

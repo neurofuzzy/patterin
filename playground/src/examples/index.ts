@@ -8,7 +8,7 @@ export interface Example {
   category: string;
   description: string;
   code: string;
-  preview?: string; // SVG string for thumbnail
+  preview?: string; // SVG string for thumbnail (populated from EXAMPLE_THUMBNAILS)
 }
 
 export const EXAMPLES: Example[] = [
@@ -258,6 +258,115 @@ gosper.trace()`,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PALETTES
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    name: 'Basic Colors',
+    category: 'Palettes',
+    description: 'Simple palette coloring',
+    code: `// Create a palette and color shapes
+const colors = palette.create(5, "blues", "purples")
+
+shape.circle().radius(15)
+  .clone(5, 40)
+  .color(colors)`,
+  },
+  {
+    name: 'Muted Tones',
+    category: 'Palettes',
+    description: 'Desaturated color schemes',
+    code: `// Create muted versions of colors
+const colors = palette.create(6, "reds", "oranges").muted()
+
+shape.hexagon().radius(20)
+  .clone(6, 50)
+  .color(colors)`,
+  },
+  {
+    name: 'Random Colors',
+    category: 'Palettes',
+    description: 'Randomize palette order',
+    code: `// Shuffle colors for variation
+const colors = palette.create(8, "greens").random()
+
+shape.circle().radius(12)
+  .clone(8, 30)
+  .color(colors)`,
+  },
+  {
+    name: 'Yoyo Colors',
+    category: 'Palettes',
+    description: 'Bounce through palette',
+    code: `// Colors bounce back and forth
+const colors = palette.create(4, "reds", "yellows").yoyo()
+
+shape.rect().size(20)
+  .clone(10, 28)
+  .color(colors)`,
+  },
+  {
+    name: 'Grid Coloring',
+    category: 'Palettes',
+    description: 'Color grid cells',
+    code: `// Apply palette to grid
+const colors = palette.create(6, "blues", "purples").muted()
+
+const grid = system.grid({
+  rows: 3,
+  cols: 3,
+  spacing: 30,
+  x: -30,
+  y: -30,
+})
+
+grid.place(shape.circle().radius(10))
+  .color(colors)`,
+  },
+  {
+    name: 'Complex Pattern',
+    category: 'Palettes',
+    description: 'Palettes + sequences + transforms',
+    code: `// Combine palettes, sequences, and transforms
+const colors = palette.create(4, "reds", "blues").muted().random()
+const scales = sequence.random(0.75, 1, 1.5)
+
+shape.circle().numSegments(6)
+  .clone(8, 40, 0)
+  .clone(8, 0, 40)
+  .rotate(scales)
+  .scaleX(2)
+  .color(colors)
+  .every(2).rotate(30)`,
+  },
+  {
+    name: 'Vivid vs Muted',
+    category: 'Palettes',
+    description: 'Compare color intensities',
+    code: `// Show vivid and muted side by side
+const vivid = palette.create(5, "oranges", "reds")
+const muted = palette.create(5, "oranges", "reds").muted()
+
+shape.circle().radius(12).xy(0, -40)
+  .clone(5, 35)
+  .color(vivid)
+
+shape.circle().radius(12).xy(0, 40)
+  .clone(5, 35)
+  .color(muted)`,
+  },
+  {
+    name: 'Multi-zone Palette',
+    category: 'Palettes',
+    description: 'Blend multiple color zones',
+    code: `// Create complex color gradients
+const colors = palette.create(12, "purples", "blues", "greens")
+
+shape.circle().radius(10)
+  .clone(12, 30)
+  .color(colors)`,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // SEQUENCES
   // ═══════════════════════════════════════════════════════════════════════════
   {
@@ -436,3 +545,60 @@ quilt.shapes.shapes.forEach(s => {
 })`,
   },
 ];
+
+/**
+ * Thumbnail URLs for examples
+ * SVG files are stored in playground/public/thumbnails/
+ * Generate using: http://localhost:5173/generate-thumbnails.html
+ * 
+ * To regenerate:
+ * 1. Visit http://localhost:5173/generate-thumbnails.html
+ * 2. Click "Generate All Thumbnails"
+ * 3. Click "💾 Download All SVGs" and save them to playground/public/thumbnails/
+ * 4. Click "📋 Copy Code" and replace this object
+ */
+export const EXAMPLE_THUMBNAILS: Record<string, string> = {
+  "Circle": `/patterin/thumbnails/circle.svg`,
+  "Star": `/patterin/thumbnails/star.svg`,
+  "Gear": `/patterin/thumbnails/gear.svg`,
+  "Hexagon": `/patterin/thumbnails/hexagon.svg`,
+  "Multiple Shapes": `/patterin/thumbnails/multiple-shapes.svg`,
+  "Point Expansion": `/patterin/thumbnails/point-expansion.svg`,
+  "Offset Shape": `/patterin/thumbnails/offset-shape.svg`,
+  "Clone & Spread": `/patterin/thumbnails/clone-spread.svg`,
+  "Square Grid": `/patterin/thumbnails/square-grid.svg`,
+  "Hex Grid": `/patterin/thumbnails/hex-grid.svg`,
+  "Mandala": `/patterin/thumbnails/mandala.svg`,
+  "Penrose Tiling": `/patterin/thumbnails/penrose-tiling.svg`,
+  "Koch Curve": `/patterin/thumbnails/koch-curve.svg`,
+  "Koch Snowflake": `/patterin/thumbnails/koch-snowflake.svg`,
+  "Dragon Curve": `/patterin/thumbnails/dragon-curve.svg`,
+  "Hilbert Curve": `/patterin/thumbnails/hilbert-curve.svg`,
+  "Sierpinski Triangle": `/patterin/thumbnails/sierpinski-triangle.svg`,
+  "Gosper Curve": `/patterin/thumbnails/gosper-curve.svg`,
+  "Repeating Sizes": `/patterin/thumbnails/repeating-sizes.svg`,
+  "Yoyo Pattern": `/patterin/thumbnails/yoyo-pattern.svg`,
+  "Random Variation": `/patterin/thumbnails/random-variation.svg`,
+  "Additive Spacing": `/patterin/thumbnails/additive-spacing.svg`,
+  "Nested Sequences": `/patterin/thumbnails/nested-sequences.svg`,
+  "Simple Quilt": `/patterin/thumbnails/simple-quilt.svg`,
+  "Alternating Blocks": `/patterin/thumbnails/alternating-blocks.svg`,
+  "Sawtooth Star": `/patterin/thumbnails/sawtooth-star.svg`,
+  "Quilt Sampler": `/patterin/thumbnails/quilt-sampler.svg`,
+  "Custom Quilt Layout": `/patterin/thumbnails/custom-quilt-layout.svg`,
+  "Basic Colors": `/patterin/thumbnails/basic-colors.svg`,
+  "Muted Tones": `/patterin/thumbnails/muted-tones.svg`,
+  "Random Colors": `/patterin/thumbnails/random-colors.svg`,
+  "Yoyo Colors": `/patterin/thumbnails/yoyo-colors.svg`,
+  "Grid Coloring": `/patterin/thumbnails/grid-coloring.svg`,
+  "Complex Pattern": `/patterin/thumbnails/complex-pattern.svg`,
+  "Vivid vs Muted": `/patterin/thumbnails/vivid-vs-muted.svg`,
+  "Multi-zone Palette": `/patterin/thumbnails/multi-zone-palette.svg`,
+};
+
+// Merge thumbnail URLs into examples
+EXAMPLES.forEach(example => {
+  if (EXAMPLE_THUMBNAILS[example.name]) {
+    example.preview = EXAMPLE_THUMBNAILS[example.name];
+  }
+});

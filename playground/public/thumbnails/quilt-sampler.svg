@@ -1,0 +1,97 @@
+<svg width="160" height="90" viewBox="-8.108108108108112 39.189189189189186 216.21621621621622 121.62162162162163" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 0 0 L 30 0 L 30 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 0 L 30 30 L 0 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 0 L 60 30 L 30 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 0 L 60 0 L 30 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 30 L 30 30 L 0 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 30 L 30 60 L 0 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 30 30 L 60 60 L 30 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 30 30 L 60 30 L 60 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 70 0 L 100 0 L 70 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 0 L 100 30 L 70 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 0 L 130 30 L 100 30 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 0 L 130 0 L 130 30 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 70 30 L 100 30 L 100 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 70 30 L 100 60 L 70 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 130 30 L 130 60 L 100 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 30 L 130 30 L 100 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 0 L 160 0 L 160 20 L 140 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 180 0 L 180 20 L 160 20 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 160 0 L 180 0 L 160 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 180 0 L 200 0 L 200 20 L 180 20 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 20 L 160 20 L 160 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 20 L 160 40 L 140 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 20 L 180 20 L 180 40 L 160 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 180 20 L 200 40 L 180 40 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 180 20 L 200 20 L 200 40 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 40 L 160 40 L 160 60 L 140 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 160 40 L 180 40 L 160 60 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 180 40 L 180 60 L 160 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 180 40 L 200 40 L 200 60 L 180 60 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 70 L 20 90 L 0 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 70 L 20 70 L 0 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 70 L 40 70 L 40 90 L 20 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 70 L 60 90 L 40 90 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 70 L 60 70 L 60 90 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 90 L 20 90 L 20 110 L 0 110 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 90 L 40 90 L 40 110 L 20 110 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 90 L 60 90 L 60 110 L 40 110 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 110 L 20 110 L 20 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 110 L 20 130 L 0 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 110 L 40 110 L 40 130 L 20 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 110 L 60 110 L 40 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 60 110 L 60 130 L 40 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 70 70 L 100 70 L 70 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 70 L 100 100 L 70 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 70 L 130 70 L 100 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 130 70 L 130 100 L 100 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 100 L 100 130 L 70 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 70 100 L 100 100 L 70 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 130 100 L 130 130 L 100 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 100 L 130 100 L 100 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 155 70 L 140 100 L 170 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 70 L 155 70 L 140 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 155 70 L 170 70 L 170 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 170 70 L 200 85 L 170 100 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 170 70 L 200 70 L 200 85 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 200 85 L 200 100 L 170 100 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 115 L 170 100 L 170 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 100 L 170 100 L 140 115 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 115 L 170 130 L 140 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 170 100 L 200 100 L 185 130 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 170 100 L 185 130 L 170 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 200 100 L 200 130 L 185 130 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 140 L 20 140 L 20 160 L 0 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 30 140 L 20 160 L 40 160 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 20 140 L 30 140 L 20 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 30 140 L 40 140 L 40 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 140 L 60 140 L 60 160 L 40 160 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 170 L 20 160 L 20 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 0 160 L 20 160 L 0 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 170 L 20 180 L 0 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 160 L 40 160 L 40 180 L 20 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 160 L 60 170 L 40 180 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 40 160 L 60 160 L 60 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 60 170 L 60 180 L 40 180 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 0 180 L 20 180 L 20 200 L 0 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 20 180 L 40 180 L 30 200 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 20 180 L 30 200 L 20 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 180 L 40 200 L 30 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 40 180 L 60 180 L 60 200 L 40 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 70 140 L 100 140 L 100 170 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 70 140 L 100 170 L 70 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 130 140 L 130 170 L 100 170 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 140 L 130 140 L 100 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 70 170 L 100 170 L 70 200 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 170 L 100 200 L 70 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 100 170 L 130 200 L 100 200 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 100 170 L 130 170 L 130 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 140 L 170 140 L 140 170 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 170 140 L 170 170 L 140 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 170 140 L 200 170 L 170 170 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 170 140 L 200 140 L 200 170 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 140 170 L 170 170 L 170 200 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 140 170 L 170 200 L 140 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+  <path d="M 200 170 L 200 200 L 170 200 Z" fill="#333" stroke="#000" stroke-width="1" />
+  <path d="M 170 170 L 200 170 L 170 200 Z" fill="#999" stroke="#000" stroke-width="1" />
+</svg>

@@ -9,6 +9,7 @@ import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
 import { SequenceFunction } from '../sequence/sequence';
+import type { Palette } from '../color/palette';
 
 export interface CloneOptions {
     count: number;
@@ -155,6 +156,25 @@ export class CloneSystem extends BaseSystem {
     }
 
     /**
+     * Set color for all shapes in this clone system.
+     * Delegates to .shapes.color() for convenience.
+     * 
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This CloneSystem for chaining
+     * 
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const circles = shape.circle().clone(5, 40, 0);
+     * circles.color(palette.create(5, "blues").vibrant());
+     * ```
+     */
+    color(colorValue: string | SequenceFunction | Palette): this {
+        this.shapes.color(colorValue as string | SequenceFunction | Palette);
+        return this;
+    }
+
+    /**
      * Make the system concrete (renderable).
      */
     trace(): this {
@@ -292,8 +312,28 @@ export class CloneSystem extends BaseSystem {
      * Scale all shapes uniformly (supports sequences).
      * @param factor - Scale factor or sequence
      */
-    scale(factor: number | SequenceFunction): this {
-        this.shapes.scale(factor);
+    /** Scale uniformly */
+    scale(factor: number | SequenceFunction): this;
+    /** Scale with different X and Y factors */
+    scale(factorX: number | SequenceFunction, factorY: number | SequenceFunction): this;
+    scale(factorX: number | SequenceFunction, factorY?: number | SequenceFunction): this {
+        if (factorY === undefined) {
+            // Uniform scaling
+            this.shapes.scale(factorX);
+        } else {
+            // Non-uniform scaling - apply to each shape individually
+            for (const shape of this._shapes) {
+                const center = shape.centroid();
+                const fx = typeof factorX === 'function' ? factorX() : factorX;
+                const fy = typeof factorY === 'function' ? factorY() : factorY;
+                
+                for (const vertex of shape.vertices) {
+                    const newX = center.x + (vertex.position.x - center.x) * fx;
+                    const newY = center.y + (vertex.position.y - center.y) * fy;
+                    vertex.position = new Vector2(newX, newY);
+                }
+            }
+        }
         return this;
     }
 
@@ -392,7 +432,9 @@ export class CloneSystem extends BaseSystem {
             return;
         }
 
-        const shapeStyle = style ?? DEFAULT_STYLES.shape;
+        // When no explicit style is provided, use empty object to allow
+        // render mode and color system to control styling
+        const shapeStyle = style ?? {};
         const pathStyle = style ?? DEFAULT_STYLES.line;
 
         // Stamp shapes

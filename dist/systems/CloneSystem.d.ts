@@ -8,6 +8,7 @@ import { ShapesContext } from '../contexts';
 import { BaseSystem, type RenderGroup } from './BaseSystem';
 import type { SystemBounds } from '../types';
 import { SequenceFunction } from '../sequence/sequence';
+import type { Palette } from '../color/palette';
 export interface CloneOptions {
     count: number;
     offsetX: number;
@@ -56,6 +57,21 @@ export declare class CloneSystem extends BaseSystem {
     get pathSegments(): Segment[];
     get shapes(): ShapesContext;
     /**
+     * Set color for all shapes in this clone system.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This CloneSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const circles = shape.circle().clone(5, 40, 0);
+     * circles.color(palette.create(5, "blues").vibrant());
+     * ```
+     */
+    color(colorValue: string | SequenceFunction | Palette): this;
+    /**
      * Make the system concrete (renderable).
      */
     trace(): this;
@@ -99,7 +115,10 @@ export declare class CloneSystem extends BaseSystem {
      * Scale all shapes uniformly (supports sequences).
      * @param factor - Scale factor or sequence
      */
+    /** Scale uniformly */
     scale(factor: number | SequenceFunction): this;
+    /** Scale with different X and Y factors */
+    scale(factorX: number | SequenceFunction, factorY: number | SequenceFunction): this;
     /**
      * Scale all shapes along X axis only (supports sequences).
      * @param factor - Scale factor or sequence

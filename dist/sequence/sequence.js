@@ -284,8 +284,33 @@ class Sequence {
      * console.log([s(), s(), s(), s()]); // e.g., [3, 1, 4, 2]
      * ```
      */
-    static shuffle(...values) {
-        return new Sequence(values, 'shuffle').createFunction();
+    /**
+     * Creates a shuffle sequence (one-time shuffle, then repeats)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
+     * @returns A sequence function
+     *
+     * @example With seed (deterministic)
+     * ```typescript
+     * const s = Sequence.shuffle(42, 1, 2, 3);
+     * console.log([s(), s(), s()]); // e.g., [2, 3, 1]
+     * s.reset();
+     * console.log([s(), s(), s()]); // Same: [2, 3, 1]
+     * ```
+     *
+     * @example Without seed (uses current time)
+     * ```typescript
+     * const s = Sequence.shuffle(1, 2, 3);
+     * console.log([s(), s(), s()]); // Shuffled order
+     * ```
+     */
+    static shuffle(seed, ...values) {
+        // If first argument is a number and there are more values, treat it as seed
+        if (typeof seed === 'number' && values.length > 0) {
+            return new Sequence(values, 'shuffle', seed).createFunction();
+        }
+        // Otherwise, first argument is a value, no seed provided
+        return new Sequence([seed, ...values], 'shuffle').createFunction();
     }
     static random(seedOrValue, ...values) {
         if (typeof seedOrValue === 'number' && values.length > 0) {
@@ -334,4 +359,64 @@ class Sequence {
         return new Sequence(values, 'multiplicative').createFunction();
     }
 }
+/**
+ * Sequence factory - lowercase entry point for creating sequences.
+ * Follows the same pattern as shape.* and system.* factories.
+ *
+ * @example
+ * ```typescript
+ * import { sequence } from 'patterin';
+ *
+ * // Create sequences using lowercase factory
+ * const sizes = sequence.repeat(10, 20, 30);
+ * const angles = sequence.yoyo(0, 45, 90);
+ * const colors = sequence.random(42, '#f00', '#0f0', '#00f');
+ * ```
+ */
+export const sequence = {
+    /**
+     * Create a repeating sequence that cycles through values indefinitely
+     */
+    repeat(...values) {
+        return Sequence.repeat(...values);
+    },
+    /**
+     * Create a yoyo sequence that bounces back and forth through values
+     */
+    yoyo(...values) {
+        return Sequence.yoyo(...values);
+    },
+    /**
+     * Create a sequence that plays once then stops at the last value
+     */
+    once(...values) {
+        return Sequence.once(...values);
+    },
+    /**
+     * Create a shuffled sequence (shuffles once at creation)
+     * @param seed - Optional seed for deterministic shuffling
+     * @param values - Values to shuffle
+     */
+    shuffle(seed, ...values) {
+        return Sequence.shuffle(seed, ...values);
+    },
+    /**
+     * Create a random sequence with seed (deterministic, reshuffles on cycle)
+     */
+    random(seed, ...values) {
+        return Sequence.random(seed, ...values);
+    },
+    /**
+     * Create an additive sequence (running total)
+     */
+    additive(...values) {
+        return Sequence.additive(...values);
+    },
+    /**
+     * Create a multiplicative sequence (running product)
+     */
+    multiplicative(...values) {
+        return Sequence.multiplicative(...values);
+    }
+};
 export { Sequence };

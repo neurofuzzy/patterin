@@ -65,7 +65,20 @@ function createExampleCard(example: Example, onClick: () => void): HTMLElement {
 
     const preview = document.createElement('div');
     preview.className = 'example-preview';
-    preview.innerHTML = example.preview || `<div class="example-placeholder">${example.name[0]}</div>`;
+    
+    // Check if preview is a URL or embedded SVG
+    if (example.preview) {
+        if (example.preview.startsWith('/') || example.preview.startsWith('http')) {
+            // It's a URL - use <img> tag
+            preview.innerHTML = `<img src="${example.preview}" alt="${example.name}" />`;
+        } else {
+            // It's embedded SVG - use innerHTML directly
+            preview.innerHTML = example.preview;
+        }
+    } else {
+        // No preview - show placeholder
+        preview.innerHTML = `<div class="example-placeholder">${example.name[0]}</div>`;
+    }
 
     const name = document.createElement('div');
     name.className = 'example-name';

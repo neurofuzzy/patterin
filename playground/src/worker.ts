@@ -363,6 +363,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
             // Create collector for this run
             const collector = new patterin.SVGCollector();
+            collector.setRenderMode('glass'); // Default to glass mode in playground
 
             // Track if render() was called explicitly
             let renderCalled = false;
@@ -376,6 +377,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 system: autoSystem,  // Override system with auto-collecting version
                 svg: collector,      // Provide collector as 'svg' for explicit use
                 Sequence: patterin.Sequence,  // Explicitly expose Sequence for easy discovery
+                Palette: patterin.Palette,    // Explicitly expose Palette for easy discovery
+                sequence: patterin.sequence,  // Lowercase sequence factory for streamlined API
+                palette: patterin.palette,    // Lowercase palette factory for streamlined API
                 // Render function for explicit control
                 render: (explicitCollector?: patterin.SVGCollector) => {
                     renderCalled = true;

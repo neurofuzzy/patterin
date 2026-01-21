@@ -121,6 +121,24 @@ export class CloneSystem extends BaseSystem {
         return new ShapesContext(this._shapes);
     }
     /**
+     * Set color for all shapes in this clone system.
+     * Delegates to .shapes.color() for convenience.
+     *
+     * @param colorValue - Hex color string, Sequence, or Palette
+     * @returns This CloneSystem for chaining
+     *
+     * @example
+     * ```typescript
+     * // Streamlined API - no need to access .shapes
+     * const circles = shape.circle().clone(5, 40, 0);
+     * circles.color(palette.create(5, "blues").vibrant());
+     * ```
+     */
+    color(colorValue) {
+        this.shapes.color(colorValue);
+        return this;
+    }
+    /**
      * Make the system concrete (renderable).
      */
     trace() {
@@ -233,12 +251,24 @@ export class CloneSystem extends BaseSystem {
             ? value() // Call sequence to advance and get next value
             : value; // Use number as-is
     }
-    /**
-     * Scale all shapes uniformly (supports sequences).
-     * @param factor - Scale factor or sequence
-     */
-    scale(factor) {
-        this.shapes.scale(factor);
+    scale(factorX, factorY) {
+        if (factorY === undefined) {
+            // Uniform scaling
+            this.shapes.scale(factorX);
+        }
+        else {
+            // Non-uniform scaling - apply to each shape individually
+            for (const shape of this._shapes) {
+                const center = shape.centroid();
+                const fx = typeof factorX === 'function' ? factorX() : factorX;
+                const fy = typeof factorY === 'function' ? factorY() : factorY;
+                for (const vertex of shape.vertices) {
+                    const newX = center.x + (vertex.position.x - center.x) * fx;
+                    const newY = center.y + (vertex.position.y - center.y) * fy;
+                    vertex.position = new Vector2(newX, newY);
+                }
+            }
+        }
         return this;
     }
     /**
@@ -322,7 +352,9 @@ export class CloneSystem extends BaseSystem {
         if (this._ephemeral) {
             return;
         }
-        const shapeStyle = style ?? DEFAULT_STYLES.shape;
+        // When no explicit style is provided, use empty object to allow
+        // render mode and color system to control styling
+        const shapeStyle = style ?? {};
         const pathStyle = style ?? DEFAULT_STYLES.line;
         // Stamp shapes
         collector.beginGroup('clone-shapes');

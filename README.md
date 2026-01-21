@@ -225,6 +225,47 @@ const growth = Sequence.multiplicative(1.2, 1.5);
 
 See [API docs](API.md#sequence-generators) for full details.
 
+### Color & Styling
+
+Patterin includes a declarative **color palette generator** and flexible **rendering modes**:
+
+```typescript
+import { palette, sequence, SVGCollector } from 'patterin';
+
+// Streamlined API - create palette and use directly
+const colors = palette.create(6, "blues", "cyans").vibrant();
+
+const circles = shape.circle()
+  .radius(20)
+  .clone(5, 50, 0);
+
+// Use palette directly - no .toArray() or spread needed!
+circles.color(colors);
+
+// Or shuffle the colors!
+circles.color(colors.shuffle());  // Random order
+circles.color(colors.yoyo());     // Gradient back and forth
+
+// Sequences work for other properties too
+const sizes = sequence.repeat(10, 20, 30);
+circles.scale(sizes);
+
+// Configure rendering mode
+const svg = new SVGCollector();
+svg.setRenderMode('glass'); // 'fill', 'stroke', or 'glass'
+circles.stamp(svg);
+```
+
+**Color Zones:** `reds`, `oranges`, `yellows`, `greens`, `cyans`, `blues`, `purples`, `magentas`  
+**Modifiers:** `.vibrant()`, `.muted()`, `.darkMode()`, `.lightMode()`  
+**Sequence Modes:** `.shuffle()`, `.yoyo()`, `.random(seed)` - Convert palette to different iteration patterns  
+**Render Modes:**
+- `fill` - Solid fill with no stroke
+- `stroke` - Stroke only with no fill  
+- `glass` - Semi-transparent fill (50%) with opaque stroke
+
+See [API docs](API.md#color--styling) for full details.
+
 ## Examples
 
 ### Mandala
