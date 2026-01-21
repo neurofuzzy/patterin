@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Example Thumbnails - Patterin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            padding: 2rem;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            color: #58a6ff;
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #30363d;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        button.primary:hover {
+            background: #2ea043;
+        }
+
+        .status {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .example-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .example-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .example-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .example-category {
+            font-size: 12px;
+            color: #8b949e;
+        }
+
+        .thumbnail-container {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thumbnail-container svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .loading {
+            color: #8b949e;
+            font-size: 12px;
+        }
+
+        .error {
+            color: #f85149;
+            font-size: 12px;
+        }
+
+        .copy-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .output {
+            margin-top: 2rem;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .output h2 {
+            margin-bottom: 1rem;
+            font-size: 16px;
+        }
+
+        .output textarea {
+            width: 100%;
+            min-height: 200px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            padding: 1rem;
+            resize: vertical;
+        }
+
+        .success {
+            color: #3fb950;
+        }
+    </style>
+</head>
+<body>
+    <h1>📸 Example Thumbnail Generator</h1>
+    
+    <div class="controls">
+        <button id="generateBtn" class="primary">Generate All Thumbnails</button>
+        <button id="copyAllBtn" disabled>Copy All to Clipboard</button>
+        <div class="status" id="status">Ready</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="output" id="outputSection" style="display: none;">
+        <h2>Generated Thumbnails Code</h2>
+        <p style="color: #8b949e; font-size: 14px; margin-bottom: 1rem;">
+            Copy this and replace the <code>EXAMPLE_THUMBNAILS</code> object in <code>playground/src/examples/index.ts</code>
+        </p>
+        <textarea id="output" readonly></textarea>
+    </div>
+
+    <script type="module" src="/src/generate-thumbnails.ts"></script>
+</body>
+</html>
