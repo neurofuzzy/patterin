@@ -237,6 +237,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'midPoint': { returns: 'Vector2', doc: 'Get average position of selected points' },
             'bbox': { returns: 'BoundingBox', doc: 'Get bounding box of selected points' },
             'expandToCircles': { params: ['radius: number', 'segments?: number'], returns: 'ShapesContext', doc: 'Create circles at each point' },
+            'round': { params: ['radius: number', 'segments?: number'], returns: 'ShapeContext', doc: 'Round selected corners with a circular arc' },
             'raycast': { params: ['distance: number', "direction: number | 'outward' | 'inward'"], returns: 'PointsContext', doc: 'Cast rays from each point' },
         },
         getters: {

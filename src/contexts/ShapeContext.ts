@@ -831,6 +831,149 @@ export class PointsContext extends SelectableContext<Vertex, PointsContext> {
 
         return new PointsContext(this._shape, endpoints);
     }
+
+    /**
+     * Round selected corners with a circular arc.
+     * 
+     * Uses a tangent circle algorithm to fit an arc of the valid radius
+     * into the corner formed by the vertex and its neighbors.
+     * 
+     * @param radius - Radius of the rounding arc
+     * @param segments - Number of segments to use for the arc (default 32 for full circle quality)
+     * @returns ShapeContext for the modified shape
+     * 
+     * @example
+     * ```typescript
+     * // Round all corners of a rectangle
+     * shape.rect().size(50).points.round(10);
+     * 
+     * // Round specific corners
+     * shape.rect().size(50).points.at(0, 2).round(10);
+     * ```
+     */
+    round(radius: number, segments = 32): ShapeContext {
+        if (radius <= 0) return new ShapeContext(this._shape);
+
+        const vertices = this._shape.vertices;
+        const n = vertices.length;
+        if (n < 3) return new ShapeContext(this._shape);
+
+        const newPoints: Vector2[] = [];
+        const selectedSet = new Set(this._items);
+
+        for (let i = 0; i < n; i++) {
+            const current = vertices[i];
+
+            // If not selected, just keep the vertex
+            if (!selectedSet.has(current)) {
+                newPoints.push(current.position);
+                continue;
+            }
+
+            const prev = vertices[(i - 1 + n) % n];
+            const next = vertices[(i + 1) % n];
+
+            const p1 = prev.position;
+            const p2 = current.position;
+            const p3 = next.position;
+
+            const v1 = p1.subtract(p2);
+            const v2 = p3.subtract(p2);
+            const len1 = v1.length();
+            const len2 = v2.length();
+
+            // Skip invalid geometry
+            if (len1 < 1e-6 || len2 < 1e-6) {
+                newPoints.push(p2);
+                continue;
+            }
+
+            // Normalize directions
+            const d1 = v1.divide(len1);
+            const d2 = v2.divide(len2);
+
+            // Calculate angle between vectors
+            const angle = Math.acos(d1.dot(d2));
+
+            // Skip if parallel (0 or 180 degrees)
+            // 180 degrees (PI radians) means straight line -> cannot round
+            // 0 degrees means spike back -> technically possible but usually artifacts
+            if (Math.abs(angle - Math.PI) < 1e-4 || Math.abs(angle) < 1e-4) {
+                newPoints.push(p2);
+                continue;
+            }
+
+            // Calculate half-angle tangent distance
+            // tan(alpha/2) = R / L  => L = R / tan(alpha/2)
+            const alpha = angle; // Angle between vectors
+            // The corner angle is actually the interior angle.
+            // Our vectors d1, d2 point away from the corner. 
+            // So the angle calculated by dot product is exactly the angle we need for the formula.
+            // The tangent distance is from the corner vertex along the edges.
+
+            let tangentDist = radius / Math.tan(alpha / 2);
+
+            // Clamp tangent distance to half the length of smallest segment to avoid overlap
+            // This prevents the arc from consuming the whole edge
+            const maxDist = Math.min(len1, len2) / 2;
+            let effectiveRadius = radius;
+
+            if (tangentDist > maxDist) {
+                // Adjust radius to fit
+                tangentDist = maxDist;
+                effectiveRadius = tangentDist * Math.tan(alpha / 2);
+            }
+
+            // Calculate tangent points
+            const t1 = p2.add(d1.multiply(tangentDist));
+            const t2 = p2.add(d2.multiply(tangentDist));
+
+            // Calculate center of circle
+            // The center is 'radius' distance away from the edge, perpendicular to it.
+            // But we need to be careful with direction (winding).
+            // A safer way: The center lies on the bisector of the angle.
+            const bisector = d1.add(d2).normalize();
+            const distToCenter = effectiveRadius / Math.sin(alpha / 2);
+            const center = p2.add(bisector.multiply(distToCenter));
+
+            // Generate arc points
+            // Start angle: from Center to T1
+            const startAngle = t1.subtract(center).angle();
+            // End angle: from Center to T2
+            const endAngle = t2.subtract(center).angle();
+
+            // Determine arc sweep
+            // We need to go from T1 to T2.
+            // Which way? depends on winding. Assume shortest path for now (acute side).
+            let sweep = endAngle - startAngle;
+
+            // Normalize sweep to -PI to PI
+            if (sweep > Math.PI) sweep -= 2 * Math.PI;
+            if (sweep < -Math.PI) sweep += 2 * Math.PI;
+
+            // Generate points
+            // Determine number of segments for this arc using step size or fixed count
+            // Allocating fraction of segments based on angular size
+            const arcSegments = Math.max(1, Math.ceil(Math.abs(sweep) / (2 * Math.PI) * segments));
+
+            for (let j = 0; j <= arcSegments; j++) {
+                const fraction = j / arcSegments;
+                const theta = startAngle + sweep * fraction;
+                newPoints.push(new Vector2(
+                    center.x + Math.cos(theta) * effectiveRadius,
+                    center.y + Math.sin(theta) * effectiveRadius
+                ));
+            }
+        }
+
+        // Remove duplicates if any (though logic shouldn't produce adjacent identicals usually)
+        if (newPoints.length >= 3) {
+            const newShape = Shape.fromPoints(newPoints, this._shape.winding);
+            return new ShapeContext(newShape);
+        }
+
+        return new ShapeContext(this._shape);
+    }
 }
 
 /**
@@ -953,14 +1096,14 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
 
         // Group selected segments by their parent shape
         const segmentsByShape = new Map<Shape, Segment[]>();
-        
+
         // Build parent shapes map if not provided (single shape case)
         const parentMap = this._parentShapes ?? new Map(this._items.map(s => [s, this._shape]));
-        
+
         for (const seg of this._items) {
             const parent = parentMap.get(seg);
             if (!parent) continue;
-            
+
             if (!segmentsByShape.has(parent)) {
                 segmentsByShape.set(parent, []);
             }
@@ -1242,14 +1385,14 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
     get lines(): LinesContext {
         const allSegments: Segment[] = [];
         const parentShapes = new Map<Segment, Shape>();
-        
+
         for (const shape of this._items) {
             for (const seg of shape.segments) {
                 allSegments.push(seg);
                 parentShapes.set(seg, shape);
             }
         }
-        
+
         const refShape = this._items[0] ?? Shape.fromPoints([
             Vector2.zero(),
             new Vector2(1, 0),

@@ -330,6 +330,25 @@ const starShape = shape.circle()
 starShape.points.every(2).expand(20);
 ```
 
+### `.round(radius: number, segments?: number)`
+
+Rounds selected corners with a circular arc.
+
+**Parameters:**
+- `radius`: Radius of the rounding arc
+- `segments` (optional): Number of segments for the arc (default: 32)
+
+**Returns:** `ShapeContext`
+
+**Example:**
+```typescript
+// Round all corners of a rectangle
+shape.rect().size(50).points.round(10);
+
+// Round specific corners
+shape.rect().size(50).points.at(0, 2).round(10);
+```
+
 See [Points Context](#points-context) for detailed API.
 
 ### Lines Context
