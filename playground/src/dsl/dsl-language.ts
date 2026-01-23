@@ -64,7 +64,7 @@ export function registerDSLLanguage() {
             'tessellation', 'grid', 'place', 'trace', 'mask', 'ephemeral',
             'clone', 'scale', 'rotate', 'translate', 'add', 'subtract',
             'every', 'at', 'repeat', 'expand', 'inset', 'round', 'extrude',
-            'lsystem'
+            'subdivide', 'lsystem'
         ],
 
         // Patterin specific shapes

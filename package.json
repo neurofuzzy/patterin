@@ -1,6 +1,6 @@
 {
   "name": "patterin",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Declarative procedural 2D vector graphics with system scaffolds",
   "keywords": [
     "svg",

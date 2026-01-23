@@ -1,5 +1,9 @@
-import { BoundingBox, Shape, Segment, Vector2, Vertex, Winding } from '../primitives';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { Vertex } from '../primitives/Vertex';
+import { Segment, Winding } from '../primitives/Segment';
+import { Shape, BoundingBox } from '../primitives/Shape';
+import { Vector2 } from '../primitives/Vector2';
+import { BooleanOps } from '../geometry/Boolean';
+import { SVGCollector, PathStyle, RenderMode, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
 import { SequenceFunction } from '../sequence/sequence';
@@ -301,6 +305,29 @@ export class ShapeContext {
      */
     inset(distance: number, count: number = 0, miterLimit = 4): ShapeContext | ShapesContext {
         return this.offset(-Math.abs(distance), count, miterLimit);
+    }
+
+    /**
+     * Subtract another shape (or shapes) from this shape.
+     * @param other Shape, ShapeContext, or ShapesContext to subtract.
+     * @returns A ShapesContext containing the resulting shape(s).
+     */
+    subtract(other: Shape | ShapeContext | ShapesContext): ShapesContext {
+        const clips = this.resolveShapes(other);
+        const result = BooleanOps.difference([this._shape], clips);
+        // Result is a single logical group (compound shape)
+        return ShapesContext.fromGroups([result]);
+    }
+
+    /** Helper to resolve inputs to Shape[] */
+    protected resolveShapes(other: Shape | ShapeContext | ShapesContext): Shape[] {
+        if (other instanceof Shape) return [other];
+        if (other instanceof ShapeContext) return [other.shape];
+        // Check for ShapesContext structurally to avoid circular type issues if relevant
+        if ('shapes' in other && Array.isArray((other as any).shapes)) {
+            return (other as any).shapes;
+        }
+        return [];
     }
 
     /**
@@ -831,6 +858,154 @@ export class PointsContext extends SelectableContext<Vertex, PointsContext> {
 
         return new PointsContext(this._shape, endpoints);
     }
+
+    /**
+     * Round selected corners with a circular arc.
+     * 
+     * Uses a tangent circle algorithm to fit an arc of the valid radius
+     * into the corner formed by the vertex and its neighbors.
+     * 
+     * @param radius - Radius of the rounding arc
+     * @param segments - Number of segments to use for the arc (default 32 for full circle quality)
+     * @returns ShapeContext for the modified shape
+     * 
+     * @example
+     * ```typescript
+     * // Round all corners of a rectangle
+     * shape.rect().size(50).points.round(10);
+     * 
+     * // Round specific corners
+     * shape.rect().size(50).points.at(0, 2).round(10);
+     * ```
+     */
+    round(radius: number, segments = 32): ShapeContext {
+        if (radius <= 0) return new ShapeContext(this._shape);
+
+        const vertices = this._shape.vertices;
+        const n = vertices.length;
+        if (n < 3) return new ShapeContext(this._shape);
+
+        const newPoints: Vector2[] = [];
+        const selectedSet = new Set(this._items);
+
+        for (let i = 0; i < n; i++) {
+            const current = vertices[i];
+
+            // If not selected, just keep the vertex
+            if (!selectedSet.has(current)) {
+                newPoints.push(current.position);
+                continue;
+            }
+
+            const prev = vertices[(i - 1 + n) % n];
+            const next = vertices[(i + 1) % n];
+
+            const p1 = prev.position;
+            const p2 = current.position;
+            const p3 = next.position;
+
+            const v1 = p1.subtract(p2);
+            const v2 = p3.subtract(p2);
+            const len1 = v1.length();
+            const len2 = v2.length();
+
+            // Skip invalid geometry
+            if (len1 < 1e-6 || len2 < 1e-6) {
+                newPoints.push(p2);
+                continue;
+            }
+
+            // Normalize directions
+            const d1 = v1.divide(len1);
+            const d2 = v2.divide(len2);
+
+            // Calculate angle between vectors
+            const angle = Math.acos(d1.dot(d2));
+
+            // Skip if parallel (0 or 180 degrees)
+            // 180 degrees (PI radians) means straight line -> cannot round
+            // 0 degrees means spike back -> technically possible but usually artifacts
+            if (Math.abs(angle - Math.PI) < 1e-4 || Math.abs(angle) < 1e-4) {
+                newPoints.push(p2);
+                continue;
+            }
+
+            // Calculate half-angle tangent distance
+            // tan(alpha/2) = R / L  => L = R / tan(alpha/2)
+            const alpha = angle; // Angle between vectors
+            // The corner angle is actually the interior angle.
+            // Our vectors d1, d2 point away from the corner. 
+            // So the angle calculated by dot product is exactly the angle we need for the formula.
+            // The tangent distance is from the corner vertex along the edges.
+
+            let tangentDist = radius / Math.tan(alpha / 2);
+
+            // Clamp tangent distance to half the length of smallest segment to avoid overlap
+            // This prevents the arc from consuming the whole edge
+            const maxDist = Math.min(len1, len2) / 2;
+            let effectiveRadius = radius;
+
+            if (tangentDist > maxDist) {
+                // Adjust radius to fit
+                tangentDist = maxDist;
+                effectiveRadius = tangentDist * Math.tan(alpha / 2);
+            }
+
+            // Calculate tangent points
+            const t1 = p2.add(d1.multiply(tangentDist));
+            const t2 = p2.add(d2.multiply(tangentDist));
+
+            // Calculate center of circle
+            // The center is 'radius' distance away from the edge, perpendicular to it.
+            // But we need to be careful with direction (winding).
+            // A safer way: The center lies on the bisector of the angle.
+            const bisector = d1.add(d2).normalize();
+            const distToCenter = effectiveRadius / Math.sin(alpha / 2);
+            const center = p2.add(bisector.multiply(distToCenter));
+
+            // Generate arc points
+            // Start angle: from Center to T1
+            const startAngle = t1.subtract(center).angle();
+            // End angle: from Center to T2
+            const endAngle = t2.subtract(center).angle();
+
+            // Determine arc sweep
+            // We need to go from T1 to T2.
+            // Which way? depends on winding. Assume shortest path for now (acute side).
+            let sweep = endAngle - startAngle;
+
+            // Normalize sweep to -PI to PI
+            if (sweep > Math.PI) sweep -= 2 * Math.PI;
+            if (sweep < -Math.PI) sweep += 2 * Math.PI;
+
+            // Generate points
+            // Determine number of segments for this arc using step size or fixed count
+            // Allocating fraction of segments based on angular size
+            const arcSegments = Math.max(1, Math.ceil(Math.abs(sweep) / (2 * Math.PI) * segments));
+
+            for (let j = 0; j <= arcSegments; j++) {
+                const fraction = j / arcSegments;
+                const theta = startAngle + sweep * fraction;
+                newPoints.push(new Vector2(
+                    center.x + Math.cos(theta) * effectiveRadius,
+                    center.y + Math.sin(theta) * effectiveRadius
+                ));
+            }
+        }
+
+
+        // Remove duplicates if any (though logic shouldn't produce adjacent identicals usually)
+        if (newPoints.length >= 3) {
+            const newShape = Shape.fromPoints(newPoints, this._shape.winding);
+            // Mutate the original shape structure (preserve identity)
+            this._shape.segments = newShape.segments;
+            this._shape.winding = newShape.winding; // Should be same
+            this._shape.connectSegments();
+        }
+
+        // Return context for the same (now mutated) shape
+        return new ShapeContext(this._shape);
+    }
 }
 
 /**
@@ -839,7 +1014,8 @@ export class PointsContext extends SelectableContext<Vertex, PointsContext> {
 export class LinesContext extends SelectableContext<Segment, LinesContext> {
     constructor(
         protected _shape: Shape,
-        segments: Segment[]
+        segments: Segment[],
+        protected _parentShapes?: Map<Segment, Shape>
     ) {
         super(segments);
     }
@@ -850,7 +1026,7 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
     }
 
     protected createNew(items: Segment[]): LinesContext {
-        return new LinesContext(this._shape, items);
+        return new LinesContext(this._shape, items, this._parentShapes);
     }
 
     /**
@@ -859,54 +1035,85 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
      * are the extruded positions (original + normal * distance).
      * Returns the modified ShapeContext.
      */
-    extrude(distance: number): ShapeContext {
+    /**
+     * Extrude selected lines outward.
+     * Use parent map to handle extrusion across multiple shapes.
+     * Returns a ShapeContext (if single shape) or ShapesContext (if multiple).
+     */
+    extrude(distance: number): ShapeContext | ShapesContext {
         if (this._items.length === 0) return new ShapeContext(this._shape);
 
-        // Build a set of selected segments for quick lookup
-        const selectedSet = new Set(this._items);
-        const newPoints: Vector2[] = [];
-        const allSegments = this._shape.segments;
+        // Group selected segments by their parent shape
+        const segmentsByShape = new Map<Shape, Segment[]>();
+        const parentMap = this._parentShapes ?? new Map(this._items.map(s => [s, this._shape]));
 
-        if (allSegments.length === 0) return new ShapeContext(this._shape);
-
-        // Iterate through all segments of the shape to build new point list
-        for (let i = 0; i < allSegments.length; i++) {
-            const seg = allSegments[i];
-            const isSelected = selectedSet.has(seg);
-
-            newPoints.push(seg.start.position);
-
-            if (isSelected) {
-                const normal = seg.normal.multiply(distance);
-                newPoints.push(seg.start.position.add(normal)); // A'
-                newPoints.push(seg.end.position.add(normal));   // B'
+        for (const seg of this._items) {
+            const parent = parentMap.get(seg);
+            if (parent) {
+                if (!segmentsByShape.has(parent)) {
+                    segmentsByShape.set(parent, []);
+                }
+                segmentsByShape.get(parent)!.push(seg);
             }
         }
 
-        // Create new shape from points
-        if (newPoints.length >= 3) {
-            // Remove duplicate consecutive points before creating shape
-            const uniquePoints = newPoints.filter((p, i, arr) => {
-                if (i === 0) return true;
-                return !p.equals(arr[i - 1]);
-            });
-            // Check for closing point duplication
-            if (uniquePoints.length > 1 && uniquePoints[0].equals(uniquePoints[uniquePoints.length - 1])) {
-                uniquePoints.pop();
+        const affectedShapes: Shape[] = [];
+
+        // Process each affected shape
+        for (const [shape, selectedSegs] of segmentsByShape) {
+            affectedShapes.push(shape);
+            const selectedSet = new Set(selectedSegs);
+            const newPoints: Vector2[] = [];
+            const allSegments = shape.segments;
+
+            if (allSegments.length === 0) continue;
+
+            // Iterate through all segments of the shape
+            for (let i = 0; i < allSegments.length; i++) {
+                const seg = allSegments[i];
+                const isSelected = selectedSet.has(seg);
+
+                newPoints.push(seg.start.position);
+
+                if (isSelected) {
+                    const normal = seg.normal.multiply(distance);
+                    newPoints.push(seg.start.position.add(normal)); // A'
+                    newPoints.push(seg.end.position.add(normal));   // B'
+                }
             }
 
-            if (uniquePoints.length < 3) return new ShapeContext(this._shape);
+            // Update shape if we have enough points
+            if (newPoints.length >= 3) {
+                // Remove duplicate consecutive points
+                const uniquePoints = newPoints.filter((p, i, arr) => {
+                    if (i === 0) return true;
+                    return !p.equals(arr[i - 1]);
+                });
+                if (uniquePoints.length > 1 && uniquePoints[0].equals(uniquePoints[uniquePoints.length - 1])) {
+                    uniquePoints.pop();
+                }
 
-            const newShape = Shape.fromPoints(uniquePoints, this._shape.winding);
-            newShape.ephemeral = this._shape.ephemeral;
+                if (uniquePoints.length >= 3) {
+                    const newShape = Shape.fromPoints(uniquePoints, shape.winding);
+                    newShape.ephemeral = shape.ephemeral;
 
-            // Mutate the original shape
-            this._shape.segments = newShape.segments;
-            this._shape.winding = newShape.winding;
-            this._shape.connectSegments();
+                    // Mutate the original shape
+                    shape.segments = newShape.segments;
+                    shape.winding = newShape.winding;
+                    shape.connectSegments();
+                }
+            }
         }
 
-        return new ShapeContext(this._shape);
+        if (affectedShapes.length === 1) {
+            return new ShapeContext(affectedShapes[0]);
+        }
+
+        // Return ShapesContext if multiple shapes were modified
+        // If nothing was modified, return context of original reference shape
+        return affectedShapes.length > 0
+            ? new ShapesContext(affectedShapes)
+            : new ShapeContext(this._shape);
     }
 
     /**
@@ -925,6 +1132,107 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
         }
 
         return new PointsContext(this._shape, vertices);
+    }
+
+    /**
+     * Subdivide selected lines into n segments each.
+     * Mutates the parent shape(s) by replacing each selected segment with n subsegments.
+     * Returns a LinesContext with all newly created subsegments.
+     * 
+     * @param n - Number of subsegments to create per selected line
+     * @returns LinesContext containing all newly created subsegments
+     * 
+     * @example
+     * ```typescript
+     * // Subdivide and extrude middle segment
+     * rect.lines.at(0).subdivide(3).at(1).extrude(10);
+     * 
+     * // Subdivide every other line in multiple shapes
+     * shapes.lines.every(2).subdivide(4);
+     * ```
+     */
+    subdivide(n: number): LinesContext {
+        // Handle edge case
+        if (n < 2) {
+            return new LinesContext(this._shape, this._items, this._parentShapes);
+        }
+
+        // Group selected segments by their parent shape
+        const segmentsByShape = new Map<Shape, Segment[]>();
+
+        // Build parent shapes map if not provided (single shape case)
+        const parentMap = this._parentShapes ?? new Map(this._items.map(s => [s, this._shape]));
+
+        for (const seg of this._items) {
+            const parent = parentMap.get(seg);
+            if (!parent) continue;
+
+            if (!segmentsByShape.has(parent)) {
+                segmentsByShape.set(parent, []);
+            }
+            segmentsByShape.get(parent)!.push(seg);
+        }
+
+        // Track all newly created subsegments to return
+        const allNewSubsegments: Segment[] = [];
+
+        // Process each shape
+        for (const [shape, selectedSegs] of segmentsByShape) {
+            const selectedSet = new Set(selectedSegs);
+            const newSegments: Segment[] = [];
+            const segmentToSubsegments = new Map<Segment, Segment[]>();
+
+            // Build new segments array in one pass
+            for (const seg of shape.segments) {
+                if (selectedSet.has(seg)) {
+                    // Subdivide this segment
+                    const subsegments = this.subdivideSegment(seg, n);
+                    newSegments.push(...subsegments);
+                    segmentToSubsegments.set(seg, subsegments);
+                    allNewSubsegments.push(...subsegments);
+                } else {
+                    // Keep original segment
+                    newSegments.push(seg);
+                }
+            }
+
+            // Replace shape's segments array
+            shape.segments = newSegments;
+            shape.connectSegments();
+        }
+
+        // Return LinesContext with all newly created subsegments
+        // Use the first parent shape as reference, or this._shape if none
+        const refShape = segmentsByShape.keys().next().value ?? this._shape;
+        return new LinesContext(refShape, allNewSubsegments, parentMap);
+    }
+
+    /**
+     * Helper to subdivide a single segment into n subsegments.
+     * Creates n-1 new vertices at division points and n new segments.
+     */
+    private subdivideSegment(seg: Segment, n: number): Segment[] {
+        const subsegments: Segment[] = [];
+        const vertices: Vertex[] = [seg.start];
+
+        // Create n-1 intermediate vertices
+        for (let i = 1; i < n; i++) {
+            const t = i / n;
+            const point = seg.pointAt(t);
+            vertices.push(new Vertex(point.x, point.y));
+        }
+
+        // Add end vertex
+        vertices.push(seg.end);
+
+        // Create n segments connecting the vertices
+        for (let i = 0; i < n; i++) {
+            const newSeg = new Segment(vertices[i], vertices[i + 1]);
+            newSeg.winding = seg.winding;
+            subsegments.push(newSeg);
+        }
+
+        return subsegments;
     }
 
     /** Get midpoint of all selected lines */
@@ -1032,8 +1340,30 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
  * ```
  */
 export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
-    constructor(shapes: Shape[]) {
+    private _isCompound: boolean;
+    private _groups: Shape[][] | null = null; // Groups of shapes that form compound paths
+
+    constructor(shapes: Shape[], isCompound = false) {
         super(shapes);
+        this._isCompound = isCompound;
+    }
+
+    /** Create a ShapesContext from groups of shapes (e.g. from boolean operations) */
+    static fromGroups(groups: Shape[][]): ShapesContext {
+        const flat = groups.reduce((acc, g) => acc.concat(g), []);
+        const ctx = new ShapesContext(flat);
+        ctx._groups = groups;
+        return ctx;
+    }
+
+    /** Treat these shapes as a single compound path (rendering only) */
+    compound(): this {
+        this._isCompound = true;
+        // If no explicit groups, treat all as one group
+        if (!this._groups) {
+            this._groups = [this._items];
+        }
+        return this;
     }
 
     /** Get all shapes */
@@ -1139,15 +1469,21 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
     /** Get all lines from all shapes */
     get lines(): LinesContext {
         const allSegments: Segment[] = [];
+        const parentShapes = new Map<Segment, Shape>();
+
         for (const shape of this._items) {
-            allSegments.push(...shape.segments);
+            for (const seg of shape.segments) {
+                allSegments.push(seg);
+                parentShapes.set(seg, shape);
+            }
         }
+
         const refShape = this._items[0] ?? Shape.fromPoints([
             Vector2.zero(),
             new Vector2(1, 0),
             new Vector2(0, 1),
         ]);
-        return new LinesContext(refShape, allSegments);
+        return new LinesContext(refShape, allSegments, parentShapes);
     }
 
     /** Make all shapes concrete */
@@ -1201,6 +1537,45 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
             shape.translate(new Vector2(dx, dy));
         }
         return this;
+    }
+
+    /**
+     * Merge all shapes in this context into a single shape (or set of shapes).
+     * Uses boolean selection logic to combine overlapping shapes.
+     * 
+     * @returns ShapesContext containing the merged result
+     */
+    union(): ShapesContext {
+        // BooleanOps.union returns Shape[], so we wrap it
+        const result = BooleanOps.union(this._items);
+        // Union of all items -> Single logical group
+        return ShapesContext.fromGroups([result]);
+    }
+
+    /**
+     * Subtract another shape (or shapes) from EACH shape in this context.
+     * @param other Shape, ShapeContext, or ShapesContext to subtract.
+     * @returns A new ShapesContext containing the resulting shapes.
+     */
+    subtract(other: Shape | ShapeContext | ShapesContext): ShapesContext {
+        const clips = this.resolveShapes(other);
+        const groups: Shape[][] = [];
+
+        for (const subject of this._items) {
+            const res = BooleanOps.difference([subject], clips);
+            if (res.length > 0) groups.push(res);
+        }
+        return ShapesContext.fromGroups(groups);
+    }
+
+    /** Helper to resolve inputs to Shape[] */
+    private resolveShapes(other: Shape | ShapeContext | ShapesContext): Shape[] {
+        if (other instanceof Shape) return [other];
+        if (other instanceof ShapeContext) return [other.shape];
+        if ('shapes' in other && Array.isArray((other as any).shapes)) {
+            return (other as any).shapes;
+        }
+        return [];
     }
 
     /**
@@ -1389,6 +1764,24 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
 
     /** Stamp all shapes to collector */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Compound/Grouped rendering
+        if (this._groups) {
+            for (const group of this._groups) {
+                const shapesToStamp: Shape[] = [];
+                for (const shape of group) {
+                    if (shape.ephemeral) continue;
+                    const clone = shape.clone();
+                    if (x !== 0 || y !== 0) {
+                        clone.translate(new Vector2(x, y));
+                    }
+                    shapesToStamp.push(clone);
+                }
+                collector.addCompound(shapesToStamp, style);
+            }
+            return;
+        }
+
+        // Standard rendering: each shape is a separate path
         // Use the provided style directly, allowing render mode to control defaults
         for (const shape of this._items) {
             if (shape.ephemeral) continue;
