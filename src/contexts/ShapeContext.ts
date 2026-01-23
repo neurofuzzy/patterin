@@ -1012,54 +1012,85 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
      * are the extruded positions (original + normal * distance).
      * Returns the modified ShapeContext.
      */
-    extrude(distance: number): ShapeContext {
+    /**
+     * Extrude selected lines outward.
+     * Use parent map to handle extrusion across multiple shapes.
+     * Returns a ShapeContext (if single shape) or ShapesContext (if multiple).
+     */
+    extrude(distance: number): ShapeContext | ShapesContext {
         if (this._items.length === 0) return new ShapeContext(this._shape);
 
-        // Build a set of selected segments for quick lookup
-        const selectedSet = new Set(this._items);
-        const newPoints: Vector2[] = [];
-        const allSegments = this._shape.segments;
+        // Group selected segments by their parent shape
+        const segmentsByShape = new Map<Shape, Segment[]>();
+        const parentMap = this._parentShapes ?? new Map(this._items.map(s => [s, this._shape]));
 
-        if (allSegments.length === 0) return new ShapeContext(this._shape);
-
-        // Iterate through all segments of the shape to build new point list
-        for (let i = 0; i < allSegments.length; i++) {
-            const seg = allSegments[i];
-            const isSelected = selectedSet.has(seg);
-
-            newPoints.push(seg.start.position);
-
-            if (isSelected) {
-                const normal = seg.normal.multiply(distance);
-                newPoints.push(seg.start.position.add(normal)); // A'
-                newPoints.push(seg.end.position.add(normal));   // B'
+        for (const seg of this._items) {
+            const parent = parentMap.get(seg);
+            if (parent) {
+                if (!segmentsByShape.has(parent)) {
+                    segmentsByShape.set(parent, []);
+                }
+                segmentsByShape.get(parent)!.push(seg);
             }
         }
 
-        // Create new shape from points
-        if (newPoints.length >= 3) {
-            // Remove duplicate consecutive points before creating shape
-            const uniquePoints = newPoints.filter((p, i, arr) => {
-                if (i === 0) return true;
-                return !p.equals(arr[i - 1]);
-            });
-            // Check for closing point duplication
-            if (uniquePoints.length > 1 && uniquePoints[0].equals(uniquePoints[uniquePoints.length - 1])) {
-                uniquePoints.pop();
+        const affectedShapes: Shape[] = [];
+
+        // Process each affected shape
+        for (const [shape, selectedSegs] of segmentsByShape) {
+            affectedShapes.push(shape);
+            const selectedSet = new Set(selectedSegs);
+            const newPoints: Vector2[] = [];
+            const allSegments = shape.segments;
+
+            if (allSegments.length === 0) continue;
+
+            // Iterate through all segments of the shape
+            for (let i = 0; i < allSegments.length; i++) {
+                const seg = allSegments[i];
+                const isSelected = selectedSet.has(seg);
+
+                newPoints.push(seg.start.position);
+
+                if (isSelected) {
+                    const normal = seg.normal.multiply(distance);
+                    newPoints.push(seg.start.position.add(normal)); // A'
+                    newPoints.push(seg.end.position.add(normal));   // B'
+                }
             }
 
-            if (uniquePoints.length < 3) return new ShapeContext(this._shape);
+            // Update shape if we have enough points
+            if (newPoints.length >= 3) {
+                // Remove duplicate consecutive points
+                const uniquePoints = newPoints.filter((p, i, arr) => {
+                    if (i === 0) return true;
+                    return !p.equals(arr[i - 1]);
+                });
+                if (uniquePoints.length > 1 && uniquePoints[0].equals(uniquePoints[uniquePoints.length - 1])) {
+                    uniquePoints.pop();
+                }
 
-            const newShape = Shape.fromPoints(uniquePoints, this._shape.winding);
-            newShape.ephemeral = this._shape.ephemeral;
+                if (uniquePoints.length >= 3) {
+                    const newShape = Shape.fromPoints(uniquePoints, shape.winding);
+                    newShape.ephemeral = shape.ephemeral;
 
-            // Mutate the original shape
-            this._shape.segments = newShape.segments;
-            this._shape.winding = newShape.winding;
-            this._shape.connectSegments();
+                    // Mutate the original shape
+                    shape.segments = newShape.segments;
+                    shape.winding = newShape.winding;
+                    shape.connectSegments();
+                }
+            }
         }
 
-        return new ShapeContext(this._shape);
+        if (affectedShapes.length === 1) {
+            return new ShapeContext(affectedShapes[0]);
+        }
+
+        // Return ShapesContext if multiple shapes were modified
+        // If nothing was modified, return context of original reference shape
+        return affectedShapes.length > 0
+            ? new ShapesContext(affectedShapes)
+            : new ShapeContext(this._shape);
     }
 
     /**
