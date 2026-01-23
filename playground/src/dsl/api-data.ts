@@ -288,6 +288,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'xy': { params: ['x: number', 'y: number'], returns: 'this', doc: 'Set x and y position of collective center' },
             'getBounds': { returns: '{ minX, minY, maxX, maxY }', doc: 'Get bounds of all shapes' },
             'trace': { returns: 'ShapesContext', doc: 'Make all shapes concrete' },
+            'union': { returns: 'ShapesContext', doc: 'Merge all overlapping shapes into a single shape (or disjoint set)' },
             'stamp': { params: ['collector: SVGCollector', 'x?: number', 'y?: number', 'style?: PathStyle'], returns: 'void', doc: 'Render all shapes' },
             'spreadPolar': { params: ['radius: number', 'arc?: number | [number, number]'], returns: 'this', doc: 'Distribute shapes radially' },
             'color': { params: ['colorValue: string | SequenceFunction'], returns: 'this', doc: 'Set color for all shapes (supports sequences)' },
@@ -335,6 +336,7 @@ export const API_DATA: Record<string, TypeInfo> = {
             'color': { params: ['colorValue: string | SequenceFunction | Palette'], returns: 'this', doc: 'Set color for all clones' },
             'every': { params: ['n: number', 'offset?: number'], returns: 'ShapesContext', doc: 'Select every nth clone' },
             'at': { params: ['...indices: number[]'], returns: 'ShapesContext', doc: 'Select clones at indices' },
+            'union': { returns: 'ShapesContext', doc: 'Merge all clones into a single shape (or disjoint set)' },
             'stamp': { params: ['collector: SVGCollector', 'style?: PathStyle'], returns: 'void', doc: 'Render to collector' },
         },
         getters: {

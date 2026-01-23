@@ -141,6 +141,27 @@ export class Segment {
     }
 
     /**
+     * Compute minimum distance from a point to this line segment.
+     */
+    distanceToPoint(point: Vector2): number {
+        const p = point;
+        const v = this.start.position;
+        const w = this.end.position;
+
+        const l2 = v.subtract(w).lengthSquared(); // Use lengthSquared if available, or just compute
+        if (l2 === 0) return p.distanceTo(v);
+
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+
+        const projection = new Vector2(
+            v.x + t * (w.x - v.x),
+            v.y + t * (w.y - v.y)
+        );
+        return p.distanceTo(projection);
+    }
+
+    /**
      * Compute intersection point with a ray from origin in direction.
      * Returns null if no intersection.
      */

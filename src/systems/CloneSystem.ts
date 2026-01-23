@@ -294,7 +294,20 @@ export class CloneSystem extends BaseSystem {
         this._segments = [];
         this._buildPathSegments();
 
+        // Rebuild segments after moving shapes
+        this._segments = [];
+        this._buildPathSegments();
+
         return this;
+    }
+
+    /**
+     * Compute the union of all shapes in this system.
+     * Convenience method delegating to ShapesContext.union().
+     * @returns ShapesContext containing the merged shape(s)
+     */
+    union(): ShapesContext {
+        return this.shapes.union();
     }
 
     // ==================== Transformation Methods (support sequences) ====================
@@ -326,7 +339,7 @@ export class CloneSystem extends BaseSystem {
                 const center = shape.centroid();
                 const fx = typeof factorX === 'function' ? factorX() : factorX;
                 const fy = typeof factorY === 'function' ? factorY() : factorY;
-                
+
                 for (const vertex of shape.vertices) {
                     const newX = center.x + (vertex.position.x - center.x) * fx;
                     const newY = center.y + (vertex.position.y - center.y) * fy;

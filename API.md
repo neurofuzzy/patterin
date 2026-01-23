@@ -535,6 +535,23 @@ shapes.scale(1.5)
 shapes.rotate(45)
 shapes.translate(10, 10)
 shapes.offset(5, 2)
+shapes.union()
+```
+
+### `.union()`
+
+Merges all overlapping shapes in the context into a single shape (or multiple disjoint shapes if they don't overlap). Uses a boolean union operation.
+
+**Returns:** `ShapesContext` - Resulting merged shape(s)
+
+**Example:**
+```typescript
+// Create 2 overlapping circles
+const circles = shape.circle()
+  .clone(1, 10, 0); // 10 units apart, overlapping
+
+// Merge them into one shape
+const merged = circles.union();
 ```
 
 ### Selection Methods

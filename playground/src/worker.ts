@@ -243,6 +243,16 @@ function createAutoCollectContext() {
                         }
                         // Handle ShapeContext/ShapesContext returned from system methods (e.g. every, slice)
                         if (result instanceof patterin.ShapeContext || result instanceof patterin.ShapesContext) {
+                            // SPECIAL CASE: union() is a generative op that replaces the system
+                            if (prop === 'union') {
+                                consumedSystems.add(target);
+                                shapeRegistry.add(result);
+                                if (result instanceof patterin.ShapesContext) {
+                                    return wrapShapesContext(result);
+                                }
+                                return wrapShapeContext(result);
+                            }
+
                             // Do NOT add to registry yet (avoid double render of system subsets)
                             // But wrap it so subsequent generative calls ARE tracked
                             return wrapSystemReturnedContext(result, target);

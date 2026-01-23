@@ -1,5 +1,9 @@
-import { BoundingBox, Shape, Segment, Vector2, Vertex, Winding } from '../primitives';
-import { SVGCollector, PathStyle, DEFAULT_STYLES } from '../collectors/SVGCollector';
+import { Vertex } from '../primitives/Vertex';
+import { Segment, Winding } from '../primitives/Segment';
+import { Shape, BoundingBox } from '../primitives/Shape';
+import { Vector2 } from '../primitives/Vector2';
+import { BooleanOps } from '../geometry/Boolean';
+import { SVGCollector, PathStyle, RenderMode, DEFAULT_STYLES } from '../collectors/SVGCollector';
 import { PointContext } from './PointContext';
 import { CloneSystem } from '../systems/CloneSystem';
 import { SequenceFunction } from '../sequence/sequence';
@@ -1457,6 +1461,18 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
             shape.translate(new Vector2(dx, dy));
         }
         return this;
+    }
+
+    /**
+     * Merge all shapes in this context into a single shape (or set of shapes).
+     * Uses boolean selection logic to combine overlapping shapes.
+     * 
+     * @returns ShapesContext containing the merged result
+     */
+    union(): ShapesContext {
+        // BooleanOps.union returns Shape[], so we wrap it
+        const result = BooleanOps.union(this._items);
+        return new ShapesContext(result);
     }
 
     /**
