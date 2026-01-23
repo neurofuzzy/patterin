@@ -90,21 +90,21 @@ export class SVGCollector {
     private maxY = -Infinity;
     private currentGroup?: string;
     private _segmentCount = 0;
-    
+
     /** Current rendering mode for shapes */
     private renderMode: RenderMode = 'stroke';
-    
+
     /** Default color palette for auto-assignment */
     private readonly defaultPalette: string[];
-    
+
     /** Current color index for auto-assignment */
     private colorIndex = 0;
-    
+
     constructor() {
         // Create a diverse default palette covering the spectrum
         this.defaultPalette = new Palette(
-            16, 
-            "reds", "oranges", "yellows", "greens", 
+            16,
+            "reds", "oranges", "yellows", "greens",
             "cyans", "blues", "purples", "magentas"
         ).toArray();
     }
@@ -164,7 +164,7 @@ export class SVGCollector {
      */
     addShape(shape: Shape, style: PathStyle = {}): void {
         if (shape.ephemeral) return;
-        
+
         // Determine the color to use
         let shapeColor = shape.color;
         if (!shapeColor) {
@@ -172,19 +172,51 @@ export class SVGCollector {
             shapeColor = this.defaultPalette[this.colorIndex % this.defaultPalette.length];
             this.colorIndex++;
         }
-        
+
         // Apply render mode to get base style
         const renderModeStyle = this.applyRenderMode(shapeColor);
-        
+
         // Merge: render mode base → explicit style overrides
         const finalStyle = {
             ...renderModeStyle,
             ...style
         };
-        
+
         const pathData = shape.toPathData();
         this.validatePathData(pathData, shape);
         this.addPath(pathData, finalStyle);
+    }
+
+    /**
+     * Add multiple shapes as a single compound path.
+     * Essential for shapes with holes (e.g. results of boolean subtract).
+     */
+    addCompound(shapes: Shape[], style: PathStyle = {}): void {
+        const validShapes = shapes.filter(s => !s.ephemeral);
+        if (validShapes.length === 0) return;
+
+        // Use color of first shape for the whole compound shape
+        let shapeColor = validShapes[0].color;
+        if (!shapeColor) {
+            shapeColor = this.defaultPalette[this.colorIndex % this.defaultPalette.length];
+            this.colorIndex++;
+        }
+
+        const renderModeStyle = this.applyRenderMode(shapeColor);
+        const finalStyle = {
+            ...renderModeStyle,
+            ...style
+        };
+
+        // Concatenate path data
+        const pathData = validShapes
+            .map(s => s.toPathData())
+            .filter(d => d.length > 0)
+            .join(' ');
+
+        if (pathData.length > 0) {
+            this.addPath(pathData, finalStyle);
+        }
     }
 
     /**

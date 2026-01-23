@@ -56,10 +56,26 @@ function createAutoCollectContext() {
     function wrapSubContext<T extends object>(ctx: T, parentContext?: patterin.ShapeContext | patterin.ShapesContext): T {
         return new Proxy(ctx, {
             get(target, prop, receiver) {
+                if (prop === '__raw__') return target;
                 const value = Reflect.get(target, prop, receiver);
                 if (typeof value === 'function') {
                     return function (this: T, ...args: unknown[]) {
                         const result = value.apply(target, args);
+
+                        // Handle chaining: maintain proxy if method returns 'this'
+                        if (result === target) {
+                            return receiver;
+                        }
+
+                        // Auto-consume arguments for boolean operations
+                        if (['subtract', 'union', 'intersect'].includes(String(prop))) {
+                            for (const arg of args) {
+                                const rawArg = (arg as any)?.__raw__ || arg;
+                                if (rawArg instanceof patterin.ShapeContext || rawArg instanceof patterin.ShapesContext) {
+                                    consumedContexts.add(rawArg);
+                                }
+                            }
+                        }
 
                         // Handle operations returning ShapeContext (e.g., round, extrude)
                         if (result instanceof patterin.ShapeContext) {
@@ -100,10 +116,26 @@ function createAutoCollectContext() {
     function wrapShapesContext(ctx: patterin.ShapesContext): patterin.ShapesContext {
         return new Proxy(ctx, {
             get(target, prop, receiver) {
+                if (prop === '__raw__') return target;
                 const value = Reflect.get(target, prop, receiver);
                 if (typeof value === 'function') {
                     return function (this: patterin.ShapesContext, ...args: unknown[]) {
                         const result = value.apply(target, args);
+
+                        // Handle chaining: maintain proxy if method returns 'this'
+                        if (result === target) {
+                            return receiver;
+                        }
+
+                        // Auto-consume arguments for boolean operations
+                        if (['subtract', 'union', 'intersect'].includes(String(prop))) {
+                            for (const arg of args) {
+                                const rawArg = (arg as any)?.__raw__ || arg;
+                                if (rawArg instanceof patterin.ShapeContext || rawArg instanceof patterin.ShapesContext) {
+                                    consumedContexts.add(rawArg);
+                                }
+                            }
+                        }
                         if (result instanceof patterin.ShapeContext) {
                             // Generative operation that returns a ShapeContext
                             // Mark the source as consumed
@@ -137,10 +169,27 @@ function createAutoCollectContext() {
     function wrapShapeContext<T extends patterin.ShapeContext>(ctx: T): T {
         return new Proxy(ctx, {
             get(target, prop, receiver) {
+                if (prop === '__raw__') return target;
                 const value = Reflect.get(target, prop, receiver);
                 if (typeof value === 'function') {
                     return function (this: T, ...args: unknown[]) {
                         const result = value.apply(target, args);
+
+                        // Handle chaining: maintain proxy if method returns 'this'
+                        if (result === target) {
+                            return receiver;
+                        }
+
+                        // Auto-consume arguments for boolean operations
+                        if (['subtract', 'union', 'intersect'].includes(String(prop))) {
+                            for (const arg of args) {
+                                const rawArg = (arg as any)?.__raw__ || arg;
+                                if (rawArg instanceof patterin.ShapeContext || rawArg instanceof patterin.ShapesContext) {
+                                    consumedContexts.add(rawArg);
+                                }
+                            }
+                        }
+
                         // Track returned ShapeContext or ShapesContext
                         if (result instanceof patterin.ShapeContext) {
                             // If method returns a NEW context (not self), it's generative
@@ -195,8 +244,10 @@ function createAutoCollectContext() {
                         const result = value.apply(target, args);
 
                         // If chaining (returns itself), return this wrapper (still not in registry)
+                        // Note: wrapSystemReturnedContext is special, it doesn't use 'receiver' usually?
+                        // Actually it should use receiver if it wants to maintain the proxy.
                         if (result === target) {
-                            return wrapSystemReturnedContext(result, parentSystem);
+                            return receiver;
                         }
 
                         // If it returns a NEW ShapeContext/ShapesContext, it's likely generative (offset)

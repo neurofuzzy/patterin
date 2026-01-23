@@ -308,6 +308,29 @@ export class ShapeContext {
     }
 
     /**
+     * Subtract another shape (or shapes) from this shape.
+     * @param other Shape, ShapeContext, or ShapesContext to subtract.
+     * @returns A ShapesContext containing the resulting shape(s).
+     */
+    subtract(other: Shape | ShapeContext | ShapesContext): ShapesContext {
+        const clips = this.resolveShapes(other);
+        const result = BooleanOps.difference([this._shape], clips);
+        // Result is a single logical group (compound shape)
+        return ShapesContext.fromGroups([result]);
+    }
+
+    /** Helper to resolve inputs to Shape[] */
+    protected resolveShapes(other: Shape | ShapeContext | ShapesContext): Shape[] {
+        if (other instanceof Shape) return [other];
+        if (other instanceof ShapeContext) return [other.shape];
+        // Check for ShapesContext structurally to avoid circular type issues if relevant
+        if ('shapes' in other && Array.isArray((other as any).shapes)) {
+            return (other as any).shapes;
+        }
+        return [];
+    }
+
+    /**
      * Set x position of centroid (keeps y unchanged).
      * 
      * @param xPos - Target x coordinate
@@ -1317,8 +1340,30 @@ export class LinesContext extends SelectableContext<Segment, LinesContext> {
  * ```
  */
 export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
-    constructor(shapes: Shape[]) {
+    private _isCompound: boolean;
+    private _groups: Shape[][] | null = null; // Groups of shapes that form compound paths
+
+    constructor(shapes: Shape[], isCompound = false) {
         super(shapes);
+        this._isCompound = isCompound;
+    }
+
+    /** Create a ShapesContext from groups of shapes (e.g. from boolean operations) */
+    static fromGroups(groups: Shape[][]): ShapesContext {
+        const flat = groups.reduce((acc, g) => acc.concat(g), []);
+        const ctx = new ShapesContext(flat);
+        ctx._groups = groups;
+        return ctx;
+    }
+
+    /** Treat these shapes as a single compound path (rendering only) */
+    compound(): this {
+        this._isCompound = true;
+        // If no explicit groups, treat all as one group
+        if (!this._groups) {
+            this._groups = [this._items];
+        }
+        return this;
     }
 
     /** Get all shapes */
@@ -1503,7 +1548,34 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
     union(): ShapesContext {
         // BooleanOps.union returns Shape[], so we wrap it
         const result = BooleanOps.union(this._items);
-        return new ShapesContext(result);
+        // Union of all items -> Single logical group
+        return ShapesContext.fromGroups([result]);
+    }
+
+    /**
+     * Subtract another shape (or shapes) from EACH shape in this context.
+     * @param other Shape, ShapeContext, or ShapesContext to subtract.
+     * @returns A new ShapesContext containing the resulting shapes.
+     */
+    subtract(other: Shape | ShapeContext | ShapesContext): ShapesContext {
+        const clips = this.resolveShapes(other);
+        const groups: Shape[][] = [];
+
+        for (const subject of this._items) {
+            const res = BooleanOps.difference([subject], clips);
+            if (res.length > 0) groups.push(res);
+        }
+        return ShapesContext.fromGroups(groups);
+    }
+
+    /** Helper to resolve inputs to Shape[] */
+    private resolveShapes(other: Shape | ShapeContext | ShapesContext): Shape[] {
+        if (other instanceof Shape) return [other];
+        if (other instanceof ShapeContext) return [other.shape];
+        if ('shapes' in other && Array.isArray((other as any).shapes)) {
+            return (other as any).shapes;
+        }
+        return [];
     }
 
     /**
@@ -1692,6 +1764,24 @@ export class ShapesContext extends SelectableContext<Shape, ShapesContext> {
 
     /** Stamp all shapes to collector */
     stamp(collector: SVGCollector, x = 0, y = 0, style: PathStyle = {}): void {
+        // Compound/Grouped rendering
+        if (this._groups) {
+            for (const group of this._groups) {
+                const shapesToStamp: Shape[] = [];
+                for (const shape of group) {
+                    if (shape.ephemeral) continue;
+                    const clone = shape.clone();
+                    if (x !== 0 || y !== 0) {
+                        clone.translate(new Vector2(x, y));
+                    }
+                    shapesToStamp.push(clone);
+                }
+                collector.addCompound(shapesToStamp, style);
+            }
+            return;
+        }
+
+        // Standard rendering: each shape is a separate path
         // Use the provided style directly, allowing render mode to control defaults
         for (const shape of this._items) {
             if (shape.ephemeral) continue;
