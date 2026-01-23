@@ -539,8 +539,8 @@ shapes.union()
 ```
 
 ### `.union()`
-
-Merges all overlapping shapes in the context into a single shape (or multiple disjoint shapes if they don't overlap). Uses a boolean union operation.
+    
+Merges all overlapping shapes in the context into a single shape (or minimal set of shapes). Uses a boolean union operation.
 
 **Returns:** `ShapesContext` - Resulting merged shape(s)
 
@@ -553,6 +553,28 @@ const circles = shape.circle()
 // Merge them into one shape
 const merged = circles.union();
 ```
+
+### `.subtract(other: Shape | ShapeContext | ShapesContext)`
+
+Subtracts the specified shape(s) from **each** shape in the context.
+
+**Returns:** `ShapesContext`
+
+**Example:**
+```typescript
+// Create a grid of washers
+const grid = shape.circle().radius(20).clone(4, 50, 0);
+const holes = shape.circle().radius(10).clone(4, 50, 0);
+
+// Subtract corresponding holes from grid circles
+const washers = grid.subtract(holes);
+```
+
+### `.compound()`
+
+Marks the shapes in this context to be rendered as a single compound path. Useful for shapes with holes (even if not created via subtract).
+
+**Returns:** `this`
 
 ### Selection Methods
 
