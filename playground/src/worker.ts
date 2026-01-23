@@ -35,10 +35,10 @@ export type WorkerResponse = {
 function createAutoCollectContext() {
     // Registry for all shape contexts (both factory-created and operation-returned)
     const shapeRegistry = new Set<patterin.ShapeContext | patterin.ShapesContext>();
-    
+
     // Track contexts that have been consumed by generative operations (don't render these)
     const consumedContexts = new WeakSet<patterin.ShapeContext | patterin.ShapesContext>();
-    
+
     // Track systems whose subsets have been consumed (don't render these)
     const consumedSystems = new WeakSet<any>();
 
@@ -48,22 +48,44 @@ function createAutoCollectContext() {
      * so when they create new shapes, we DON'T mark the parent as consumed
      * because the sub-context operations are typically additive/generative by nature.
      */
-    function wrapSubContext<T extends object>(ctx: T): T {
+    /**
+     * Wrap a sub-context (PointsContext, LinesContext) to track returned shapes.
+     * We pass the parent context (ShapeContext) so we can mark it as consumed
+     * if the sub-context operation returns a NEW ShapeContext (generative/mutation).
+     */
+    function wrapSubContext<T extends object>(ctx: T, parentContext?: patterin.ShapeContext | patterin.ShapesContext): T {
         return new Proxy(ctx, {
             get(target, prop, receiver) {
                 const value = Reflect.get(target, prop, receiver);
                 if (typeof value === 'function') {
                     return function (this: T, ...args: unknown[]) {
                         const result = value.apply(target, args);
-                        // Track returned ShapeContext or ShapesContext
+
+                        // Handle operations returning ShapeContext (e.g., round, extrude)
                         if (result instanceof patterin.ShapeContext) {
+                            // This operation produced a new Context for the shape
+                            // Mark the original parent as consumed to avoid double-rendering
+                            if (parentContext) {
+                                consumedContexts.add(parentContext);
+                            }
                             shapeRegistry.add(result);
                             return wrapShapeContext(result);
                         }
+
+                        // Handle operations returning ShapesContext (e.g., expandToCircles)
                         if (result instanceof patterin.ShapesContext) {
+                            if (parentContext) {
+                                consumedContexts.add(parentContext);
+                            }
                             shapeRegistry.add(result);
                             return wrapShapesContext(result);
                         }
+
+                        // Handle chaining: if result is another SubContext, propagate parent
+                        if (result instanceof patterin.PointsContext || result instanceof patterin.LinesContext) {
+                            return wrapSubContext(result, parentContext);
+                        }
+
                         return result;
                     };
                 }
@@ -102,7 +124,7 @@ function createAutoCollectContext() {
                 }
                 // Wrap property accessors
                 if (value instanceof patterin.PointsContext || value instanceof patterin.LinesContext) {
-                    return wrapSubContext(value);
+                    return wrapSubContext(value, ctx);
                 }
                 return value;
             }
@@ -148,7 +170,7 @@ function createAutoCollectContext() {
                 }
                 // Wrap property accessors like .points and .lines
                 if (value instanceof patterin.PointsContext || value instanceof patterin.LinesContext) {
-                    return wrapSubContext(value);
+                    return wrapSubContext(value, ctx);
                 }
                 return value;
             }
@@ -442,7 +464,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 // render() was not called explicitly
                 // Check if user manually stamped anything to the collector
                 const collectorLength = (collector as any).length || 0;
-                
+
                 if (collectorLength > 0) {
                     // User manually stamped content - render it
                     resultSVG = (collector as any).toString({
