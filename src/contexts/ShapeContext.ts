@@ -966,12 +966,17 @@ export class PointsContext extends SelectableContext<Vertex, PointsContext> {
             }
         }
 
+
         // Remove duplicates if any (though logic shouldn't produce adjacent identicals usually)
         if (newPoints.length >= 3) {
             const newShape = Shape.fromPoints(newPoints, this._shape.winding);
-            return new ShapeContext(newShape);
+            // Mutate the original shape structure (preserve identity)
+            this._shape.segments = newShape.segments;
+            this._shape.winding = newShape.winding; // Should be same
+            this._shape.connectSegments();
         }
 
+        // Return context for the same (now mutated) shape
         return new ShapeContext(this._shape);
     }
 }
